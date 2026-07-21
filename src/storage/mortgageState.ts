@@ -51,6 +51,14 @@ export type AppPersisted = {
   currentHomeValue: number;
   /** Whole years since purchase — used with present value to imply compound annual appreciation. */
   yearsOwned: number;
+  /** Property street address (Places Autocomplete or manual entry). */
+  propertyAddress: string;
+  /** Google Place ID when selected via Autocomplete; empty when manual-only. */
+  propertyPlaceId: string;
+  /** WGS84 latitude from Places geometry, or null if unset / manual address. */
+  propertyLatitude: number | null;
+  /** WGS84 longitude from Places geometry, or null if unset / manual address. */
+  propertyLongitude: number | null;
   /**
    * Optional USD overrides for modeled buyer-cost lines (`estimateHomeBuyingOneTimeCosts` line `id`s).
    * Omitted keys use the formula amount. Persisted with the scenario.
@@ -100,8 +108,10 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   };
   const { buyingCostLineOverrides: rawLineOverrides, ...mergedRest } = merged;
   const buyingCostLineOverrides = parseBuyingCostLineOverrides(rawLineOverrides);
+  const location = normalizePropertyLocation(merged, defaultAppState());
   return {
     ...mergedRest,
+    ...location,
     pmiMonthly: Math.max(0, Math.round(Number(merged.pmiMonthly) || 0)),
     extraPrincipalMonthly: Math.max(0, Math.round(Number(merged.extraPrincipalMonthly) || 0)),
     annualGrossIncome: Math.max(0, Math.round(Number(merged.annualGrossIncome) || 0)),
@@ -211,6 +221,37 @@ type RentalOnly = Pick<
   | "capexPercent"
 >;
 
+type PropertyLocation = Pick<
+  AppPersisted,
+  "propertyAddress" | "propertyPlaceId" | "propertyLatitude" | "propertyLongitude"
+>;
+
+function strField(x: unknown, fallback: string): string {
+  if (typeof x === "string") return x;
+  if (x === null || x === undefined) return fallback;
+  return String(x);
+}
+
+/** Finite number or null (legacy missing / invalid → fallback). */
+function nullableCoord(x: unknown, fallback: number | null): number | null {
+  if (x === null || x === undefined || x === "") return fallback;
+  if (typeof x === "number" && Number.isFinite(x)) return x;
+  const n = Number(x);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizePropertyLocation(
+  data: Partial<PropertyLocation> | Record<string, unknown>,
+  base: AppPersisted
+): PropertyLocation {
+  return {
+    propertyAddress: strField(data.propertyAddress, base.propertyAddress),
+    propertyPlaceId: strField(data.propertyPlaceId, base.propertyPlaceId),
+    propertyLatitude: nullableCoord(data.propertyLatitude, base.propertyLatitude),
+    propertyLongitude: nullableCoord(data.propertyLongitude, base.propertyLongitude),
+  };
+}
+
 function parseBuyingCostLineOverrides(raw: unknown): Partial<Record<string, number>> | undefined {
   if (raw == null) return undefined;
   if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
@@ -260,10 +301,12 @@ export function parseMortgageState(raw: string | null): AppPersisted {
       const m1 = { ...m0, ...d };
       const t = normalizePropertyTax(m1, data, base);
       const m = { ...m1, ...t };
+      const loc = normalizePropertyLocation(data, base);
       const merged: AppPersisted = {
         ...base,
         ...m,
         ...parseRentalFields({}, base),
+        ...loc,
         v: SCHEMA_VERSION,
       };
       const yearsOwned = Math.max(1, Math.round(merged.yearsOwned));
@@ -308,10 +351,12 @@ export function parseMortgageState(raw: string | null): AppPersisted {
       yearsOwned
     );
     const buyingCostLineOverrides = parseBuyingCostLineOverrides(data.buyingCostLineOverrides);
+    const loc = normalizePropertyLocation(data, base);
     return {
       v: SCHEMA_VERSION,
       ...m,
       ...r,
+      ...loc,
       pmiMonthly: num(data.pmiMonthly, base.pmiMonthly),
       extraPrincipalMonthly: num(data.extraPrincipalMonthly, base.extraPrincipalMonthly),
       annualGrossIncome: num(data.annualGrossIncome, base.annualGrossIncome),

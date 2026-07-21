@@ -35,6 +35,8 @@ jobs:
         env:
           # Must match your repository name (path segment on github.io)
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Browser Maps key from repo secret (still client-visible in the built JS — restrict by HTTP referrer)
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

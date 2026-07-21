@@ -22,5 +22,9 @@
   "capexPercent": 5,
   "sellClosingCostPercent": 6,
   "yearsOwned": 1,
-  "currentHomeValue": 454500
+  "currentHomeValue": 454500,
+  "propertyAddress": "",
+  "propertyPlaceId": "",
+  "propertyLatitude": null,
+  "propertyLongitude": null
 }

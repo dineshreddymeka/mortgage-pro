@@ -16,6 +16,7 @@ import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCa
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
+import { PropertyLocationCard } from "../components/PropertyLocationCard";
 import {
   aggregateYearlyPaydownDetailed,
   buildAmortizationSchedule,
@@ -166,6 +167,10 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
 
   return (
     <BoxSections>
+      <AppSection title="Property" description="Address for this scenario">
+        <PropertyLocationCard state={state} patch={patch} />
+      </AppSection>
+
       <AppSection
         title="Loan & payment"
         description={`${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}% · cash ${money.format(cashToClose)}`}
