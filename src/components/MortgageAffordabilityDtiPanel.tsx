@@ -106,11 +106,13 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
       disableGutters
       elevation={0}
       sx={{
-        borderRadius: 2,
+        borderRadius: 1,
         border: "1px solid",
         borderColor: "divider",
-        bgcolor: "background.paper",
+        bgcolor: "transparent",
+        boxShadow: "none",
         "&:before": { display: "none" },
+        "&.Mui-expanded": { borderColor: "secondary.main" },
       }}
     >
       <AccordionSummary
@@ -119,6 +121,7 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
           px: 1.25,
           minHeight: 52,
           alignItems: "flex-start",
+          "&:hover": { bgcolor: "action.hover" },
           "& .MuiAccordionSummary-content": { my: 0.75, width: "100%", maxWidth: "calc(100% - 36px)" },
         }}
       >

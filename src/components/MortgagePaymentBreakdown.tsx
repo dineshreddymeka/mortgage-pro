@@ -35,11 +35,12 @@ export function MortgagePaymentBreakdown(props: { breakdown: MonthlyBreakdown })
       <Box
         sx={{
           display: "flex",
-          height: 12,
-          borderRadius: 999,
+          height: 10,
+          borderRadius: 1,
           overflow: "hidden",
-          bgcolor: alpha(theme.palette.divider, theme.palette.mode === "dark" ? 0.35 : 0.6),
-          boxShadow: (th) => `inset 0 0 0 1px ${alpha(th.palette.divider, 0.5)}`,
+          bgcolor: alpha(theme.palette.divider, theme.palette.mode === "dark" ? 0.35 : 0.55),
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         {segments.map((s) => (
@@ -63,7 +64,7 @@ export function MortgagePaymentBreakdown(props: { breakdown: MonthlyBreakdown })
                 sx={{
                   width: 10,
                   height: 10,
-                  borderRadius: "50%",
+                  borderRadius: 0.5,
                   bgcolor: s.color,
                   flexShrink: 0,
                 }}

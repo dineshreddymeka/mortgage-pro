@@ -72,14 +72,15 @@ const PF_PMI_ID = "pmi";
 const rentalAccordionSx = {
   border: "1px solid",
   borderColor: "divider",
-  borderRadius: 2,
+  borderRadius: 1,
   overflow: "hidden",
   bgcolor: "background.paper",
-  transition: "border-color 160ms ease, box-shadow 160ms ease",
+  boxShadow: "none",
+  transition: "border-color 160ms ease",
   "&:before": { display: "none" },
   "&.Mui-expanded": {
-    borderColor: "primary.main",
-    boxShadow: 2,
+    borderColor: "secondary.main",
+    boxShadow: "none",
   },
 } as const;
 
@@ -263,14 +264,16 @@ export function RentalTab({ state, patch }: RentalTabProps) {
     <Stack spacing={2}>
       <Paper
         variant="outlined"
+        elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 2,
+          borderRadius: 1,
           borderColor: "divider",
-          bgcolor: "action.hover",
+          bgcolor: "transparent",
+          boxShadow: "none",
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: "-0.02em", mb: 0.75 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em", mb: 0.75 }}>
           Same scenario as Mortgage
         </Typography>
         <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 2.25, color: "text.secondary" }}>
@@ -532,11 +535,11 @@ export function RentalTab({ state, patch }: RentalTabProps) {
 
             <Box
               sx={{
-                borderRadius: 2,
+                borderRadius: 1,
                 p: 1.25,
-                border: "1px dashed",
+                border: "1px solid",
                 borderColor: "divider",
-                bgcolor: "action.hover",
+                bgcolor: "transparent",
               }}
             >
               <Typography
@@ -593,73 +596,81 @@ export function RentalTab({ state, patch }: RentalTabProps) {
         </AccordionDetails>
       </Accordion>
 
-      <Grid id="rental-metrics-row" container spacing={1.25}>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <MetricCard
-            label="Mo cash flow"
-            value={moneyDec.format(r.cashFlowMonthly)}
-            detail={`Yr ${moneyDec.format(r.cashFlowAnnual)}`}
-            detailExtra={piSummaryRight}
-            hint={`NOI ${moneyDec.format(r.noiMonthly)} − P&amp;I ${moneyDec.format(piMonthly)} (same ${state.termYears}-yr loan as Mortgage)`}
-            positive={r.cashFlowMonthly >= 0}
-            title={`Mo cash flow = monthly NOI minus monthly P&I. P&I is ${moneyDec.format(piMonthly)} on a ${state.termYears}-year amortizing loan — identical to the Mortgage tab for this scenario.`}
-            note={
-              loanPaidOffByYearsHeld ? (
-                <>
-                  <strong>Approx. mortgage-free</strong> (years held &gt; {termYearsRounded} yr loan):{" "}
-                  {moneyDec.format(mortgageFreeMonthly)}/mo — effective gross income (vacancy applied), no OpEx or P&amp;I{" "}
-                  (matches When to sell rent after loan payoff). Uses <strong>Years since purchase</strong> on When to sell.
-                </>
-              ) : undefined
-            }
-          />
+      <Box id="rental-metrics-row" className="pp-fade-in" sx={{ py: 0.5 }}>
+        <Typography variant="h6" sx={{ fontSize: { xs: "1.1rem", sm: "1.2rem" }, mb: 0.35 }}>
+          Key metrics
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25, lineHeight: 1.4, maxWidth: 520 }}>
+          Cash flow, NOI, and returns for this scenario.
+        </Typography>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <MetricCard
+              label="Mo cash flow"
+              value={moneyDec.format(r.cashFlowMonthly)}
+              detail={`Yr ${moneyDec.format(r.cashFlowAnnual)}`}
+              detailExtra={piSummaryRight}
+              hint={`NOI ${moneyDec.format(r.noiMonthly)} − P&amp;I ${moneyDec.format(piMonthly)} (same ${state.termYears}-yr loan as Mortgage)`}
+              positive={r.cashFlowMonthly >= 0}
+              title={`Mo cash flow = monthly NOI minus monthly P&I. P&I is ${moneyDec.format(piMonthly)} on a ${state.termYears}-year amortizing loan — identical to the Mortgage tab for this scenario.`}
+              note={
+                loanPaidOffByYearsHeld ? (
+                  <>
+                    <strong>Approx. mortgage-free</strong> (years held &gt; {termYearsRounded} yr loan):{" "}
+                    {moneyDec.format(mortgageFreeMonthly)}/mo — effective gross income (vacancy applied), no OpEx or P&amp;I{" "}
+                    (matches When to sell rent after loan payoff). Uses <strong>Years since purchase</strong> on When to sell.
+                  </>
+                ) : undefined
+              }
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <MetricCard
+              label="Yr cash flow"
+              value={moneyDec.format(r.cashFlowAnnual)}
+              detail={`Mo ${moneyDec.format(r.cashFlowMonthly)}`}
+              detailExtra={piSummaryRight}
+              hint={`12 × mo cash flow; P&amp;I still ${moneyDec.format(piMonthly)}/mo (${state.termYears} yr)`}
+              positive={r.cashFlowAnnual >= 0}
+              title={`Year cash flow is twelve times monthly cash flow (NOI − P&I). Loan term is ${state.termYears} years on both tabs.`}
+              note={
+                loanPaidOffByYearsHeld ? (
+                  <>
+                    <strong>Approx. mortgage-free</strong>: {moneyDec.format(mortgageFreeAnnual)}/yr ({moneyDec.format(mortgageFreeMonthly)}
+                    /mo EGI). Main figures above still assume debt service for side-by-side underwriting.
+                  </>
+                ) : undefined
+              }
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <MetricCard
+              label="NOI / yr"
+              value={moneyDec.format(r.noiAnnual)}
+              detail={`${moneyDec.format(r.noiMonthly)}/mo`}
+              hint="Net operating income: after vacancy &amp; OpEx, before P&amp;I"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <MetricCard
+              label="Cap rate"
+              value={`${pct1.format(r.capRate * 100)}%`}
+              detail={`Price ${money.format(state.homePrice)}`}
+              hint="NOI (per year) ÷ purchase price"
+              title="The price on the right is the purchase price used as the divisor for cap rate (same as Financing)."
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <MetricCard
+              label="Cash-on-cash"
+              value={`${pct1.format(r.cashOnCash * 100)}%`}
+              detail={`${money.format(r.initialCashInvested)} in`}
+              hint="Yr cash flow ÷ total cash in (down + closing fees + misc one-time)"
+              title="Denominator is everything in Upfront cash: down payment, closing fees, and miscellaneous one-time at close."
+            />
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <MetricCard
-            label="Yr cash flow"
-            value={moneyDec.format(r.cashFlowAnnual)}
-            detail={`Mo ${moneyDec.format(r.cashFlowMonthly)}`}
-            detailExtra={piSummaryRight}
-            hint={`12 × mo cash flow; P&amp;I still ${moneyDec.format(piMonthly)}/mo (${state.termYears} yr)`}
-            positive={r.cashFlowAnnual >= 0}
-            title={`Year cash flow is twelve times monthly cash flow (NOI − P&I). Loan term is ${state.termYears} years on both tabs.`}
-            note={
-              loanPaidOffByYearsHeld ? (
-                <>
-                  <strong>Approx. mortgage-free</strong>: {moneyDec.format(mortgageFreeAnnual)}/yr ({moneyDec.format(mortgageFreeMonthly)}
-                  /mo EGI). Main figures above still assume debt service for side-by-side underwriting.
-                </>
-              ) : undefined
-            }
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <MetricCard
-            label="NOI / yr"
-            value={moneyDec.format(r.noiAnnual)}
-            detail={`${moneyDec.format(r.noiMonthly)}/mo`}
-            hint="Net operating income: after vacancy &amp; OpEx, before P&amp;I"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <MetricCard
-            label="Cap rate"
-            value={`${pct1.format(r.capRate * 100)}%`}
-            detail={`Price ${money.format(state.homePrice)}`}
-            hint="NOI (per year) ÷ purchase price"
-            title="The price on the right is the purchase price used as the divisor for cap rate (same as Financing)."
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <MetricCard
-            label="Cash-on-cash"
-            value={`${pct1.format(r.cashOnCash * 100)}%`}
-            detail={`${money.format(r.initialCashInvested)} in`}
-            hint="Yr cash flow ÷ total cash in (down + closing fees + misc one-time)"
-            title="Denominator is everything in Upfront cash: down payment, closing fees, and miscellaneous one-time at close."
-          />
-        </Grid>
-      </Grid>
+      </Box>
 
       <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -905,15 +916,15 @@ export function RentalTab({ state, patch }: RentalTabProps) {
         </Grid>
       </Grid>
 
-      <Card variant="outlined" sx={{ borderRadius: 2, borderColor: "divider" }}>
+      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, borderColor: "divider", boxShadow: "none" }}>
         <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
           <RentalExpenseComposition slices={r.composition} />
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 2, borderColor: "divider" }}>
+      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, borderColor: "divider", boxShadow: "none" }}>
         <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.35, letterSpacing: "-0.02em" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.35, letterSpacing: "-0.02em" }}>
             Monthly pro-forma
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, lineHeight: 1.4 }}>
@@ -1160,19 +1171,23 @@ function RentalPanelCard(props: {
   return (
     <Card
       id={props.panelId}
+      variant="outlined"
+      elevation={0}
       sx={{
         height: "100%",
         border: "1px solid",
         borderColor: "divider",
-        borderRadius: 2,
+        borderRadius: 1,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        boxShadow: "none",
+        bgcolor: "transparent",
       }}
     >
-      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
+      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1} flexWrap="wrap" useFlexGap>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: "-0.02em", flex: "1 1 8rem", minWidth: 0 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em", flex: "1 1 8rem", minWidth: 0 }}>
             {props.title}
           </Typography>
           {props.headerExtra ?? null}
@@ -1191,8 +1206,8 @@ function RentalSummaryStat(props: { label: string; value: string; emphasize?: bo
         minWidth: 0,
         px: 1.25,
         py: 1,
-        borderRadius: 1.5,
-        bgcolor: "action.selected",
+        borderRadius: 1,
+        bgcolor: "transparent",
         border: "1px solid",
         borderColor: "divider",
       }}
@@ -1226,12 +1241,11 @@ function RentalSubsection(props: { sectionId?: string; title: string; subtitle?:
     <Box
       id={props.sectionId}
       sx={{
-        borderRadius: 2,
+        borderRadius: 1,
         border: "1px solid",
         borderColor: "divider",
         p: 1.5,
-        bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+        bgcolor: "transparent",
       }}
     >
       <Typography
@@ -1355,19 +1369,25 @@ function MetricCard(props: {
 }) {
   const hasRight = Boolean(props.detail || props.detailExtra);
   return (
-    <Card
-      variant="outlined"
+    <Box
       title={props.title}
       sx={{
         height: "100%",
-        borderRadius: 2,
+        borderRadius: 1,
+        border: "1px solid",
         borderColor: "divider",
-        transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-        "&:hover": { borderColor: "action.active", boxShadow: 1 },
+        px: 1.5,
+        py: 1.25,
+        bgcolor: "transparent",
+        transition: "border-color 0.15s ease",
+        "&:hover": { borderColor: "secondary.main" },
       }}
     >
-      <CardContent sx={{ py: 1.25, px: 1.5, "&:last-child": { pb: 1.25 } }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem", lineHeight: 1.2 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontSize: "0.65rem", lineHeight: 1.2, letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 700 }}
+        >
           {props.label}
         </Typography>
         <Stack
@@ -1382,7 +1402,9 @@ function MetricCard(props: {
             sx={{
               fontWeight: 700,
               fontVariantNumeric: "tabular-nums",
-              fontSize: "0.8125rem",
+              fontSize: "0.9375rem",
+              letterSpacing: "-0.02em",
+              fontFamily: "var(--pp-font-display)",
               color:
                 props.positive === undefined
                   ? "text.primary"
@@ -1438,7 +1460,6 @@ function MetricCard(props: {
             {props.note}
           </Typography>
         ) : null}
-      </CardContent>
-    </Card>
+    </Box>
   );
 }

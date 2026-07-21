@@ -54,11 +54,13 @@ export function MortgageBuyerCashPanel({ state, patch, loanAmount, cashToClose }
       disableGutters
       elevation={0}
       sx={{
-        borderRadius: 2,
+        borderRadius: 1,
         border: "1px solid",
         borderColor: "divider",
-        bgcolor: "background.paper",
+        bgcolor: "transparent",
+        boxShadow: "none",
         "&:before": { display: "none" },
+        "&.Mui-expanded": { borderColor: "secondary.main" },
       }}
     >
       <AccordionSummary
@@ -67,6 +69,7 @@ export function MortgageBuyerCashPanel({ state, patch, loanAmount, cashToClose }
           px: 1.25,
           minHeight: 52,
           alignItems: "flex-start",
+          "&:hover": { bgcolor: "action.hover" },
           "& .MuiAccordionSummary-content": { my: 0.65, width: "100%", maxWidth: "calc(100% - 36px)" },
         }}
       >
