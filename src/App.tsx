@@ -91,149 +91,127 @@ export default function App() {
       <Box
         component="header"
         sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
           borderBottom: "1px solid",
           borderColor: "divider",
           bgcolor: (t) =>
-            t.palette.mode === "light" ? alpha("#fbfcfb", 0.72) : alpha("#15201c", 0.82),
-          backdropFilter: "blur(14px)",
+            t.palette.mode === "light" ? alpha("#fbfcfb", 0.9) : alpha("#15201c", 0.92),
+          backdropFilter: "blur(12px)",
         }}
       >
-        <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5 } }}>
+        <Container maxWidth="lg" sx={{ py: 1 }}>
           <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={{ xs: 2.5, md: 4 }}
-            alignItems={{ md: "flex-end" }}
+            direction="row"
+            spacing={1.25}
+            alignItems="center"
             justifyContent="space-between"
+            flexWrap="wrap"
+            useFlexGap
           >
-            <Box className="pp-rise" sx={{ minWidth: 0, flex: 1 }}>
+            <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ minWidth: 0 }}>
               <Typography
                 component="h1"
                 sx={{
                   fontFamily: "var(--pp-font-display)",
                   fontWeight: 800,
-                  fontSize: { xs: "2.55rem", sm: "3.4rem", md: "3.85rem" },
-                  letterSpacing: "-0.045em",
-                  lineHeight: 0.95,
-                  color: "text.primary",
-                  mb: 1.25,
+                  fontSize: { xs: "1.35rem", sm: "1.55rem" },
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap",
                 }}
               >
                 Property Pro
               </Typography>
               <Typography
-                className="pp-rise-delay"
-                variant="body1"
-                color="text.secondary"
-                sx={{
-                  maxWidth: 420,
-                  fontSize: { xs: "1rem", sm: "1.08rem" },
-                  lineHeight: 1.45,
-                  mb: 2,
-                }}
-              >
-                Model the payment, cash to close, rental yield, and exit — one scenario, yours to keep.
-              </Typography>
-              <Stack
-                className="pp-rise-delay"
-                direction="row"
-                spacing={1}
-                flexWrap="wrap"
-                useFlexGap
-                alignItems="center"
-              >
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<SaveOutlinedIcon />}
-                  onClick={saveScenario}
-                  aria-label="Save scenario"
-                  sx={{ minHeight: 44, px: 2.25 }}
-                >
-                  Save
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<FileDownloadOutlinedIcon />}
-                  onClick={exportExcel}
-                  aria-label="Export scenario to Excel"
-                  sx={{ minHeight: 44 }}
-                >
-                  Export Excel
-                </Button>
-                <Tooltip title="Reset to defaults">
-                  <IconButton onClick={reset} aria-label="reset scenario">
-                    <RestartAltIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
-                  <IconButton
-                    onClick={() => setMode(isDark ? "light" : "dark")}
-                    aria-label="toggle color mode"
-                  >
-                    {isDark ? (
-                      <LightModeOutlinedIcon fontSize="small" />
-                    ) : (
-                      <DarkModeOutlinedIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Box>
-
-            <Box
-              className="pp-metric-pop"
-              sx={{
-                flexShrink: 0,
-                minWidth: { xs: "100%", md: 280 },
-                maxWidth: { md: 320 },
-                pl: { md: 3 },
-                borderLeft: { md: "1px solid" },
-                borderColor: { md: "divider" },
-                pt: { xs: 1.5, md: 0 },
-                borderTop: { xs: "1px solid", md: "none" },
-              }}
-            >
-              <Typography
-                variant="overline"
-                sx={{ color: "secondary.dark", display: "block", mb: 0.5 }}
-              >
-                Estimated / month
-              </Typography>
-              <Typography
                 sx={{
                   fontFamily: "var(--pp-font-display)",
                   fontWeight: 800,
-                  fontSize: { xs: "2.4rem", sm: "2.75rem" },
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
+                  fontSize: { xs: "1.2rem", sm: "1.35rem" },
+                  letterSpacing: "-0.03em",
                   fontVariantNumeric: "tabular-nums",
+                  color: "secondary.dark",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {moneyDec.format(payment.total)}
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ ml: 0.4, fontWeight: 600 }}
+                >
+                  /mo
+                </Typography>
               </Typography>
               <Typography
-                variant="body2"
+                variant="caption"
                 color="text.secondary"
-                sx={{ mt: 1, lineHeight: 1.4, maxWidth: 280 }}
+                sx={{ display: { xs: "none", md: "inline" }, whiteSpace: "nowrap" }}
               >
-                {state.interestRateApr}% APR · {state.termYears}-year ·{" "}
-                {moneyDec.format(payment.loanAmount)} loan
+                {state.interestRateApr}% · {state.termYears}-yr
               </Typography>
-            </Box>
+            </Stack>
+
+            <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Button
+                size="small"
+                variant="contained"
+                color="secondary"
+                startIcon={<SaveOutlinedIcon />}
+                onClick={saveScenario}
+                aria-label="Save scenario"
+                sx={{ minHeight: 34 }}
+              >
+                Save
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<FileDownloadOutlinedIcon />}
+                onClick={exportExcel}
+                aria-label="Export scenario to Excel"
+                sx={{ minHeight: 34 }}
+              >
+                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Export
+                </Box>
+                <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                  XLS
+                </Box>
+              </Button>
+              <Tooltip title="Reset to defaults">
+                <IconButton onClick={reset} aria-label="reset scenario" size="small">
+                  <RestartAltIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
+                <IconButton
+                  onClick={() => setMode(isDark ? "light" : "dark")}
+                  aria-label="toggle color mode"
+                  size="small"
+                >
+                  {isDark ? (
+                    <LightModeOutlinedIcon fontSize="small" />
+                  ) : (
+                    <DarkModeOutlinedIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Stack>
           </Stack>
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ pb: { xs: 3, sm: 4 } }}>
+      <Container maxWidth="lg" sx={{ pb: 2 }}>
         <Box
           role="tablist"
           aria-label="Main sections"
-          className="pp-fade-in"
           sx={{
             display: "flex",
-            gap: { xs: 0.5, sm: 1.5 },
-            mt: { xs: 2, sm: 2.5 },
-            mb: 0.5,
+            gap: { xs: 0.25, sm: 1 },
+            mt: 0.5,
             borderBottom: "1px solid",
             borderColor: "divider",
             overflowX: "auto",
@@ -246,7 +224,7 @@ export default function App() {
             return (
               <Button
                 key={id}
-                size="medium"
+                size="small"
                 disableElevation
                 id={`tab-${id}`}
                 aria-controls={`tabpanel-${id}`}
@@ -255,15 +233,16 @@ export default function App() {
                 onClick={() => setTab(i)}
                 sx={{
                   position: "relative",
-                  py: 1.35,
-                  px: { xs: 1.25, sm: 1.75 },
+                  py: 0.85,
+                  px: { xs: 1, sm: 1.35 },
                   minWidth: "auto",
+                  minHeight: 36,
                   borderRadius: 0,
                   bgcolor: "transparent !important",
                   boxShadow: "none !important",
                   color: selected ? "text.primary" : "text.secondary",
                   fontWeight: selected ? 700 : 600,
-                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  fontSize: { xs: "0.85rem", sm: "0.92rem" },
                   letterSpacing: "-0.02em",
                   whiteSpace: "nowrap",
                   "&::after": {
@@ -276,7 +255,7 @@ export default function App() {
                     bgcolor: "secondary.main",
                     transform: selected ? "scaleX(1)" : "scaleX(0)",
                     transformOrigin: "left center",
-                    transition: "transform 0.28s var(--pp-ease, ease)",
+                    transition: "transform 0.22s var(--pp-ease, ease)",
                   },
                   "&:hover": {
                     color: "text.primary",
@@ -295,7 +274,6 @@ export default function App() {
           hidden={tab !== 0}
           id="tabpanel-mortgage"
           aria-labelledby="tab-mortgage"
-          className={tab === 0 ? "pp-fade-in" : undefined}
         >
           {tab === 0 ? <MortgageTab state={state} patch={patch} /> : null}
         </Box>
@@ -304,26 +282,13 @@ export default function App() {
           hidden={tab !== 1}
           id="tabpanel-upfront"
           aria-labelledby="tab-upfront"
-          className={tab === 1 ? "pp-fade-in" : undefined}
         >
           {tab === 1 ? <UpfrontCashTab state={state} patch={patch} /> : null}
         </Box>
-        <Box
-          role="tabpanel"
-          hidden={tab !== 2}
-          id="tabpanel-rental"
-          aria-labelledby="tab-rental"
-          className={tab === 2 ? "pp-fade-in" : undefined}
-        >
+        <Box role="tabpanel" hidden={tab !== 2} id="tabpanel-rental" aria-labelledby="tab-rental">
           {tab === 2 ? <RentalTab state={state} patch={patch} /> : null}
         </Box>
-        <Box
-          role="tabpanel"
-          hidden={tab !== 3}
-          id="tabpanel-sell"
-          aria-labelledby="tab-sell"
-          className={tab === 3 ? "pp-fade-in" : undefined}
-        >
+        <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
           {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
         </Box>
 
@@ -331,10 +296,9 @@ export default function App() {
           variant="caption"
           color="text.secondary"
           display="block"
-          sx={{ lineHeight: 1.5, pt: 3, pb: 1, maxWidth: 640 }}
+          sx={{ lineHeight: 1.4, pt: 1.5, pb: 0.5, maxWidth: 560 }}
         >
-          Estimates only — not an offer or advice. One shared scenario across tabs; edits auto-save
-          locally. Export Excel for an offline workbook.
+          Estimates only. One scenario across tabs; auto-saves locally.
         </Typography>
       </Container>
 

@@ -54,8 +54,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
               sx={{
                 fontFamily: "var(--pp-font-display)",
                 fontWeight: 800,
-                fontSize: "1.85rem",
-                letterSpacing: "-0.035em",
+                fontSize: "1.35rem",
+                letterSpacing: "-0.03em",
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
               }}
