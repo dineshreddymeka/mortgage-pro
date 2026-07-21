@@ -41,10 +41,10 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 });
 
 const summarySx = {
-  px: 2,
-  minHeight: 56,
+  px: 1.25,
+  minHeight: 44,
   alignItems: "flex-start",
-  "& .MuiAccordionSummary-content": { my: 1, width: "100%", maxWidth: "calc(100% - 36px)" },
+  "& .MuiAccordionSummary-content": { my: 0.6, width: "100%", maxWidth: "calc(100% - 36px)" },
 } as const;
 
 export type MortgageTabProps = {
@@ -167,17 +167,11 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
 
   return (
     <BoxSections>
-      <AppSection
-        title="Loan inputs"
-        description="Set purchase price, down payment, rate, and carrying costs. The header payment updates as you type."
-      >
+      <AppSection title="Loan inputs" description="Header payment updates as you type">
         <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
       </AppSection>
 
-      <AppSection
-        title="Cash to close"
-        description="Down payment plus closing and one-time cash — shared with the Upfront tab."
-      >
+      <AppSection title="Cash to close" description="Shared with Upfront">
         <MortgageBuyerCashPanel
           state={state}
           patch={patch}
@@ -190,7 +184,7 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         title="Payment split"
         description={`${moneyDec.format(breakdown.total)} /mo · LTV ${ltvPct.toFixed(1)}% · cash to close ${money.format(cashToClose)}`}
       >
-        <Grid container spacing={2.5} alignItems="flex-start">
+        <Grid container spacing={1.5} alignItems="flex-start">
           <Grid size={{ xs: 12, md: 7 }}>
             <MortgagePaymentBreakdown breakdown={breakdown} />
           </Grid>
@@ -209,8 +203,8 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         </Grid>
       </AppSection>
 
-      <AppSection title="Compare & dig deeper" description="Loan length, year-by-year paydown, and refinance timing.">
-        <Stack spacing={1.25}>
+      <AppSection title="Compare" description="Term, paydown, refi">
+        <Stack spacing={0.85}>
           <Accordion defaultExpanded={false} disableGutters elevation={0}>
             <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
               <Stack
@@ -313,10 +307,7 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         </Stack>
       </AppSection>
 
-      <AppSection
-        title="Affordability"
-        description="Front- and back-end DTI from your income and other debt."
-      >
+      <AppSection title="Affordability" description="DTI from income and other debt">
         <MortgageAffordabilityDtiPanel
           state={state}
           patch={patch}
@@ -324,9 +315,9 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         />
       </AppSection>
 
-      <Alert severity="info" variant="outlined" sx={{ mt: 1, mb: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45, display: "block" }}>
-          Single-scenario calculator — no listings or live rates. Numbers stay in your browser until export or reset.
+      <Alert severity="info" variant="outlined" sx={{ mt: 0.5, py: 0.35 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
+          Single-scenario calculator — numbers stay in your browser until export or reset.
         </Typography>
       </Alert>
     </BoxSections>

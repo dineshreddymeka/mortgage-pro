@@ -10,40 +10,47 @@ type AppSectionProps = {
   className?: string;
 };
 
-/** One job per section: headline, short support, content. No card chrome. */
+/** Compact section: title + optional support line + content. */
 export function AppSection({ title, description, children, aside, className }: AppSectionProps) {
   return (
     <Box
       component="section"
       className={className}
       sx={{
-        py: { xs: 2, sm: 2.5 },
+        py: 1.25,
         borderTop: "1px solid",
         borderColor: "divider",
       }}
     >
       <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        alignItems={{ sm: "flex-end" }}
+        direction="row"
+        spacing={1}
+        alignItems="baseline"
         justifyContent="space-between"
-        sx={{ mb: description || aside ? 1.75 : 1.25 }}
+        sx={{ mb: 1 }}
       >
-        <Box sx={{ minWidth: 0, maxWidth: 560 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
-            variant="h6"
+            variant="subtitle1"
             sx={{
-              fontSize: { xs: "1.15rem", sm: "1.28rem" },
-              mb: description ? 0.4 : 0,
+              fontSize: "1.02rem",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.25,
             }}
           >
             {title}
+            {description ? (
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 1, fontWeight: 500, display: { xs: "none", sm: "inline" } }}
+              >
+                — {description}
+              </Typography>
+            ) : null}
           </Typography>
-          {description ? (
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-              {description}
-            </Typography>
-          ) : null}
         </Box>
         {aside ? <Box sx={{ flexShrink: 0 }}>{aside}</Box> : null}
       </Stack>

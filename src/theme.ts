@@ -347,16 +347,16 @@ export const appTheme = createTheme({
     MuiAccordionSummary: {
       styleOverrides: {
         root: {
-          minHeight: 52,
-          paddingLeft: 16,
-          paddingRight: 16,
+          minHeight: 42,
+          paddingLeft: 12,
+          paddingRight: 12,
         },
-        content: { marginTop: 10, marginBottom: 10 },
+        content: { marginTop: 6, marginBottom: 6 },
       },
     },
     MuiAccordionDetails: {
       styleOverrides: {
-        root: { padding: 16, paddingTop: 0 },
+        root: { padding: 12, paddingTop: 0 },
       },
     },
     MuiOutlinedInput: {
