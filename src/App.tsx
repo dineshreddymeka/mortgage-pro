@@ -5,25 +5,38 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import Alert from "@mui/material/Alert";
 import {
-  AppBar,
   Box,
   Button,
   Container,
   IconButton,
   Snackbar,
   Stack,
-  Toolbar,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { alpha, useColorScheme, useTheme } from "@mui/material/styles";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
+import { computeMonthlyPayment } from "./lib/mortgageMath";
+
+const moneyDec = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+const TABS = [
+  { label: "Mortgage", id: "mortgage" },
+  { label: "Upfront", id: "upfront" },
+  { label: "Rental", id: "rental" },
+  { label: "When to sell", id: "sell" },
+] as const;
 
 export default function App() {
   const { setMode } = useColorScheme();
@@ -36,212 +49,298 @@ export default function App() {
 
   const isDark = theme.palette.mode === "dark";
 
+  const payment = useMemo(
+    () =>
+      computeMonthlyPayment(
+        state.homePrice,
+        state.downPayment,
+        state.interestRateApr,
+        state.termYears,
+        state.propertyTaxAnnual,
+        state.insuranceAnnual,
+        state.hoaMonthly,
+        state.pmiMonthly
+      ),
+    [
+      state.downPayment,
+      state.homePrice,
+      state.hoaMonthly,
+      state.insuranceAnnual,
+      state.interestRateApr,
+      state.pmiMonthly,
+      state.propertyTaxAnnual,
+      state.termYears,
+    ]
+  );
+
   function exportExcel() {
     downloadScenarioExcel(state);
     setToast({
-      message: "Exported property-pro-scenario.xlsx (inputs, formulas, and calculated tables).",
+      message: "Exported property-pro-scenario.xlsx.",
       severity: "success",
     });
   }
 
-  function saveToLocalStorage() {
+  function saveScenario() {
     saveToBrowser();
-    setToast({ message: "Saved to this browser (localStorage).", severity: "success" });
+    setToast({ message: "Scenario saved in this browser.", severity: "success" });
   }
 
   return (
     <Box sx={{ minHeight: "100dvh", bgcolor: "transparent" }}>
-      <AppBar
-        position="sticky"
-        color="transparent"
-        elevation={0}
+      <Box
+        component="header"
         sx={{
           borderBottom: "1px solid",
-          borderColor: (t) => alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.12 : 0.2),
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          borderColor: "divider",
           bgcolor: (t) =>
-            t.palette.mode === "light"
-              ? alpha("#E8F2FF", 0.82)
-              : alpha("#0D1520", 0.78),
+            t.palette.mode === "light" ? alpha("#fbfcfb", 0.72) : alpha("#15201c", 0.82),
+          backdropFilter: "blur(14px)",
         }}
       >
-        <Toolbar sx={{ py: 0.35, gap: 0.75, flexWrap: "wrap" }}>
-          <Typography
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontSize: { xs: "1.28rem", sm: "1.42rem" },
-              fontWeight: 700,
-              letterSpacing: "-0.035em",
-              lineHeight: 1.15,
-              background: isDark
-                ? "linear-gradient(120deg, #93C5FD 0%, #5EEAD4 55%, #7DD3FC 100%)"
-                : "linear-gradient(120deg, #0052CC 0%, #006AFF 40%, #00A67E 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+        <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5 } }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 2.5, md: 4 }}
+            alignItems={{ md: "flex-end" }}
+            justifyContent="space-between"
           >
-            Property Pro
-          </Typography>
-          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0, flexWrap: "wrap" }}>
-            <Tooltip title="Write the current scenario to this browser (localStorage). Factory defaults for new visitors live in src/defaults/scenario-defaults.json; Reset reloads those defaults.">
-              <Button
-                size="small"
-                variant="contained"
-                color="primary"
-                startIcon={<SaveOutlinedIcon />}
-                onClick={saveToLocalStorage}
-                aria-label="Save scenario to local storage"
+            <Box className="pp-rise" sx={{ minWidth: 0, flex: 1 }}>
+              <Typography
+                component="h1"
                 sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  px: { xs: 1.1, sm: 1.6 },
+                  fontFamily: "var(--pp-font-display)",
+                  fontWeight: 800,
+                  fontSize: { xs: "2.55rem", sm: "3.4rem", md: "3.85rem" },
+                  letterSpacing: "-0.045em",
+                  lineHeight: 0.95,
+                  color: "text.primary",
+                  mb: 1.25,
                 }}
               >
-                Save
-              </Button>
-            </Tooltip>
-            <Tooltip title="Download Excel workbook: scenario inputs, metric definitions, and calculated tables (multi-sheet).">
-              <Button
-                size="small"
-                variant="outlined"
-                color="secondary"
-                startIcon={<FileDownloadOutlinedIcon />}
-                onClick={exportExcel}
-                aria-label="Export scenario to Excel"
+                Property Pro
+              </Typography>
+              <Typography
+                className="pp-rise-delay"
+                variant="body1"
+                color="text.secondary"
                 sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  px: { xs: 1, sm: 1.5 },
-                  borderWidth: 2,
-                  "&:hover": { borderWidth: 2 },
+                  maxWidth: 420,
+                  fontSize: { xs: "1rem", sm: "1.08rem" },
+                  lineHeight: 1.45,
+                  mb: 2,
                 }}
               >
-                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                Model the payment, cash to close, rental yield, and exit — one scenario, yours to keep.
+              </Typography>
+              <Stack
+                className="pp-rise-delay"
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+                alignItems="center"
+              >
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<SaveOutlinedIcon />}
+                  onClick={saveScenario}
+                  aria-label="Save scenario"
+                  sx={{ minHeight: 44, px: 2.25 }}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadOutlinedIcon />}
+                  onClick={exportExcel}
+                  aria-label="Export scenario to Excel"
+                  sx={{ minHeight: 44 }}
+                >
                   Export Excel
-                </Box>
-                <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-                  Excel
-                </Box>
-              </Button>
-            </Tooltip>
-          </Stack>
-          <Tooltip title="Reset to defaults">
-            <IconButton onClick={reset} aria-label="reset" sx={{ color: "text.secondary" }}>
-              <RestartAltIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
-            <IconButton
-              onClick={() => setMode(isDark ? "light" : "dark")}
-              aria-label="toggle color mode"
-              sx={{ color: "text.secondary" }}
-            >
-              {isDark ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
+                </Button>
+                <Tooltip title="Reset to defaults">
+                  <IconButton onClick={reset} aria-label="reset scenario">
+                    <RestartAltIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
+                  <IconButton
+                    onClick={() => setMode(isDark ? "light" : "dark")}
+                    aria-label="toggle color mode"
+                  >
+                    {isDark ? (
+                      <LightModeOutlinedIcon fontSize="small" />
+                    ) : (
+                      <DarkModeOutlinedIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Box>
 
-      <Container maxWidth="lg" sx={{ py: { xs: 1, sm: 1.15 } }}>
+            <Box
+              className="pp-metric-pop"
+              sx={{
+                flexShrink: 0,
+                minWidth: { xs: "100%", md: 280 },
+                maxWidth: { md: 320 },
+                pl: { md: 3 },
+                borderLeft: { md: "1px solid" },
+                borderColor: { md: "divider" },
+                pt: { xs: 1.5, md: 0 },
+                borderTop: { xs: "1px solid", md: "none" },
+              }}
+            >
+              <Typography
+                variant="overline"
+                sx={{ color: "secondary.dark", display: "block", mb: 0.5 }}
+              >
+                Estimated / month
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--pp-font-display)",
+                  fontWeight: 800,
+                  fontSize: { xs: "2.4rem", sm: "2.75rem" },
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {moneyDec.format(payment.total)}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1, lineHeight: 1.4, maxWidth: 280 }}
+              >
+                {state.interestRateApr}% APR · {state.termYears}-year ·{" "}
+                {moneyDec.format(payment.loanAmount)} loan
+              </Typography>
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ pb: { xs: 3, sm: 4 } }}>
         <Box
           role="tablist"
           aria-label="Main sections"
+          className="pp-fade-in"
           sx={{
             display: "flex",
-            p: 0.65,
-            mb: 1.1,
-            borderRadius: 3,
-            gap: 0.65,
-            background: (t) =>
-              t.palette.mode === "light"
-                ? `linear-gradient(145deg, ${alpha(t.palette.primary.main, 0.09)}, ${alpha(t.palette.secondary.main, 0.06)})`
-                : `linear-gradient(145deg, ${alpha(t.palette.primary.main, 0.16)}, ${alpha(t.palette.secondary.main, 0.08)})`,
-            boxShadow: (t) =>
-              t.palette.mode === "light"
-                ? `0 1px 2px ${alpha(t.palette.primary.dark, 0.06)}, inset 0 1px 0 ${alpha("#fff", 0.65)}`
-                : `inset 0 1px 0 ${alpha("#fff", 0.06)}`,
-            border: (t) => `1px solid ${alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.14 : 0.22)}`,
+            gap: { xs: 0.5, sm: 1.5 },
+            mt: { xs: 2, sm: 2.5 },
+            mb: 0.5,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          {(
-            [
-              { label: "Mortgage", id: "mortgage" },
-              { label: "Upfront", id: "upfront" },
-              { label: "Rental", id: "rental" },
-              { label: "When to sell", id: "sell" },
-            ] as const
-          ).map(({ label, id }, i) => (
-            <Button
-              key={id}
-              size="medium"
-              fullWidth
-              disableElevation
-              id={`tab-${id}`}
-              aria-controls={`tabpanel-${id}`}
-              aria-selected={tab === i}
-              role="tab"
-              onClick={() => setTab(i)}
-              sx={{
-                py: 0.85,
-                minHeight: 42,
-                borderRadius: 2.5,
-                textTransform: "none",
-                fontWeight: 700,
-                fontSize: { xs: "0.82rem", sm: "0.95rem" },
-                letterSpacing: "-0.022em",
-                color: (t) =>
-                  tab === i
-                    ? "#FFFFFF"
-                    : t.palette.mode === "light"
-                      ? t.palette.primary.dark
-                      : t.palette.primary.light,
-                background: (t) =>
-                  tab === i
-                    ? `linear-gradient(145deg, ${t.palette.primary.main} 0%, ${alpha(t.palette.secondary.main, 0.92)} 100%)`
-                    : alpha(t.palette.background.paper, t.palette.mode === "light" ? 0.55 : 0.12),
-                boxShadow:
-                  tab === i
-                    ? (th) =>
-                        `0 2px 10px ${alpha(th.palette.primary.main, 0.35)}, 0 0 0 1px ${alpha(th.palette.primary.light, 0.35)}`
-                    : "none",
-                "&:hover": {
-                  background: (t) =>
-                    tab === i
-                      ? `linear-gradient(145deg, ${alpha(t.palette.primary.main, 0.95)} 0%, ${alpha(t.palette.secondary.main, 0.88)} 100%)`
-                      : alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.1 : 0.16),
-                },
-              }}
-            >
-              {label}
-            </Button>
-          ))}
+          {TABS.map(({ label, id }, i) => {
+            const selected = tab === i;
+            return (
+              <Button
+                key={id}
+                size="medium"
+                disableElevation
+                id={`tab-${id}`}
+                aria-controls={`tabpanel-${id}`}
+                aria-selected={selected}
+                role="tab"
+                onClick={() => setTab(i)}
+                sx={{
+                  position: "relative",
+                  py: 1.35,
+                  px: { xs: 1.25, sm: 1.75 },
+                  minWidth: "auto",
+                  borderRadius: 0,
+                  bgcolor: "transparent !important",
+                  boxShadow: "none !important",
+                  color: selected ? "text.primary" : "text.secondary",
+                  fontWeight: selected ? 700 : 600,
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  letterSpacing: "-0.02em",
+                  whiteSpace: "nowrap",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 2,
+                    bgcolor: "secondary.main",
+                    transform: selected ? "scaleX(1)" : "scaleX(0)",
+                    transformOrigin: "left center",
+                    transition: "transform 0.28s var(--pp-ease, ease)",
+                  },
+                  "&:hover": {
+                    color: "text.primary",
+                    bgcolor: "transparent",
+                  },
+                }}
+              >
+                {label}
+              </Button>
+            );
+          })}
         </Box>
 
-        <Box role="tabpanel" hidden={tab !== 0} id="tabpanel-mortgage" aria-labelledby="tab-mortgage">
-          <MortgageTab state={state} patch={patch} />
+        <Box
+          role="tabpanel"
+          hidden={tab !== 0}
+          id="tabpanel-mortgage"
+          aria-labelledby="tab-mortgage"
+          className={tab === 0 ? "pp-fade-in" : undefined}
+        >
+          {tab === 0 ? <MortgageTab state={state} patch={patch} /> : null}
         </Box>
-        <Box role="tabpanel" hidden={tab !== 1} id="tabpanel-upfront" aria-labelledby="tab-upfront">
-          <UpfrontCashTab state={state} patch={patch} />
+        <Box
+          role="tabpanel"
+          hidden={tab !== 1}
+          id="tabpanel-upfront"
+          aria-labelledby="tab-upfront"
+          className={tab === 1 ? "pp-fade-in" : undefined}
+        >
+          {tab === 1 ? <UpfrontCashTab state={state} patch={patch} /> : null}
         </Box>
-        <Box role="tabpanel" hidden={tab !== 2} id="tabpanel-rental" aria-labelledby="tab-rental">
-          <RentalTab state={state} patch={patch} />
+        <Box
+          role="tabpanel"
+          hidden={tab !== 2}
+          id="tabpanel-rental"
+          aria-labelledby="tab-rental"
+          className={tab === 2 ? "pp-fade-in" : undefined}
+        >
+          {tab === 2 ? <RentalTab state={state} patch={patch} /> : null}
         </Box>
-        <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
-          <WhenToSellTab state={state} patch={patch} />
+        <Box
+          role="tabpanel"
+          hidden={tab !== 3}
+          id="tabpanel-sell"
+          aria-labelledby="tab-sell"
+          className={tab === 3 ? "pp-fade-in" : undefined}
+        >
+          {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
         </Box>
 
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.45, pt: 1.25, pb: 0.5 }}>
-          Estimates only. One scenario across tabs; edits auto-save to localStorage. Use <strong>Save</strong> in the header
-          to force a write. <strong>Export Excel</strong> downloads a multi-sheet workbook (inputs, formulas, projections).
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ lineHeight: 1.5, pt: 3, pb: 1, maxWidth: 640 }}
+        >
+          Estimates only — not an offer or advice. One shared scenario across tabs; edits auto-save
+          locally. Export Excel for an offline workbook.
         </Typography>
       </Container>
 
       <Snackbar
         open={toast != null}
-        autoHideDuration={4000}
+        autoHideDuration={3500}
         onClose={() => setToast(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
@@ -249,7 +348,7 @@ export default function App() {
           onClose={() => setToast(null)}
           severity={toast?.severity ?? "success"}
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{ width: "100%", bgcolor: "primary.main" }}
         >
           {toast?.message ?? ""}
         </Alert>

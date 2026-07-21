@@ -64,41 +64,40 @@ function StatTile({
     <Paper
       elevation={0}
       variant="outlined"
-      sx={(t) => ({
+      sx={{
         p: { xs: 0.85, sm: 1 },
         height: "100%",
-        borderRadius: 1.5,
-        borderColor: alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.22 : 0.35),
-        background:
-          t.palette.mode === "light"
-            ? `linear-gradient(160deg, ${alpha(t.palette.primary.main, 0.07)} 0%, ${alpha(t.palette.background.paper, 1)} 55%)`
-            : `linear-gradient(160deg, ${alpha(t.palette.primary.main, 0.14)} 0%, ${alpha(t.palette.background.paper, 1)} 50%)`,
-      })}
+        borderRadius: 1,
+        borderColor: "divider",
+        bgcolor: "transparent",
+        boxShadow: "none",
+      }}
     >
       <Typography
         variant="caption"
-        sx={(t) => ({
-          fontWeight: 800,
+        sx={{
+          fontWeight: 700,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
           fontSize: "0.65rem",
-          color: t.palette.text.secondary,
+          color: "text.secondary",
           display: "block",
           mb: 0.2,
-        })}
+        }}
       >
         {kicker}
       </Typography>
       <Typography
         variant="h6"
-        sx={(t) => ({
+        sx={{
           fontWeight: 800,
           fontVariantNumeric: "tabular-nums",
           letterSpacing: "-0.03em",
           lineHeight: 1.12,
           fontSize: { xs: "1rem", sm: "1.1rem" },
-          color: t.palette.mode === "light" ? t.palette.primary.dark : t.palette.primary.light,
-        })}
+          fontFamily: "var(--pp-font-display)",
+          color: "text.primary",
+        }}
       >
         {value}
       </Typography>
@@ -115,15 +114,15 @@ function SectionTitle({ children, tightTop }: { children: ReactNode; tightTop?: 
   return (
     <Typography
       variant="overline"
-      sx={(t) => ({
+      sx={{
         display: "block",
-        fontWeight: 800,
+        fontWeight: 700,
         letterSpacing: "0.08em",
-        color: t.palette.primary.main,
+        color: "text.secondary",
         mt: tightTop ? 0.35 : 1,
         mb: 0.35,
         fontSize: "0.65rem",
-      })}
+      }}
     >
       {children}
     </Typography>
@@ -143,7 +142,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
         mx: -0.5,
         borderRadius: 1,
         borderBottom: `1px solid ${alpha(t.palette.divider, 0.9)}`,
-        "&:hover": { bgcolor: alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.04 : 0.08) },
+        "&:hover": { bgcolor: alpha(t.palette.secondary.main, t.palette.mode === "light" ? 0.06 : 0.1) },
       })}
     >
       <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.25, fontSize: "0.78rem" }}>
@@ -181,29 +180,25 @@ export function MortgageLoanSummaryCard({
   return (
     <Card
       variant="outlined"
-      sx={(t) => ({
-        borderRadius: 2,
+      elevation={0}
+      sx={{
+        borderRadius: 1,
         overflow: "hidden",
-        borderColor: alpha(t.palette.primary.main, t.palette.mode === "light" ? 0.35 : 0.45),
-        boxShadow:
-          t.palette.mode === "light"
-            ? `0 4px 20px ${alpha(t.palette.primary.dark, 0.08)}`
-            : `0 4px 24px ${alpha("#000", 0.35)}`,
-      })}
+        borderColor: "divider",
+        boxShadow: "none",
+        bgcolor: "transparent",
+      }}
     >
       <Box
-        sx={(t) => ({
+        sx={{
           px: 1.5,
-          py: 1,
-          background:
-            t.palette.mode === "light"
-              ? `linear-gradient(110deg, ${alpha(t.palette.primary.main, 0.12)} 0%, ${alpha(t.palette.secondary.main, 0.08)} 100%)`
-              : `linear-gradient(110deg, ${alpha(t.palette.primary.main, 0.22)} 0%, ${alpha(t.palette.secondary.main, 0.12)} 100%)`,
+          py: 1.1,
           borderBottom: "1px solid",
           borderColor: "divider",
-        })}
+          bgcolor: "transparent",
+        }}
       >
-        <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: "0.12em", opacity: 0.9 }}>
+        <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: "0.12em", color: "text.secondary" }}>
           Loan summary
         </Typography>
         <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: "-0.02em", mt: 0.15, fontSize: "1rem" }}>

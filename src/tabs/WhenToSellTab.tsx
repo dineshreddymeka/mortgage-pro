@@ -98,16 +98,22 @@ const sectionAccordionSx = {
   borderColor: "divider",
   borderRadius: 1,
   overflow: "hidden",
-  bgcolor: "background.paper",
+  bgcolor: "transparent",
   "&:before": { display: "none" },
   boxShadow: "none",
+  "&.Mui-expanded": {
+    borderColor: "secondary.main",
+    boxShadow: "none",
+  },
 } as const;
 
 const sectionAccordionSummarySx = {
-  px: { xs: 0.65, sm: 0.75 },
-  py: { xs: 0.35, sm: 0.25 },
-  minHeight: { xs: 44, sm: 40 },
+  px: { xs: 1, sm: 1.25 },
+  py: { xs: 0.5, sm: 0.4 },
+  minHeight: { xs: 48, sm: 44 },
   alignItems: "center",
+  transition: "background-color 0.15s ease",
+  "&:hover": { bgcolor: "action.hover" },
   "& .MuiAccordionSummary-content": { my: 0.5, overflow: "hidden", minWidth: 0, width: "100%" },
 } as const;
 
@@ -409,7 +415,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
         on Mortgage.
       </Typography>
 
-      <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden" }}>
+      <Paper variant="outlined" elevation={0} sx={{ borderRadius: 1, overflow: "hidden", boxShadow: "none", bgcolor: "transparent" }}>
         <Stack
           direction="row"
           alignItems="center"
@@ -418,12 +424,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
           columnGap={1}
           rowGap={0}
           sx={{
-            px: 1,
-            py: 0.35,
-            minHeight: 28,
+            px: 1.25,
+            py: 0.65,
+            minHeight: 36,
             borderBottom: 1,
             borderColor: "divider",
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,255,255,0.04)" : "action.hover"),
+            bgcolor: "transparent",
           }}
         >
           <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.2 }}>
@@ -724,12 +730,13 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                   <Grid size={12}>
                     <Paper
                       variant="outlined"
+                      elevation={0}
                       sx={{
-                        p: 0.65,
-                        borderRadius: 1.25,
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? alpha(theme.palette.primary.main, 0.06) : alpha("#E8F2FF", 0.55),
-                        borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "light" ? 0.2 : 0.28),
+                        p: 1,
+                        borderRadius: 1,
+                        boxShadow: "none",
+                        bgcolor: "transparent",
+                        borderColor: "divider",
                       }}
                     >
                       <Typography
@@ -974,36 +981,9 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
             <strong>Left border + chip</strong> summarize the 30-yr vs 15-yr comparison only.
           </Typography>
           <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mb: 0.75 }}>
-            <Chip
-              size="small"
-              variant="filled"
-              label="Gain: both paths"
-              sx={(theme) => ({
-                fontWeight: 600,
-                bgcolor: alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.35 : 0.22),
-                color: theme.palette.mode === "dark" ? theme.palette.success.light : theme.palette.success.dark,
-              })}
-            />
-            <Chip
-              size="small"
-              variant="filled"
-              label="Loss: both paths"
-              sx={(theme) => ({
-                fontWeight: 600,
-                bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.35 : 0.2),
-                color: theme.palette.mode === "dark" ? theme.palette.error.light : theme.palette.error.dark,
-              })}
-            />
-            <Chip
-              size="small"
-              variant="filled"
-              label="Mixed"
-              sx={(theme) => ({
-                fontWeight: 600,
-                bgcolor: alpha(theme.palette.warning.main, theme.palette.mode === "dark" ? 0.32 : 0.2),
-                color: theme.palette.mode === "dark" ? theme.palette.warning.light : theme.palette.warning.dark,
-              })}
-            />
+            <Chip size="small" variant="outlined" color="success" label="Gain: both paths" sx={{ fontWeight: 600, borderRadius: 1 }} />
+            <Chip size="small" variant="outlined" color="error" label="Loss: both paths" sx={{ fontWeight: 600, borderRadius: 1 }} />
+            <Chip size="small" variant="outlined" color="warning" label="Mixed" sx={{ fontWeight: 600, borderRadius: 1 }} />
           </Stack>
         </Box>
         <Grid container spacing={1}>
@@ -1018,9 +998,14 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
           ))}
         </Grid>
 
-        <Accordion variant="outlined" disableGutters sx={{ borderRadius: 2, "&:before": { display: "none" } }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        <Accordion
+          variant="outlined"
+          disableGutters
+          elevation={0}
+          sx={{ borderRadius: 1, boxShadow: "none", bgcolor: "transparent", "&:before": { display: "none" } }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={sectionAccordionSummarySx}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Optional: interest paid to the bank and loan principal (detail only)
             </Typography>
           </AccordionSummary>
@@ -1093,7 +1078,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
         </Accordion>
       </Stack>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, boxShadow: "none", bgcolor: "transparent" }}>
         <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
           <Stack
             direction="row"
@@ -1165,12 +1150,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                       key={r.year}
                       sx={(theme) => ({
                         bgcolor: hi
-                          ? alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.16 : 0.09)
+                          ? alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.14 : 0.1)
                           : undefined,
-                        boxShadow: hi ? `inset 3px 0 0 ${theme.palette.primary.main}` : undefined,
+                        boxShadow: hi ? `inset 3px 0 0 ${theme.palette.secondary.main}` : undefined,
                         "&:hover": {
                           bgcolor: hi
-                            ? alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.2 : 0.11)
+                            ? alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.18 : 0.12)
                             : "action.hover",
                         },
                       })}
@@ -1354,47 +1339,34 @@ function MilestoneWealthCard(props: {
     px: 0.75,
     borderTop: "1px solid",
     borderColor: "divider",
-    borderRadius: "0 0 10px 10px",
     bgcolor:
       n > 0
-        ? alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.22 : 0.14)
+        ? alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.16 : 0.1)
         : n < 0
-          ? alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.22 : 0.12)
-          : alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.14 : 0.08),
+          ? alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.16 : 0.08)
+          : "transparent",
   });
 
   return (
     <Card
       variant="outlined"
+      elevation={0}
       sx={(theme) => ({
         height: "100%",
-        borderRadius: 2.5,
+        borderRadius: 1,
         overflow: "hidden",
         borderWidth: 1,
         borderStyle: "solid",
-        borderColor:
-          scenario === "bothGain"
-            ? alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.55 : 0.4)
-            : scenario === "bothLoss"
-              ? alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.55 : 0.4)
-              : alpha(theme.palette.warning.main, theme.palette.mode === "dark" ? 0.5 : 0.42),
-        borderLeftWidth: 6,
+        borderColor: "divider",
+        borderLeftWidth: 3,
         borderLeftColor:
           scenario === "bothGain"
             ? theme.palette.success.main
             : scenario === "bothLoss"
               ? theme.palette.error.main
               : theme.palette.warning.main,
-        bgcolor:
-          scenario === "bothGain"
-            ? alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.08 : 0.05)
-            : scenario === "bothLoss"
-              ? alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.09 : 0.05)
-              : alpha(theme.palette.warning.main, theme.palette.mode === "dark" ? 0.08 : 0.06),
-        boxShadow:
-          theme.palette.mode === "dark"
-            ? `0 0 0 1px ${alpha(theme.palette.common.white, 0.06)} inset`
-            : "0 2px 12px rgba(0,0,0,0.06)",
+        bgcolor: "transparent",
+        boxShadow: "none",
       })}
     >
       <CardContent sx={{ py: 1.1, "&:last-child": { pb: 1.1 } }}>
@@ -1406,30 +1378,13 @@ function MilestoneWealthCard(props: {
             size="small"
             label={chipLabel}
             color={chipTone}
-            variant="filled"
-            sx={(theme) => ({
+            variant="outlined"
+            sx={{
               fontWeight: 700,
               flexShrink: 0,
+              borderRadius: 1,
               boxShadow: "none",
-              bgcolor:
-                chipTone === "success"
-                  ? alpha(theme.palette.success.main, theme.palette.mode === "dark" ? 0.45 : 0.28)
-                  : chipTone === "error"
-                    ? alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.45 : 0.26)
-                    : alpha(theme.palette.warning.main, theme.palette.mode === "dark" ? 0.42 : 0.26),
-              color:
-                chipTone === "success"
-                  ? theme.palette.mode === "dark"
-                    ? theme.palette.success.light
-                    : theme.palette.success.dark
-                  : chipTone === "error"
-                    ? theme.palette.mode === "dark"
-                      ? theme.palette.error.light
-                      : theme.palette.error.dark
-                    : theme.palette.mode === "dark"
-                      ? theme.palette.warning.light
-                      : theme.palette.warning.dark,
-            })}
+            }}
           />
         </Stack>
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, lineHeight: 1.35 }}>
