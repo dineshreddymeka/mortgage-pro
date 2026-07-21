@@ -1,22 +1,22 @@
 import { alpha, createTheme, type Theme } from "@mui/material/styles";
 
-/** Zillow-adjacent blues + greens; typography & surfaces stay Apple-like (SF stack, soft radii). */
-const zillowBlue = "#006AFF";
-const zillowBlueLight = "#338CFF";
-const zillowBlueDark = "#0052CC";
-const zillowTeal = "#00A67E";
-const zillowGreen = "#1CAC78";
-const zillowBlueDarkMode = "#4DA3FF";
+/** Harbor Ledger — forest ink, brass accent, sea-glass secondary. Light-first. */
+const ink = "#132821";
+const inkSoft = "#2a4038";
+const brass = "#b8893a";
+const brassDeep = "#8f6a28";
+const sea = "#2f6b5c";
+const seaSoft = "#4a8f7c";
+const fog = "#f3f7f4";
+const paper = "#fbfcfb";
+const mist = "#e7efe9";
 
-const groupedBgLight = "#F0F4FA";
-const groupedBgDark = "#05080D";
-const elevatedLight = "#FFFFFF";
-const elevatedDark = "#141A22";
-const separatorLight = "rgba(0, 82, 204, 0.12)";
-const separatorDark = "rgba(77, 163, 255, 0.18)";
+const inkDark = "#e8f0eb";
+const paperDark = "#15201c";
+const surfaceDark = "#1c2a25";
 
 export const appTheme = createTheme({
-  spacing: 6,
+  spacing: 8,
   cssVariables: {
     colorSchemeSelector: "class",
   },
@@ -25,51 +25,51 @@ export const appTheme = createTheme({
       palette: {
         mode: "light",
         primary: {
-          main: zillowBlue,
-          light: zillowBlueLight,
-          dark: zillowBlueDark,
-          contrastText: "#FFFFFF",
+          main: ink,
+          light: inkSoft,
+          dark: "#0b1612",
+          contrastText: "#f7faf8",
         },
         secondary: {
-          main: zillowTeal,
-          light: "#33B894",
-          dark: "#008563",
-          contrastText: "#FFFFFF",
+          main: brass,
+          light: "#d4a95c",
+          dark: brassDeep,
+          contrastText: "#1a1408",
         },
         success: {
-          main: zillowGreen,
-          light: "#47C08F",
-          dark: "#158A5C",
-          contrastText: "#FFFFFF",
+          main: sea,
+          light: seaSoft,
+          dark: "#214c41",
+          contrastText: "#f4faf7",
         },
         info: {
-          main: "#0EA5E9",
-          contrastText: "#FFFFFF",
+          main: "#3d6e7a",
+          contrastText: "#f4fafb",
         },
         warning: {
-          main: "#F59E0B",
-          contrastText: "#1a1000",
+          main: "#c47a2a",
+          contrastText: "#1a1206",
         },
         error: {
-          main: "#DC2626",
-          contrastText: "#FFFFFF",
+          main: "#b54040",
+          contrastText: "#fff8f8",
         },
         text: {
-          primary: "rgba(15, 23, 42, 0.92)",
-          secondary: "rgba(51, 65, 85, 0.72)",
-          disabled: "rgba(100, 116, 139, 0.45)",
+          primary: alpha(ink, 0.94),
+          secondary: alpha(inkSoft, 0.72),
+          disabled: alpha(inkSoft, 0.4),
         },
         background: {
-          default: groupedBgLight,
-          paper: elevatedLight,
+          default: fog,
+          paper: paper,
         },
-        divider: separatorLight,
+        divider: alpha(ink, 0.12),
         action: {
-          active: alpha(zillowBlueDark, 0.55),
-          hover: alpha(zillowBlue, 0.06),
-          selected: alpha(zillowBlue, 0.12),
-          disabled: "rgba(100, 116, 139, 0.28)",
-          disabledBackground: "rgba(148, 163, 184, 0.18)",
+          active: alpha(ink, 0.55),
+          hover: alpha(sea, 0.08),
+          selected: alpha(brass, 0.14),
+          disabled: alpha(inkSoft, 0.28),
+          disabledBackground: alpha(ink, 0.06),
         },
       },
     },
@@ -77,90 +77,131 @@ export const appTheme = createTheme({
       palette: {
         mode: "dark",
         primary: {
-          main: zillowBlueDarkMode,
-          light: "#7DCBFF",
-          dark: zillowBlue,
-          contrastText: "#041018",
+          main: "#c9d9d1",
+          light: "#e8f0eb",
+          dark: "#9bb0a5",
+          contrastText: "#0f1814",
         },
         secondary: {
-          main: "#2DD4BF",
-          light: "#5EEAD4",
-          dark: "#0D9488",
-          contrastText: "#041018",
+          main: "#d4a95c",
+          light: "#e6c27a",
+          dark: brass,
+          contrastText: "#1a1408",
         },
         success: {
-          main: "#34D399",
-          light: "#6EE7B7",
-          dark: zillowGreen,
-          contrastText: "#041018",
+          main: seaSoft,
+          light: "#6aada0",
+          dark: sea,
+          contrastText: "#0f1814",
         },
         info: {
-          main: "#38BDF8",
-          contrastText: "#041018",
+          main: "#7eb0bc",
+          contrastText: "#0f1814",
         },
         warning: {
-          main: "#FBBF24",
-          contrastText: "#1a1000",
+          main: "#e0a35a",
+          contrastText: "#1a1206",
         },
         error: {
-          main: "#F87171",
-          contrastText: "#1a0505",
+          main: "#e07a7a",
+          contrastText: "#1a0a0a",
         },
         text: {
-          primary: "rgba(248, 250, 252, 0.95)",
-          secondary: "rgba(203, 213, 225, 0.72)",
-          disabled: "rgba(148, 163, 184, 0.45)",
+          primary: alpha(inkDark, 0.95),
+          secondary: alpha(inkDark, 0.7),
+          disabled: alpha(inkDark, 0.4),
         },
         background: {
-          default: groupedBgDark,
-          paper: elevatedDark,
+          default: "#0f1613",
+          paper: paperDark,
         },
-        divider: separatorDark,
+        divider: alpha("#c9d9d1", 0.14),
         action: {
-          active: "rgba(255, 255, 255, 0.65)",
-          hover: alpha(zillowBlueDarkMode, 0.12),
-          selected: alpha(zillowBlueDarkMode, 0.2),
-          disabled: "rgba(148, 163, 184, 0.35)",
-          disabledBackground: "rgba(71, 85, 105, 0.35)",
+          active: alpha("#fff", 0.65),
+          hover: alpha("#c9d9d1", 0.08),
+          selected: alpha("#d4a95c", 0.16),
+          disabled: alpha("#c9d9d1", 0.3),
+          disabledBackground: alpha("#fff", 0.06),
         },
       },
     },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 6 },
   typography: {
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif',
-    fontWeightLight: 300,
+    fontFamily: '"Source Sans 3", "Segoe UI", sans-serif',
+    fontWeightLight: 400,
     fontWeightRegular: 400,
-    fontWeightMedium: 500,
-    fontWeightBold: 600,
+    fontWeightMedium: 600,
+    fontWeightBold: 700,
+    h1: {
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 800,
+      letterSpacing: "-0.04em",
+      lineHeight: 1.05,
+    },
+    h2: {
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 800,
+      letterSpacing: "-0.035em",
+      lineHeight: 1.1,
+    },
     h3: {
-      fontWeight: 600,
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 700,
       fontSize: "1.75rem",
-      letterSpacing: "-0.022em",
+      letterSpacing: "-0.03em",
       lineHeight: 1.15,
     },
-    h5: { fontWeight: 600, letterSpacing: "-0.018em" },
-    h6: { fontWeight: 600, letterSpacing: "-0.015em" },
-    subtitle1: { letterSpacing: "-0.012em" },
-    subtitle2: { letterSpacing: "-0.008em", fontWeight: 600 },
-    body1: { letterSpacing: "-0.011em", lineHeight: 1.47 },
-    body2: { letterSpacing: "-0.008em", lineHeight: 1.43 },
-    caption: { letterSpacing: "-0.006em" },
-    overline: { letterSpacing: "0.06em", fontWeight: 600 },
-    button: { textTransform: "none", fontWeight: 600, letterSpacing: "-0.01em" },
+    h4: {
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 700,
+      letterSpacing: "-0.03em",
+    },
+    h5: {
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 700,
+      letterSpacing: "-0.025em",
+    },
+    h6: {
+      fontFamily: '"Bricolage Grotesque", Georgia, serif',
+      fontWeight: 700,
+      letterSpacing: "-0.02em",
+    },
+    subtitle1: { fontWeight: 600, letterSpacing: "-0.01em" },
+    subtitle2: { fontWeight: 600, letterSpacing: "-0.01em" },
+    body1: { letterSpacing: "-0.005em", lineHeight: 1.5 },
+    body2: { letterSpacing: "-0.005em", lineHeight: 1.45 },
+    caption: { letterSpacing: "0", lineHeight: 1.4 },
+    overline: {
+      fontFamily: '"Source Sans 3", "Segoe UI", sans-serif',
+      letterSpacing: "0.14em",
+      fontWeight: 700,
+      fontSize: "0.68rem",
+    },
+    button: {
+      textTransform: "none",
+      fontWeight: 700,
+      letterSpacing: "-0.01em",
+      fontFamily: '"Source Sans 3", "Segoe UI", sans-serif',
+    },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: ({ theme }: { theme: Theme }) => ({
-          textRendering: "optimizeLegibility",
-          backgroundAttachment: "fixed",
-          backgroundImage:
-            theme.palette.mode === "light"
-              ? `linear-gradient(165deg, ${alpha(zillowBlue, 0.07)} 0%, ${alpha(zillowTeal, 0.04)} 28%, ${groupedBgLight} 52%, #E8EEF6 100%)`
-              : `linear-gradient(165deg, ${alpha(zillowBlueDarkMode, 0.12)} 0%, ${alpha("#0D9488", 0.06)} 35%, ${groupedBgDark} 55%, #000000 100%)`,
-        }),
+        body: ({ theme }: { theme: Theme }) =>
+          theme.palette.mode === "dark"
+            ? {
+                backgroundColor: "#0f1613",
+                backgroundImage: `
+                  radial-gradient(ellipse 80% 50% at 10% -5%, ${alpha("#d4a95c", 0.12)}, transparent 50%),
+                  radial-gradient(ellipse 60% 40% at 90% 0%, ${alpha(seaSoft, 0.1)}, transparent 45%),
+                  linear-gradient(180deg, #121a16 0%, #0f1613 50%, #0c1210 100%)
+                `,
+                backgroundAttachment: "fixed",
+              }
+            : {
+                /* Atmosphere lives in index.css for light mode */
+              },
       },
     },
     MuiButton: {
@@ -171,39 +212,46 @@ export const appTheme = createTheme({
       },
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          paddingInline: 16,
-          minHeight: 38,
+          borderRadius: 4,
+          paddingInline: 18,
+          minHeight: 40,
+          transition: "transform 0.15s var(--pp-ease, ease), background 0.2s ease, border-color 0.2s ease",
+          "&:active": {
+            transform: "translateY(1px)",
+          },
         },
         contained: ({ theme }) => ({
-          boxShadow:
-            theme.palette.mode === "light"
-              ? `0 1px 2px ${alpha(zillowBlueDark, 0.12)}, 0 2px 8px ${alpha(zillowBlue, 0.18)}`
-              : `0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px ${alpha(zillowBlueDarkMode, 0.25)}`,
+          boxShadow: "none",
+          backgroundColor: theme.palette.mode === "light" ? ink : inkDark,
+          color: theme.palette.mode === "light" ? paper : ink,
           "&:hover": {
-            boxShadow:
-              theme.palette.mode === "light"
-                ? `0 2px 6px ${alpha(zillowBlueDark, 0.18)}, 0 4px 14px ${alpha(zillowBlue, 0.22)}`
-                : `0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px ${alpha(zillowBlueDarkMode, 0.35)}`,
-          },
-          "&:active": {
-            transform: "scale(0.98)",
-            transition: "transform 0.12s ease",
+            boxShadow: "none",
+            backgroundColor: theme.palette.mode === "light" ? inkSoft : "#dce8e1",
           },
         }),
         containedSecondary: ({ theme }) => ({
-          boxShadow:
-            theme.palette.mode === "light"
-              ? `0 1px 2px ${alpha(zillowTeal, 0.2)}, 0 2px 8px ${alpha(zillowTeal, 0.15)}`
-              : undefined,
+          backgroundColor: theme.palette.secondary.main,
+          color: theme.palette.secondary.contrastText,
+          "&:hover": {
+            backgroundColor: theme.palette.secondary.dark,
+          },
         }),
         outlined: ({ theme }) => ({
           borderWidth: 1.5,
-          borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "light" ? 0.35 : 0.45),
+          borderColor: alpha(theme.palette.text.primary, 0.28),
+          color: theme.palette.text.primary,
+          backgroundColor: "transparent",
           "&:hover": {
             borderWidth: 1.5,
-            backgroundColor: alpha(theme.palette.primary.main, 0.06),
-            borderColor: theme.palette.primary.main,
+            borderColor: theme.palette.secondary.main,
+            backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+          },
+        }),
+        text: ({ theme }) => ({
+          color: theme.palette.text.secondary,
+          "&:hover": {
+            backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+            color: theme.palette.text.primary,
           },
         }),
       },
@@ -212,11 +260,14 @@ export const appTheme = createTheme({
       defaultProps: { size: "small" },
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: 12,
+          borderRadius: 4,
+          border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
           padding: 8,
+          transition: "border-color 0.2s ease, background 0.2s ease",
           "&:hover": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-            color: theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.secondary.main, 0.12),
+            borderColor: alpha(theme.palette.secondary.main, 0.45),
+            color: theme.palette.secondary.dark,
           },
         }),
       },
@@ -225,13 +276,12 @@ export const appTheme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: ({ theme }) => ({
-          border: "none",
-          borderRadius: 14,
+          border: `1px solid ${alpha(theme.palette.text.primary, theme.palette.mode === "light" ? 0.1 : 0.14)}`,
+          borderRadius: 6,
           backgroundImage: "none",
-          boxShadow:
-            theme.palette.mode === "light"
-              ? `0 1px 2px ${alpha(zillowBlueDark, 0.06)}, 0 4px 16px ${alpha(zillowBlue, 0.08)}, 0 0 0 1px ${alpha(zillowBlue, 0.06)}`
-              : `0 1px 0 ${alpha("#fff", 0.06)} inset, 0 0 0 1px ${alpha(zillowBlueDarkMode, 0.12)}, 0 8px 24px rgba(0,0,0,0.35)`,
+          backgroundColor:
+            theme.palette.mode === "light" ? alpha(paper, 0.88) : alpha(surfaceDark, 0.92),
+          boxShadow: "none",
         }),
       },
     },
@@ -241,11 +291,9 @@ export const appTheme = createTheme({
           backgroundImage: "none",
         },
         outlined: ({ theme }) => ({
-          borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "light" ? 0.14 : 0.22),
+          borderColor: alpha(theme.palette.text.primary, theme.palette.mode === "light" ? 0.1 : 0.14),
           backgroundColor:
-            theme.palette.mode === "light"
-              ? alpha("#fff", 0.72)
-              : alpha(elevatedDark, 0.85),
+            theme.palette.mode === "light" ? alpha(paper, 0.9) : alpha(surfaceDark, 0.9),
         }),
       },
     },
@@ -259,71 +307,81 @@ export const appTheme = createTheme({
     MuiFormHelperText: {
       styleOverrides: {
         root: {
-          marginTop: 2,
-          lineHeight: 1.2,
-          fontSize: "0.68rem",
+          marginTop: 3,
+          lineHeight: 1.25,
+          fontSize: "0.72rem",
         },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          fontSize: "0.82rem",
+          fontSize: "0.85rem",
+          fontWeight: 500,
         },
       },
     },
     MuiCardContent: {
       styleOverrides: {
         root: {
-          padding: 14,
-          "&:last-child": { paddingBottom: 14 },
+          padding: 18,
+          "&:last-child": { paddingBottom: 18 },
         },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          borderRadius: "6px !important",
+          border: `1px solid ${alpha(theme.palette.text.primary, 0.1)}`,
+          backgroundColor:
+            theme.palette.mode === "light" ? alpha(paper, 0.85) : alpha(surfaceDark, 0.88),
+          boxShadow: "none",
+          "&:before": { display: "none" },
+          "&.Mui-expanded": {
+            margin: 0,
+          },
+        }),
       },
     },
     MuiAccordionSummary: {
       styleOverrides: {
         root: {
-          minHeight: 44,
-          paddingLeft: 14,
-          paddingRight: 14,
+          minHeight: 52,
+          paddingLeft: 16,
+          paddingRight: 16,
         },
-        content: { marginTop: 8, marginBottom: 8 },
+        content: { marginTop: 10, marginBottom: 10 },
       },
     },
     MuiAccordionDetails: {
       styleOverrides: {
-        root: { padding: 14, paddingTop: 0 },
+        root: { padding: 16, paddingTop: 0 },
       },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: 12,
+          borderRadius: 4,
           backgroundColor:
-            theme.palette.mode === "light"
-              ? alpha(zillowBlue, 0.04)
-              : alpha(zillowBlueDarkMode, 0.08),
+            theme.palette.mode === "light" ? alpha(mist, 0.65) : alpha("#fff", 0.04),
           "& fieldset": {
-            borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "light" ? 0.15 : 0.25),
+            borderColor: alpha(theme.palette.text.primary, theme.palette.mode === "light" ? 0.14 : 0.2),
           },
           "&:hover fieldset": {
-            borderColor: alpha(theme.palette.primary.main, 0.35),
+            borderColor: alpha(theme.palette.secondary.main, 0.55),
           },
           "&.Mui-focused fieldset": {
-            borderWidth: 2,
-            borderColor: theme.palette.primary.main,
+            borderWidth: 1.5,
+            borderColor: theme.palette.secondary.main,
           },
           "& .MuiInputBase-input.MuiInputBase-inputSizeSmall": {
-            paddingTop: 9,
-            paddingBottom: 9,
+            paddingTop: 10,
+            paddingBottom: 10,
             paddingLeft: 12,
             paddingRight: 12,
-            fontSize: "0.9rem",
-          },
-          "& .MuiSelect-select.MuiInputBase-inputSizeSmall": {
-            paddingTop: 9,
-            paddingBottom: 9,
-            minHeight: "unset",
+            fontSize: "0.92rem",
+            fontVariantNumeric: "tabular-nums",
           },
         }),
       },
@@ -331,32 +389,34 @@ export const appTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          paddingTop: 7,
-          paddingBottom: 7,
+          paddingTop: 8,
+          paddingBottom: 8,
           paddingLeft: 12,
           paddingRight: 12,
+          fontVariantNumeric: "tabular-nums",
         },
         head: ({ theme }) => ({
-          fontWeight: 600,
-          fontSize: "0.75rem",
-          color:
-            theme.palette.mode === "light" ? theme.palette.primary.dark : theme.palette.primary.light,
-          letterSpacing: "-0.01em",
-          paddingTop: 9,
-          paddingBottom: 9,
+          fontWeight: 700,
+          fontSize: "0.72rem",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: theme.palette.text.secondary,
+          paddingTop: 10,
+          paddingBottom: 10,
           backgroundColor:
-            theme.palette.mode === "light" ? alpha(zillowBlue, 0.06) : alpha(zillowBlueDarkMode, 0.12),
+            theme.palette.mode === "light" ? alpha(mist, 0.9) : alpha("#fff", 0.04),
+          borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.1)}`,
         }),
       },
     },
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 14,
+          borderRadius: 6,
         },
-        standardSuccess: ({ theme }) => ({
-          backgroundColor: alpha(theme.palette.success.main, theme.palette.mode === "light" ? 0.12 : 0.18),
-          color: theme.palette.mode === "light" ? theme.palette.success.dark : theme.palette.success.light,
+        outlinedInfo: ({ theme }) => ({
+          borderColor: alpha(theme.palette.info.main, 0.35),
+          backgroundColor: alpha(theme.palette.info.main, 0.06),
         }),
       },
     },
@@ -371,17 +431,21 @@ export const appTheme = createTheme({
     MuiToolbar: {
       styleOverrides: {
         root: {
-          minHeight: 52,
-          "@media (min-width: 600px)": { minHeight: 52 },
+          minHeight: 56,
+          "@media (min-width: 600px)": { minHeight: 56 },
         },
       },
     },
     MuiChip: {
       styleOverrides: {
-        colorPrimary: ({ theme }) => ({
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)}, ${alpha(theme.palette.secondary.main, 0.12)})`,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+        root: {
+          borderRadius: 4,
           fontWeight: 600,
+        },
+        colorPrimary: ({ theme }) => ({
+          backgroundColor: alpha(theme.palette.secondary.main, 0.16),
+          border: `1px solid ${alpha(theme.palette.secondary.main, 0.35)}`,
+          color: theme.palette.mode === "light" ? brassDeep : theme.palette.secondary.light,
         }),
       },
     },

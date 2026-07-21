@@ -8,8 +8,8 @@ import App from "./App";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <InitColorSchemeScript attribute="class" defaultMode="system" />
-    <ThemeProvider theme={appTheme} defaultMode="system">
+    <InitColorSchemeScript attribute="class" defaultMode="light" />
+    <ThemeProvider theme={appTheme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <App />
     </ThemeProvider>
