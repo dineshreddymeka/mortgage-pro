@@ -10,33 +10,34 @@ type AppSectionProps = {
   className?: string;
 };
 
-/** Compact section: title + optional support line + content. */
+/** Compact section for dense / side-by-side dashboard content. */
 export function AppSection({ title, description, children, aside, className }: AppSectionProps) {
   return (
     <Box
       component="section"
       className={className}
       sx={{
-        py: 1.25,
+        py: 0.85,
         borderTop: "1px solid",
         borderColor: "divider",
       }}
     >
       <Stack
         direction="row"
-        spacing={1}
-        alignItems="baseline"
+        spacing={0.75}
+        alignItems="center"
         justifyContent="space-between"
-        sx={{ mb: 1 }}
+        sx={{ mb: 0.75 }}
       >
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
-            variant="subtitle1"
+            variant="subtitle2"
             sx={{
-              fontSize: "1.02rem",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              letterSpacing: "-0.015em",
               lineHeight: 1.25,
+              color: "text.primary",
             }}
           >
             {title}
@@ -45,9 +46,14 @@ export function AppSection({ title, description, children, aside, className }: A
                 component="span"
                 variant="caption"
                 color="text.secondary"
-                sx={{ ml: 1, fontWeight: 500, display: { xs: "none", sm: "inline" } }}
+                sx={{
+                  ml: 0.75,
+                  fontWeight: 400,
+                  fontSize: "0.72rem",
+                  display: { xs: "none", sm: "inline" },
+                }}
               >
-                — {description}
+                {description}
               </Typography>
             ) : null}
           </Typography>

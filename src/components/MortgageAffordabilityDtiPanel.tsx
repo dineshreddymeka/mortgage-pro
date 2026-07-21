@@ -119,28 +119,28 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
         expandIcon={<ExpandMore />}
         sx={{
           px: 1.25,
-          minHeight: 52,
+          minHeight: 44,
           alignItems: "flex-start",
           "&:hover": { bgcolor: "action.hover" },
-          "& .MuiAccordionSummary-content": { my: 0.75, width: "100%", maxWidth: "calc(100% - 36px)" },
+          "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
         }}
       >
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1}
+          spacing={0.75}
           alignItems={{ sm: "flex-end" }}
           justifyContent="space-between"
-          sx={{ width: "100%", gap: 1 }}
+          sx={{ width: "100%", gap: 0.75 }}
         >
-          <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+          <Stack spacing={0.1} sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Affordability &amp; DTI
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-              Income, debts, rough max price — expand to edit
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+              Income, debts, rough max price
             </Typography>
           </Stack>
-          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.25} sx={{ flexShrink: 0 }}>
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
             <AccordionSummaryMetric label="Housing /mo" value={moneyDec.format(currentHousingPaymentMonthly)} />
             <AccordionSummaryMetric
               label="Front DTI"
@@ -157,13 +157,12 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
           </Stack>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ px: 1.5, pt: 0, pb: 1.5 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.25, lineHeight: 1.45 }}>
-          Estimates only — not a lender decision. Uses your <strong>rate, term, down %, tax %, insurance, HOA, PMI</strong>{" "}
-          rules from above. Tax scales with price; insurance stays at your annual figure while searching max price.
+      <AccordionDetails sx={{ px: 1.25, pt: 0, pb: 1 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.85, lineHeight: 1.35 }}>
+          Estimates only. Uses rate, term, down %, tax %, insurance, HOA, PMI from above.
         </Typography>
 
-        <Grid container spacing={1.25}>
+        <Grid container spacing={1}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="Annual gross income (pre-tax)"
@@ -205,12 +204,11 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
         </Grid>
 
         {state.annualGrossIncome > 0 ? (
-          <Stack spacing={1} sx={{ mt: 1.5 }}>
-            <Typography variant="body2" color="text.secondary">
-              Housing payment in DTI: <strong>{moneyDec.format(currentHousingPaymentMonthly)}</strong>/mo (same as your
-              estimated payment total above).
+          <Stack spacing={0.65} sx={{ mt: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Housing in DTI: <strong>{moneyDec.format(currentHousingPaymentMonthly)}</strong>/mo
             </Typography>
-            <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} alignItems="center">
+            <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.65} alignItems="center">
               <Chip
                 size="small"
                 variant="outlined"
@@ -224,20 +222,15 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
                 label={dtiChipLabel("Back-end DTI", dti.backEndPct)}
               />
             </Stack>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-              Front-end = housing ÷ gross monthly income. Back-end = (housing + other debts) ÷ gross monthly. Many
-              lenders use ~28% / 36% as rough guides — not universal.
-            </Typography>
             {maxFrom28 > 0 ? (
-              <Alert severity="info" variant="outlined" sx={{ py: 0.5, borderRadius: 1.5 }}>
-                <strong>28% rule rough max price</strong> (housing ≤ 28% of gross monthly): about{" "}
-                <strong>{money.format(maxFrom28)}</strong> with the same loan assumptions as this tab.
+              <Alert severity="info" variant="outlined" sx={{ py: 0.35, borderRadius: 1.5 }}>
+                28% rule max price ≈ <strong>{money.format(maxFrom28)}</strong>
               </Alert>
             ) : null}
           </Stack>
         ) : null}
 
-        <Stack spacing={1} sx={{ mt: 2 }}>
+        <Stack spacing={0.75} sx={{ mt: 1.25 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Max price for a monthly budget
           </Typography>

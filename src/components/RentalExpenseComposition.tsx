@@ -55,16 +55,11 @@ export function RentalExpenseComposition({ slices }: Props) {
   }
 
   return (
-    <Stack spacing={1.25}>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: "-0.02em" }}>
-            Monthly obligations
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
-            P&amp;I + property tax, insurance, HOA, mgmt, maintenance, CapEx reserve
-          </Typography>
-        </Box>
+    <Stack spacing={0.75}>
+      <Stack direction="row" justifyContent="space-between" alignItems="baseline" gap={1}>
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+          P&amp;I + tax, insurance, HOA, mgmt, maint, CapEx
+        </Typography>
         <Typography
           variant="caption"
           sx={{
@@ -74,20 +69,20 @@ export function RentalExpenseComposition({ slices }: Props) {
             color: "text.primary",
           }}
         >
-          Total {moneyDec.format(total)}/mo
+          {moneyDec.format(total)}/mo
         </Typography>
       </Stack>
 
-      <Grid container spacing={0.75} columns={12}>
+      <Grid container spacing={0.5} columns={12}>
         {slices.map((s, i) => {
           const color = sliceColor(theme, i);
           return (
             <Grid size={{ xs: 12, sm: 6 }} key={s.id}>
-              <Stack direction="row" spacing={0.75} alignItems="flex-start" sx={{ py: 0.25 }}>
+              <Stack direction="row" spacing={0.65} alignItems="flex-start" sx={{ py: 0.1 }}>
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     borderRadius: 0.5,
                     bgcolor: color,
                     flexShrink: 0,
@@ -95,15 +90,15 @@ export function RentalExpenseComposition({ slices }: Props) {
                   }}
                 />
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3, display: "block" }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.25, display: "block" }}>
                     {s.label}
                   </Typography>
-                  <Stack direction="row" spacing={0.75} alignItems="baseline" flexWrap="wrap" useFlexGap>
+                  <Stack direction="row" spacing={0.65} alignItems="baseline" flexWrap="wrap" useFlexGap>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                       {moneyDec.format(s.amount)}/mo
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                      {pctLabel(s.amount, total)} of obligations
+                      {pctLabel(s.amount, total)}
                     </Typography>
                   </Stack>
                 </Box>

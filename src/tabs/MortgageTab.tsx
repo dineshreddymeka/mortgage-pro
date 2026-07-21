@@ -3,7 +3,6 @@ import { Stack, Typography } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
-import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid2";
 import { useMemo, type ReactNode } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
@@ -42,9 +41,9 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 
 const summarySx = {
   px: 1.25,
-  minHeight: 44,
+  minHeight: 42,
   alignItems: "flex-start",
-  "& .MuiAccordionSummary-content": { my: 0.6, width: "100%", maxWidth: "calc(100% - 36px)" },
+  "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
 } as const;
 
 export type MortgageTabProps = {
@@ -167,8 +166,30 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
 
   return (
     <BoxSections>
-      <AppSection title="Loan inputs" description="Header payment updates as you type">
-        <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
+      <AppSection
+        title="Loan & payment"
+        description={`${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}% · cash ${money.format(cashToClose)}`}
+      >
+        <Grid container spacing={1.25} alignItems="flex-start">
+          <Grid size={{ xs: 12, md: 6 }}>
+            <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Stack spacing={1}>
+              <MortgagePaymentBreakdown breakdown={breakdown} />
+              <MortgageLoanSummaryCard
+                state={state}
+                breakdown={breakdown}
+                cashToClose={cashToClose}
+                ltvPct={ltvPct}
+                lifeInterest={lifeInterest}
+                lifePrincipal={lifePrincipal}
+                extraPrincipalMonthly={extraPrincipalMonthly}
+                prepaySummary={prepaySummary}
+              />
+            </Stack>
+          </Grid>
+        </Grid>
       </AppSection>
 
       <AppSection title="Cash to close" description="Shared with Upfront">
@@ -180,53 +201,30 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         />
       </AppSection>
 
-      <AppSection
-        title="Payment split"
-        description={`${moneyDec.format(breakdown.total)} /mo · LTV ${ltvPct.toFixed(1)}% · cash to close ${money.format(cashToClose)}`}
-      >
-        <Grid container spacing={1.5} alignItems="flex-start">
-          <Grid size={{ xs: 12, md: 7 }}>
-            <MortgagePaymentBreakdown breakdown={breakdown} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <MortgageLoanSummaryCard
-              state={state}
-              breakdown={breakdown}
-              cashToClose={cashToClose}
-              ltvPct={ltvPct}
-              lifeInterest={lifeInterest}
-              lifePrincipal={lifePrincipal}
-              extraPrincipalMonthly={extraPrincipalMonthly}
-              prepaySummary={prepaySummary}
-            />
-          </Grid>
-        </Grid>
-      </AppSection>
-
       <AppSection title="Compare" description="Term, paydown, refi">
-        <Stack spacing={0.85}>
+        <Stack spacing={0.75}>
           <Accordion defaultExpanded={false} disableGutters elevation={0}>
             <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={1}
+                spacing={0.75}
                 alignItems={{ sm: "flex-end" }}
                 justifyContent="space-between"
-                sx={{ width: "100%", gap: 1 }}
+                sx={{ width: "100%", gap: 0.75 }}
               >
-                <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+                <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
                   <Typography variant="subtitle2">Compare loan length</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Monthly split, life interest, 15−30 deltas
+                    15 vs 30 · monthly split &amp; life interest
                   </Typography>
                 </Stack>
-                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.25} sx={{ flexShrink: 0 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
                   <AccordionSummaryMetric label="Loan" value={money.format(breakdown.loanAmount)} />
                   <AccordionSummaryMetric label="P&I /mo" value={moneyDec.format(breakdown.principalAndInterest)} />
                 </Stack>
               </Stack>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ pt: 0 }}>
               <MortgageLoanCompareCards state={state} />
             </AccordionDetails>
           </Accordion>
@@ -236,27 +234,27 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
               <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
+                  spacing={0.75}
                   alignItems={{ sm: "flex-end" }}
                   justifyContent="space-between"
-                  sx={{ width: "100%", gap: 1 }}
+                  sx={{ width: "100%", gap: 0.75 }}
                 >
                   <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2">Year-by-year (15-yr vs loan term)</Typography>
+                    <Typography variant="subtitle2">Year-by-year paydown</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      One table; 15-yr columns blank after payoff
+                      15-yr vs {state.termYears}-yr
                     </Typography>
                   </Stack>
-                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.25} sx={{ flexShrink: 0 }}>
-                    <AccordionSummaryMetric label="Life int (15-yr)" value={money.format(lifeInterest15)} />
+                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                    <AccordionSummaryMetric label="Life int (15)" value={money.format(lifeInterest15)} />
                     <AccordionSummaryMetric
-                      label={`Life int (${state.termYears}-yr)`}
+                      label={`Life int (${state.termYears})`}
                       value={money.format(lifeInterest)}
                     />
                   </Stack>
                 </Stack>
               </AccordionSummary>
-              <AccordionDetails>
+              <AccordionDetails sx={{ pt: 0 }}>
                 <PaydownYearlyColorLegend />
                 <PaydownYearlyMergedCompare
                   rows15={yearlyDetailed15}
@@ -276,24 +274,24 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
               <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
+                  spacing={0.75}
                   alignItems={{ sm: "flex-end" }}
                   justifyContent="space-between"
-                  sx={{ width: "100%", gap: 1 }}
+                  sx={{ width: "100%", gap: 0.75 }}
                 >
                   <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
                     <Typography variant="subtitle2">Refi breakeven</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      New rate vs costs · months to recover
+                      New rate vs costs
                     </Typography>
                   </Stack>
-                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.25} sx={{ flexShrink: 0 }}>
+                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
                     <AccordionSummaryMetric label="P&I now" value={moneyDec.format(breakdown.principalAndInterest)} />
                     <AccordionSummaryMetric label="Note %" value={`${state.interestRateApr}%`} />
                   </Stack>
                 </Stack>
               </AccordionSummary>
-              <AccordionDetails>
+              <AccordionDetails sx={{ pt: 0 }}>
                 <MortgageRefiBreakevenCard
                   scenarioLoanAmount={breakdown.loanAmount}
                   scenarioPrincipalAndInterest={breakdown.principalAndInterest}
@@ -315,11 +313,9 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         />
       </AppSection>
 
-      <Alert severity="info" variant="outlined" sx={{ mt: 0.5, py: 0.35 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
-          Single-scenario calculator — numbers stay in your browser until export or reset.
-        </Typography>
-      </Alert>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", pt: 0.25, lineHeight: 1.35 }}>
+        Single-scenario calculator — numbers stay in your browser until export or reset.
+      </Typography>
     </BoxSections>
   );
 }

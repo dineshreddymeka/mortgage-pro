@@ -100,23 +100,20 @@ export function UpfrontCashScenarioPanel({
   return (
     <Stack spacing={1}>
       {!hideEditHint ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.35 }}>
-          Edit down / closing / misc on the <strong>Upfront</strong> tab or under Rental → carrying costs. Modeled lines
-          below are <strong>editable</strong> and saved with this scenario; totals compare to your entered closing bucket
-          — not a Loan Estimate.
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+          Modeled lines are editable · compare to entered closing · not a Loan Estimate.
         </Typography>
       ) : (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.35 }}>
-          <strong>Calculator-style</strong> fee / prepaid split — not a Loan Estimate. Lines use your scenario inputs
-          and are <strong>editable</strong>; overrides persist with the scenario.
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+          Fee / prepaid model · editable · not a Loan Estimate.
         </Typography>
       )}
 
-      <Stack direction="row" flexWrap="wrap" useFlexGap gap={1.5}>
+      <Stack direction="row" flexWrap="wrap" useFlexGap gap={1.25}>
         <Stat label="Down" value={money.format(down)} />
-        <Stat label="Closing (entered)" value={money.format(closing)} />
-        <Stat label="Misc one-time" value={money.format(misc)} />
-        <Stat label="Total cash" value={money.format(cashToClose)} emphasized />
+        <Stat label="Closing" value={money.format(closing)} />
+        <Stat label="Misc" value={money.format(misc)} />
+        <Stat label="Total" value={money.format(cashToClose)} emphasized />
       </Stack>
 
       <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>

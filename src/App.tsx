@@ -97,28 +97,30 @@ export default function App() {
           borderBottom: "1px solid",
           borderColor: "divider",
           bgcolor: (t) =>
-            t.palette.mode === "light" ? alpha("#fbfcfb", 0.9) : alpha("#15201c", 0.92),
-          backdropFilter: "blur(12px)",
+            t.palette.mode === "light" ? alpha("#f5f5f7", 0.72) : alpha("#1c1c1e", 0.72),
+          backdropFilter: "saturate(180%) blur(20px)",
+          WebkitBackdropFilter: "saturate(180%) blur(20px)",
         }}
       >
-        <Container maxWidth="lg" sx={{ py: 1 }}>
+        <Container maxWidth="xl" sx={{ py: 0.65, px: { xs: 1.5, sm: 2 } }}>
           <Stack
             direction="row"
-            spacing={1.25}
+            spacing={1}
             alignItems="center"
             justifyContent="space-between"
             flexWrap="wrap"
             useFlexGap
+            sx={{ rowGap: 0.75 }}
           >
-            <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ minWidth: 0 }}>
+            <Stack direction="row" spacing={1.25} alignItems="baseline" sx={{ minWidth: 0 }}>
               <Typography
                 component="h1"
                 sx={{
                   fontFamily: "var(--pp-font-display)",
-                  fontWeight: 800,
-                  fontSize: { xs: "1.35rem", sm: "1.55rem" },
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1.1,
+                  fontWeight: 700,
+                  fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.15,
                   whiteSpace: "nowrap",
                 }}
               >
@@ -127,11 +129,11 @@ export default function App() {
               <Typography
                 sx={{
                   fontFamily: "var(--pp-font-display)",
-                  fontWeight: 800,
-                  fontSize: { xs: "1.2rem", sm: "1.35rem" },
-                  letterSpacing: "-0.03em",
+                  fontWeight: 600,
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  letterSpacing: "-0.02em",
                   fontVariantNumeric: "tabular-nums",
-                  color: "secondary.dark",
+                  color: "secondary.main",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -140,7 +142,7 @@ export default function App() {
                   component="span"
                   variant="caption"
                   color="text.secondary"
-                  sx={{ ml: 0.4, fontWeight: 600 }}
+                  sx={{ ml: 0.35, fontWeight: 500, fontSize: "0.7rem" }}
                 >
                   /mo
                 </Typography>
@@ -148,31 +150,35 @@ export default function App() {
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ display: { xs: "none", md: "inline" }, whiteSpace: "nowrap" }}
+                sx={{
+                  display: { xs: "none", md: "inline" },
+                  whiteSpace: "nowrap",
+                  fontSize: "0.72rem",
+                }}
               >
                 {state.interestRateApr}% · {state.termYears}-yr
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
               <Button
                 size="small"
                 variant="contained"
                 color="secondary"
-                startIcon={<SaveOutlinedIcon />}
+                startIcon={<SaveOutlinedIcon sx={{ fontSize: 16 }} />}
                 onClick={saveScenario}
                 aria-label="Save scenario"
-                sx={{ minHeight: 34 }}
+                sx={{ minHeight: 30, px: 1.25 }}
               >
                 Save
               </Button>
               <Button
                 size="small"
                 variant="outlined"
-                startIcon={<FileDownloadOutlinedIcon />}
+                startIcon={<FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />}
                 onClick={exportExcel}
                 aria-label="Export scenario to Excel"
-                sx={{ minHeight: 34 }}
+                sx={{ minHeight: 30, px: 1.25 }}
               >
                 <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
                   Export
@@ -181,10 +187,17 @@ export default function App() {
                   XLS
                 </Box>
               </Button>
-              <Tooltip title="Reset to defaults">
-                <IconButton onClick={reset} aria-label="reset scenario" size="small">
-                  <RestartAltIcon fontSize="small" />
-                </IconButton>
+              <Tooltip title="Restore all fields to their default values">
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<RestartAltIcon sx={{ fontSize: 17 }} />}
+                  onClick={reset}
+                  aria-label="Reset scenario to defaults"
+                  sx={{ minHeight: 32, px: 1 }}
+                >
+                  Reset
+                </Button>
               </Tooltip>
               <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
                 <IconButton
@@ -193,9 +206,9 @@ export default function App() {
                   size="small"
                 >
                   {isDark ? (
-                    <LightModeOutlinedIcon fontSize="small" />
+                    <LightModeOutlinedIcon sx={{ fontSize: 18 }} />
                   ) : (
-                    <DarkModeOutlinedIcon fontSize="small" />
+                    <DarkModeOutlinedIcon sx={{ fontSize: 18 }} />
                   )}
                 </IconButton>
               </Tooltip>
@@ -204,19 +217,24 @@ export default function App() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ pb: 2 }}>
+      <Container maxWidth="xl" sx={{ pb: 1.5, px: { xs: 1.5, sm: 2 }, pt: 1 }}>
         <Box
           role="tablist"
           aria-label="Main sections"
           sx={{
-            display: "flex",
-            gap: { xs: 0.25, sm: 1 },
-            mt: 0.5,
-            borderBottom: "1px solid",
+            display: "inline-flex",
+            maxWidth: "100%",
+            p: 0.35,
+            gap: 0.25,
+            borderRadius: "10px",
+            bgcolor: (t) =>
+              t.palette.mode === "light" ? alpha("#787880", 0.12) : alpha("#787880", 0.28),
+            border: "1px solid",
             borderColor: "divider",
             overflowX: "auto",
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
+            mb: 0.75,
           }}
         >
           {TABS.map(({ label, id }, i) => {
@@ -232,34 +250,34 @@ export default function App() {
                 role="tab"
                 onClick={() => setTab(i)}
                 sx={{
-                  position: "relative",
-                  py: 0.85,
+                  py: 0.45,
                   px: { xs: 1, sm: 1.35 },
                   minWidth: "auto",
-                  minHeight: 36,
-                  borderRadius: 0,
-                  bgcolor: "transparent !important",
-                  boxShadow: "none !important",
+                  minHeight: 28,
+                  borderRadius: "8px",
+                  bgcolor: selected
+                    ? (t) =>
+                        t.palette.mode === "light"
+                          ? alpha("#ffffff", 0.95)
+                          : alpha("#636366", 0.72)
+                    : "transparent !important",
+                  boxShadow: selected
+                    ? (t) =>
+                        t.palette.mode === "light"
+                          ? "0 1px 2px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)"
+                          : "0 1px 2px rgba(0,0,0,0.35)"
+                    : "none !important",
                   color: selected ? "text.primary" : "text.secondary",
-                  fontWeight: selected ? 700 : 600,
-                  fontSize: { xs: "0.85rem", sm: "0.92rem" },
-                  letterSpacing: "-0.02em",
+                  fontWeight: selected ? 600 : 500,
+                  fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+                  letterSpacing: "-0.015em",
                   whiteSpace: "nowrap",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: 2,
-                    bgcolor: "secondary.main",
-                    transform: selected ? "scaleX(1)" : "scaleX(0)",
-                    transformOrigin: "left center",
-                    transition: "transform 0.22s var(--pp-ease, ease)",
-                  },
+                  flexShrink: 0,
                   "&:hover": {
                     color: "text.primary",
-                    bgcolor: "transparent",
+                    bgcolor: selected
+                      ? undefined
+                      : (t) => alpha(t.palette.text.primary, 0.04),
                   },
                 }}
               >
@@ -296,7 +314,7 @@ export default function App() {
           variant="caption"
           color="text.secondary"
           display="block"
-          sx={{ lineHeight: 1.4, pt: 1.5, pb: 0.5, maxWidth: 560 }}
+          sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
         >
           Estimates only. One scenario across tabs; auto-saves locally.
         </Typography>
@@ -312,7 +330,7 @@ export default function App() {
           onClose={() => setToast(null)}
           severity={toast?.severity ?? "success"}
           variant="filled"
-          sx={{ width: "100%", bgcolor: "primary.main" }}
+          sx={{ width: "100%", bgcolor: "secondary.main" }}
         >
           {toast?.message ?? ""}
         </Alert>
