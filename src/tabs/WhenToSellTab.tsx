@@ -96,7 +96,7 @@ function plTextColor(theme: Theme, n: number): string {
 const sectionAccordionSx = {
   border: "1px solid",
   borderColor: "divider",
-  borderRadius: 1,
+  borderRadius: 1.5,
   overflow: "hidden",
   bgcolor: "transparent",
   "&:before": { display: "none" },
@@ -108,13 +108,13 @@ const sectionAccordionSx = {
 } as const;
 
 const sectionAccordionSummarySx = {
-  px: { xs: 1, sm: 1.25 },
-  py: { xs: 0.5, sm: 0.4 },
-  minHeight: { xs: 48, sm: 44 },
+  px: { xs: 1, sm: 1.15 },
+  py: 0.35,
+  minHeight: 40,
   alignItems: "center",
   transition: "background-color 0.15s ease",
   "&:hover": { bgcolor: "action.hover" },
-  "& .MuiAccordionSummary-content": { my: 0.5, overflow: "hidden", minWidth: 0, width: "100%" },
+  "& .MuiAccordionSummary-content": { my: 0.35, overflow: "hidden", minWidth: 0, width: "100%" },
 } as const;
 
 /** Net sale proceeds cell: green when cash-out, red when zero/underwater. */
@@ -151,10 +151,10 @@ function YieldGainToggleRow(props: {
       onClick={() => props.onToggle()}
       sx={{
         alignItems: "flex-start",
-        py: { xs: 1.1, sm: 1 },
-        px: { xs: 1, sm: 1.25 },
-        mb: 0.65,
-        borderRadius: 1.25,
+        py: 0.65,
+        px: 1,
+        mb: 0.45,
+        borderRadius: 1.5,
         border: "1px solid",
         borderColor: "divider",
         width: "100%",
@@ -164,14 +164,14 @@ function YieldGainToggleRow(props: {
         "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
       }}
     >
-      <ListItemIcon sx={{ minWidth: 44, mt: 0.2 }}>
+      <ListItemIcon sx={{ minWidth: 36, mt: 0.1 }}>
         <Checkbox
-          size="medium"
+          size="small"
           edge="start"
           checked={props.checked}
           tabIndex={-1}
           disableRipple
-          sx={{ p: 0.35, pointerEvents: "none" }}
+          sx={{ p: 0.25, pointerEvents: "none" }}
         />
       </ListItemIcon>
       <Box
@@ -407,15 +407,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
   }, []);
 
   return (
-    <Stack spacing={0.75}>
-      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-        Uses your <strong>Mortgage</strong> numbers (price, down payment, interest rate) and your <strong>Rental</strong>{" "}
-        income and costs — editable below. We compare the <strong>same loan size</strong> on a <strong>30-year</strong>{" "}
-        payment plan vs a <strong>15-year</strong> plan. In real life 15-year rates are often lower — adjust APR here or
-        on Mortgage.
+    <Stack spacing={0.65}>
+      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
+        Same loan size · <strong>30-yr vs 15-yr</strong> · syncs Mortgage &amp; Rental. Expand boxes to edit.
       </Typography>
 
-      <Paper variant="outlined" elevation={0} sx={{ borderRadius: 1, overflow: "hidden", boxShadow: "none", bgcolor: "transparent" }}>
+      <Paper variant="outlined" elevation={0} sx={{ borderRadius: 1.5, overflow: "hidden", boxShadow: "none", bgcolor: "transparent" }}>
         <Stack
           direction="row"
           alignItems="center"
@@ -424,19 +421,19 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
           columnGap={1}
           rowGap={0}
           sx={{
-            px: 1.25,
-            py: 0.65,
-            minHeight: 36,
+            px: 1.15,
+            py: 0.45,
+            minHeight: 32,
             borderBottom: 1,
             borderColor: "divider",
             bgcolor: "transparent",
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.2 }}>
-            Upfront &amp; financing
+          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem", lineHeight: 1.2 }}>
+            Workspace inputs
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.62rem", lineHeight: 1.2 }}>
-            Syncs Mortgage/Rental · expand a box to edit
+            Collapsed = summary · expand to edit
           </Typography>
         </Stack>
 
@@ -494,13 +491,6 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0.75, pt: 0, pb: 0.5, borderTop: 1, borderColor: "divider" }}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block", mb: 0.5, lineHeight: 1.35, fontSize: "0.72rem" }}
-                >
-                  Purchase price and down payment are under <strong>Financing</strong> (same fields as Mortgage).
-                </Typography>
                 <Grid container spacing={0.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
@@ -674,19 +664,13 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
               <AccordionDetails
                 sx={{ px: 0.75, pt: 0.5, pb: 0.75, borderTop: 1, borderColor: "divider" }}
               >
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, fontSize: "0.72rem", display: "block", mb: 0.75 }}>
-                  Implied <strong>appreciation</strong> from purchase ({money.format(basePrice)}), <strong>years</strong>, and{" "}
-                  <strong>present value</strong>. <strong>Calculated value</strong> = purchase × (1 + rate)
-                  <sup>{yearsOwnedClamped}</sup> — should match your present value. Same rate drives projections below.
-                </Typography>
                 <Grid container spacing={0.5}>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
-                      label="Annual appreciation (implied)"
+                      label="Implied appreciation"
                       size="small"
                       fullWidth
                       value={Number.isFinite(appreciationPct) ? appreciationPct.toFixed(2) : "0"}
-                      helperText="Compound %/yr"
                       slotProps={{
                         input: {
                           readOnly: true,
@@ -697,7 +681,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
-                      label="Years since purchase"
+                      label="Years held"
                       size="small"
                       fullWidth
                       value={String(state.yearsOwned)}
@@ -707,13 +691,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                           patch({ yearsOwned: Math.min(80, Math.max(1, Math.round(n))) });
                         }
                       }}
-                      helperText="Min 1 yr"
                       slotProps={{ input: { inputMode: "numeric" } }}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
-                      label="Closing cost at sale"
+                      label="Sale closing %"
                       size="small"
                       fullWidth
                       value={String(sellingCostPct)}
@@ -723,57 +706,33 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                           patch({ sellClosingCostPercent: Math.min(15, Math.max(0, n)) });
                         }
                       }}
-                      helperText="% of sale price"
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
                     />
                   </Grid>
-                  <Grid size={12}>
-                    <Paper
-                      variant="outlined"
-                      elevation={0}
-                      sx={{
-                        p: 1,
-                        borderRadius: 1,
-                        boxShadow: "none",
-                        bgcolor: "transparent",
-                        borderColor: "divider",
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Calculated value"
+                      size="small"
+                      fullWidth
+                      value={money.format(Math.round(calculatedPresentHomeValue))}
+                      helperText={`(1+${Number.isFinite(appreciationPct) ? appreciationPct.toFixed(2) : "0"}%)^${yearsOwnedClamped}`}
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Present value"
+                      size="small"
+                      fullWidth
+                      value={formatNumberField(state.currentHomeValue)}
+                      onChange={(e) => {
+                        const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                        if (Number.isFinite(n)) patch({ currentHomeValue: Math.max(0, Math.round(n)) });
                       }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{ fontWeight: 700, fontSize: "0.7rem", display: "block", mb: 0.5, letterSpacing: "0.02em" }}
-                      >
-                        Present value — calculated vs yours
-                      </Typography>
-                      <Grid container spacing={0.5}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            label="Calculated home value"
-                            size="small"
-                            fullWidth
-                            value={money.format(Math.round(calculatedPresentHomeValue))}
-                            helperText={`× (1 + ${Number.isFinite(appreciationPct) ? appreciationPct.toFixed(2) : "0"}%) ^ ${yearsOwnedClamped}`}
-                            slotProps={{ input: { readOnly: true } }}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            label="Present home value"
-                            size="small"
-                            fullWidth
-                            value={formatNumberField(state.currentHomeValue)}
-                            onChange={(e) => {
-                              const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                              if (Number.isFinite(n)) patch({ currentHomeValue: Math.max(0, Math.round(n)) });
-                            }}
-                            helperText="Your market value"
-                            slotProps={{
-                              input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                            }}
-                          />
-                        </Grid>
-                      </Grid>
-                    </Paper>
+                      slotProps={{
+                        input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                      }}
+                    />
                   </Grid>
                 </Grid>
               </AccordionDetails>
@@ -808,10 +767,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                 </Box>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0.75, pt: 0.5, pb: 0.75, borderTop: 1, borderColor: "divider" }}>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, fontSize: "0.72rem", display: "block", mb: 0.65 }}>
-                  Same scenario as the Rental tab. Fields below; then expand <strong>What counts in gain</strong> for checkboxes.
-                </Typography>
-                <Grid container spacing={0.5} sx={{ mb: 0.75 }}>
+                <Grid container spacing={0.5} sx={{ mb: 0.65 }}>
                   <Grid size={12}>
                     <TextField
                       label="Monthly rent"
@@ -828,7 +784,6 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                         if (!Number.isFinite(n)) return;
                         patch({ monthlyRent: Math.min(999_999, Math.max(0, n)) });
                       }}
-                      helperText="$0–999,999/mo · saves on blur"
                       slotProps={{
                         input: {
                           startAdornment: <InputAdornment position="start">$</InputAdornment>,
@@ -837,7 +792,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                       }}
                     />
                   </Grid>
-                  <Grid size={12}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Other income"
                       size="small"
@@ -847,7 +802,6 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                         const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
                         if (Number.isFinite(n)) patch({ otherMonthlyIncome: Math.min(3_000, Math.max(0, Math.round(n))) });
                       }}
-                      helperText="0–3,000/mo · GSI with rent"
                       slotProps={{
                         input: {
                           startAdornment: <InputAdornment position="start">$</InputAdornment>,
@@ -856,7 +810,7 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                       }}
                     />
                   </Grid>
-                  <Grid size={12}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Vacancy"
                       size="small"
@@ -866,7 +820,6 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                         const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
                         if (Number.isFinite(n)) patch({ vacancyRatePercent: Math.min(100, Math.max(0, n)) });
                       }}
-                      helperText="0–100% · applied to GSI"
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
                     />
                   </Grid>
@@ -874,17 +827,10 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
                 <Accordion defaultExpanded={false} disableGutters elevation={0} sx={{ ...sectionAccordionSx, width: "100%" }}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: "1.1rem" }} />} sx={sectionAccordionSummarySx}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>
-                      What counts in gain — checkboxes
+                      What counts in gain
                     </Typography>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ px: 0.5, pt: 0.25, pb: 0.85 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.85, lineHeight: 1.4, fontSize: "0.72rem" }}
-                    >
-                      Tap a row to include or exclude it (full row is clickable).
-                    </Typography>
+                  <AccordionDetails sx={{ px: 0.5, pt: 0.25, pb: 0.65 }}>
                     <List dense disablePadding sx={{ width: "100%", maxWidth: "100%" }}>
                       <YieldGainToggleRow
                         checked={yieldIncluded(RENTAL_YIELD_PI_ID)}
@@ -958,35 +904,22 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
         </Grid>
       </Paper>
 
-      <Stack spacing={0.75}>
-        <Typography variant="caption" color="text.secondary" sx={{ px: 0.25, lineHeight: 1.4 }}>
-          <strong>Your total gain</strong> = sale cash + cumulative monthly rent (while the loan is active: yield toggles
-          and NOI − P&amp;I; <strong>after payoff</strong>: effective gross income only — vacancy applied,{" "}
-          <strong>no</strong> property operating expenses or P&amp;I) − upfront cash (down, closing, misc).{" "}
-          <strong>Gain %</strong> is total gain / upfront cash (not annualized).
-        </Typography>
-
+      <Stack spacing={0.65}>
         <Box sx={{ px: 0.25 }}>
-          <Typography variant="subtitle2" component="div" sx={{ fontWeight: 600, lineHeight: 1.35 }}>
-            Your total gain by exit year ({totalGainHeadingYears.line1},
-            <br />
-            {totalGainHeadingYears.line2})
+          <Typography variant="subtitle2" component="div" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            Total gain by exit year
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, display: "block", mt: 0.25, mb: 0.5 }}>
-            Each card is <strong>if you sold after that many years</strong> from purchase (3, 5, 7… — not your{" "}
-            <strong>Years since purchase</strong> field, which only helps set implied appreciation).{" "}
-            <strong>Your total gain</strong> (bottom row) is green when the full outcome is positive, red when negative:
-            sale proceeds + cumulative rent through that exit − upfront cash. The <strong>Rent</strong> row can be amber
-            (negative cumulative operating cash) while total gain is still green if sale proceeds are large enough.{" "}
-            <strong>Left border + chip</strong> summarize the 30-yr vs 15-yr comparison only.
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block", mt: 0.2, mb: 0.45 }}>
+            Sale proceeds + cumulative rent − upfront · years {totalGainHeadingYears.line1}, {totalGainHeadingYears.line2} ·
+            not annualized. Chip = 30 vs 15 outcome.
           </Typography>
-          <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mb: 0.75 }}>
-            <Chip size="small" variant="outlined" color="success" label="Gain: both paths" sx={{ fontWeight: 600, borderRadius: 1 }} />
-            <Chip size="small" variant="outlined" color="error" label="Loss: both paths" sx={{ fontWeight: 600, borderRadius: 1 }} />
-            <Chip size="small" variant="outlined" color="warning" label="Mixed" sx={{ fontWeight: 600, borderRadius: 1 }} />
+          <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.55} sx={{ mb: 0.65 }}>
+            <Chip size="small" variant="outlined" color="success" label="Both gain" sx={{ fontWeight: 600, borderRadius: 1.5 }} />
+            <Chip size="small" variant="outlined" color="error" label="Both loss" sx={{ fontWeight: 600, borderRadius: 1.5 }} />
+            <Chip size="small" variant="outlined" color="warning" label="Mixed" sx={{ fontWeight: 600, borderRadius: 1.5 }} />
           </Stack>
         </Box>
-        <Grid container spacing={1}>
+        <Grid container spacing={0.85}>
           {wealthSnapshots.map((w) => (
             <Grid key={w.year} size={{ xs: 12, sm: 6, lg: 4 }}>
               <MilestoneWealthCard
@@ -999,20 +932,19 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
         </Grid>
 
         <Accordion
-          variant="outlined"
+          defaultExpanded={false}
           disableGutters
           elevation={0}
-          sx={{ borderRadius: 1, boxShadow: "none", bgcolor: "transparent", "&:before": { display: "none" } }}
+          sx={sectionAccordionSx}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={sectionAccordionSummarySx}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Optional: interest paid to the bank and loan principal (detail only)
+              Interest &amp; principal detail
             </Typography>
           </AccordionSummary>
-          <AccordionDetails>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.65, lineHeight: 1.4 }}>
-              These rows are for curiosity. They are <strong>not</strong> extra subtractions from your total gain —
-              interest is already counted inside your yearly rent line (via the mortgage payment).
+          <AccordionDetails sx={{ pt: 0 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, lineHeight: 1.35 }}>
+              Not extra subtractions — interest is already inside the rent line via the mortgage payment.
             </Typography>
             <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
               <Table size="small">
@@ -1078,31 +1010,30 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
         </Accordion>
       </Stack>
 
-      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, boxShadow: "none", bgcolor: "transparent" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
+      <Accordion defaultExpanded={false} disableGutters elevation={0} sx={sectionAccordionSx}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={sectionAccordionSummarySx}>
           <Stack
-            direction="row"
-            alignItems="baseline"
+            direction={{ xs: "column", sm: "row" }}
+            spacing={0.5}
+            alignItems={{ sm: "baseline" }}
             justifyContent="space-between"
-            flexWrap="wrap"
-            columnGap={1}
-            rowGap={0.25}
-            sx={{ mb: 0.75 }}
+            sx={{ width: "100%", pr: 0.5, gap: 0.5 }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Year-by-year projection
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.72rem", lineHeight: 1.35 }}>
-              {appreciationPct}%/yr on price · {sellingCostPct}% closing at sale · edit in{" "}
-              <strong>Upfront &amp; financing</strong>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", fontVariantNumeric: "tabular-nums" }}>
+              {appreciationPct}%/yr · {sellingCostPct}% sale close · {rows.length} yrs
             </Typography>
           </Stack>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 0, pb: 1 }}>
           <TableContainer
             sx={{
-              maxHeight: { xs: "min(42vh, 280px)", sm: "min(44vh, 320px)" },
+              maxHeight: { xs: "min(38vh, 260px)", sm: "min(40vh, 300px)" },
               border: "1px solid",
               borderColor: "divider",
-              borderRadius: 1,
+              borderRadius: 1.5,
             }}
           >
             <Table size="small" stickyHeader>
@@ -1273,26 +1204,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
               </TableBody>
             </Table>
           </TableContainer>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, lineHeight: 1.35 }}>
-            Highlighted row = <strong>Mortgage term</strong> ({exitHorizonYears} yr). Net = value − payoff −{" "}
-            {sellingCostPct}% sale closing. Gain adds cumulative rent (yield toggles apply with loan; after payoff,{" "}
-            <strong>EGI only</strong> — no OpEx). {showUserTermColumn ? (
-              <>
-                <strong>Net/Gain {exitHorizonYears}y</strong> matches your Mortgage tab term; 30 and 15 are comparisons.
-              </>
-            ) : exitHorizonYears === 15 ? (
-              <>
-                <strong>Gain 15</strong> matches your Mortgage tab term.
-              </>
-            ) : exitHorizonYears === 30 ? (
-              <>
-                <strong>Gain 30</strong> matches your Mortgage tab term.
-              </>
-            ) : null}{" "}
-            % vs upfront cash.
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.45, lineHeight: 1.35 }}>
+            Highlight = Mortgage term ({exitHorizonYears} yr). Net = value − payoff − {sellingCostPct}% close. Gain adds
+            cumulative rent (after payoff: EGI only).
           </Typography>
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
     </Stack>
   );
 }
@@ -1353,7 +1270,7 @@ function MilestoneWealthCard(props: {
       elevation={0}
       sx={(theme) => ({
         height: "100%",
-        borderRadius: 1,
+        borderRadius: 1.5,
         overflow: "hidden",
         borderWidth: 1,
         borderStyle: "solid",
@@ -1369,10 +1286,10 @@ function MilestoneWealthCard(props: {
         boxShadow: "none",
       })}
     >
-      <CardContent sx={{ py: 1.1, "&:last-child": { pb: 1.1 } }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1} sx={{ mb: 0.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-            Sell after year {w.year}
+      <CardContent sx={{ py: 0.85, px: 1.1, "&:last-child": { pb: 0.85 } }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1} sx={{ mb: 0.35 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.25, fontSize: "0.9rem" }}>
+            Year {w.year}
           </Typography>
           <Chip
             size="small"
@@ -1382,55 +1299,49 @@ function MilestoneWealthCard(props: {
             sx={{
               fontWeight: 700,
               flexShrink: 0,
-              borderRadius: 1,
+              borderRadius: 1.5,
               boxShadow: "none",
+              height: 22,
             }}
           />
         </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, lineHeight: 1.35 }}>
-          Rent and income for this model are under <strong>Rental yield in total gain</strong> on this tab (also on Rental).
-          We compare 30- vs 15-year amortization (same rate)
-          {showUser ? ` plus your Mortgage tab term (${ty} yr)` : ""}. After payoff, the rent line adds{" "}
-          <strong>EGI / mo</strong> (no OpEx, no P&amp;I).
-          Amber cells = negative rent drag in the model.
-        </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600, borderBottom: "none", py: 0.5 }} />
-              <TableCell align="right" sx={{ fontWeight: 600, py: 0.5 }}>
-                30-yr loan
+              <TableCell sx={{ fontWeight: 600, borderBottom: "none", py: 0.35 }} />
+              <TableCell align="right" sx={{ fontWeight: 600, py: 0.35 }}>
+                30-yr
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, py: 0.5 }}>
-                15-yr loan
+              <TableCell align="right" sx={{ fontWeight: 600, py: 0.35 }}>
+                15-yr
               </TableCell>
               {showUser ? (
-                <TableCell align="right" sx={{ fontWeight: 600, py: 0.5 }}>
-                  {ty}-yr loan
+                <TableCell align="right" sx={{ fontWeight: 600, py: 0.35 }}>
+                  {ty}-yr
                 </TableCell>
               ) : null}
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.65, maxWidth: 168 }}>
-                Cash you put in at closing
+              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.4, maxWidth: 140, fontSize: "0.75rem" }}>
+                Cash in
               </TableCell>
-              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                 {money.format(w.initialCashInvested)}
               </TableCell>
-              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                 {money.format(w.initialCashInvested)}
               </TableCell>
               {showUser ? (
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                   {money.format(w.initialCashInvested)}
                 </TableCell>
               ) : null}
             </TableRow>
             <TableRow>
-              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.65 }}>
-                + Rent in gain
+              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.4, fontSize: "0.75rem" }}>
+                + Rent
               </TableCell>
               <TableCell align="right" sx={rentCellSx(w.cumulativeRentalCashFlow30)}>
                 {plusMoney(w.cumulativeRentalCashFlow30)}
@@ -1445,17 +1356,17 @@ function MilestoneWealthCard(props: {
               ) : null}
             </TableRow>
             <TableRow>
-              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.65 }}>
-                + Cash when you sell
+              <TableCell sx={{ color: "text.secondary", borderBottom: "none", py: 0.4, fontSize: "0.75rem" }}>
+                + Sale
               </TableCell>
-              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                 {plusMoney(w.netProceeds30)}
               </TableCell>
-              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+              <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                 {plusMoney(w.netProceeds15)}
               </TableCell>
               {showUser ? (
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.65 }}>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", py: 0.4, fontSize: "0.75rem" }}>
                   {plusMoney(w.netProceedsUserTerm)}
                 </TableCell>
               ) : null}
@@ -1464,19 +1375,20 @@ function MilestoneWealthCard(props: {
               <TableCell
                 sx={{
                   fontWeight: 700,
-                  pt: 0.65,
+                  pt: 0.45,
                   borderTop: "1px solid",
                   borderColor: "divider",
+                  fontSize: "0.75rem",
                 }}
               >
-                = Your total gain
+                = Gain
               </TableCell>
               <TableCell align="right" sx={gainCellSx(g30)}>
-                <Stack alignItems="flex-end" spacing={0.15}>
+                <Stack alignItems="flex-end" spacing={0.1}>
                   <Typography
                     sx={(theme) => ({
                       fontWeight: 800,
-                      fontSize: "1.05rem",
+                      fontSize: "0.95rem",
                       letterSpacing: "-0.02em",
                       fontVariantNumeric: "tabular-nums",
                       color: plTextColor(theme, g30),
@@ -1489,7 +1401,7 @@ function MilestoneWealthCard(props: {
                     sx={(theme) => ({
                       fontWeight: 700,
                       fontVariantNumeric: "tabular-nums",
-                      lineHeight: 1.2,
+                      lineHeight: 1.15,
                       color: plTextColor(theme, g30),
                     })}
                   >
@@ -1498,11 +1410,11 @@ function MilestoneWealthCard(props: {
                 </Stack>
               </TableCell>
               <TableCell align="right" sx={gainCellSx(g15)}>
-                <Stack alignItems="flex-end" spacing={0.15}>
+                <Stack alignItems="flex-end" spacing={0.1}>
                   <Typography
                     sx={(theme) => ({
                       fontWeight: 800,
-                      fontSize: "1.05rem",
+                      fontSize: "0.95rem",
                       letterSpacing: "-0.02em",
                       fontVariantNumeric: "tabular-nums",
                       color: plTextColor(theme, g15),
@@ -1515,7 +1427,7 @@ function MilestoneWealthCard(props: {
                     sx={(theme) => ({
                       fontWeight: 700,
                       fontVariantNumeric: "tabular-nums",
-                      lineHeight: 1.2,
+                      lineHeight: 1.15,
                       color: plTextColor(theme, g15),
                     })}
                   >
@@ -1525,11 +1437,11 @@ function MilestoneWealthCard(props: {
               </TableCell>
               {showUser ? (
                 <TableCell align="right" sx={gainCellSx(gUser)}>
-                  <Stack alignItems="flex-end" spacing={0.15}>
+                  <Stack alignItems="flex-end" spacing={0.1}>
                     <Typography
                       sx={(theme) => ({
                         fontWeight: 800,
-                        fontSize: "1.05rem",
+                        fontSize: "0.95rem",
                         letterSpacing: "-0.02em",
                         fontVariantNumeric: "tabular-nums",
                         color: plTextColor(theme, gUser),
@@ -1542,7 +1454,7 @@ function MilestoneWealthCard(props: {
                       sx={(theme) => ({
                         fontWeight: 700,
                         fontVariantNumeric: "tabular-nums",
-                        lineHeight: 1.2,
+                        lineHeight: 1.15,
                         color: plTextColor(theme, gUser),
                       })}
                     >
@@ -1554,10 +1466,6 @@ function MilestoneWealthCard(props: {
             </TableRow>
           </TableBody>
         </Table>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.6, lineHeight: 1.4 }}>
-          Your total gain = rent + cash when you sell − cash you put in at closing. Percent is gain or loss vs that upfront
-          cash (not annualized).
-        </Typography>
       </CardContent>
     </Card>
   );

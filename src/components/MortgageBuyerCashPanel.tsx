@@ -50,11 +50,11 @@ export function MortgageBuyerCashPanel({ state, patch, loanAmount, cashToClose }
 
   return (
     <Accordion
-      defaultExpanded
+      defaultExpanded={false}
       disableGutters
       elevation={0}
       sx={{
-        borderRadius: 1,
+        borderRadius: 1.5,
         border: "1px solid",
         borderColor: "divider",
         bgcolor: "transparent",
@@ -67,35 +67,35 @@ export function MortgageBuyerCashPanel({ state, patch, loanAmount, cashToClose }
         expandIcon={<ExpandMore />}
         sx={{
           px: 1.25,
-          minHeight: 52,
+          minHeight: 44,
           alignItems: "flex-start",
           "&:hover": { bgcolor: "action.hover" },
-          "& .MuiAccordionSummary-content": { my: 0.65, width: "100%", maxWidth: "calc(100% - 36px)" },
+          "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
         }}
       >
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1}
+          spacing={0.75}
           alignItems={{ sm: "flex-end" }}
           justifyContent="space-between"
-          sx={{ width: "100%", gap: 1 }}
+          sx={{ width: "100%", gap: 0.75 }}
         >
-          <Stack spacing={0.2} sx={{ minWidth: 0, flex: 1 }}>
+          <Stack spacing={0.1} sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Cash to buy — breakdown &amp; modeled costs
+              Cash to close
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-              Modeled buyer costs vs closing — collapse for a shorter page (same editor on <strong>Upfront</strong>)
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+              Modeled costs vs entered closing · also on <strong>Upfront</strong>
             </Typography>
           </Stack>
-          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.25} sx={{ flexShrink: 0 }}>
-            <AccordionSummaryMetric label="Total cash" value={moneyDec.format(cashToClose)} />
-            <AccordionSummaryMetric label="Closing (entered)" value={moneyDec.format(closing)} />
-            <AccordionSummaryMetric label="Model closing" value={moneyDec.format(Math.round(suggestedClosing))} />
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+            <AccordionSummaryMetric label="Total" value={moneyDec.format(cashToClose)} />
+            <AccordionSummaryMetric label="Closing" value={moneyDec.format(closing)} />
+            <AccordionSummaryMetric label="Model" value={moneyDec.format(Math.round(suggestedClosing))} />
           </Stack>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ px: 1.25, pt: 0, pb: 1.25 }}>
+      <AccordionDetails sx={{ px: 1.25, pt: 0, pb: 1 }}>
         <UpfrontCashScenarioPanel
           state={state}
           patch={patch}

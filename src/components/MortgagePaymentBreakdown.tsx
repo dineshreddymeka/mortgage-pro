@@ -31,12 +31,12 @@ export function MortgagePaymentBreakdown(props: { breakdown: MonthlyBreakdown })
   ].filter((s) => s.amount > 0.001);
 
   return (
-    <Stack spacing={1.25}>
+    <Stack spacing={0.85}>
       <Box
         sx={{
           display: "flex",
-          height: 10,
-          borderRadius: 1,
+          height: 8,
+          borderRadius: 1.5,
           overflow: "hidden",
           bgcolor: alpha(theme.palette.divider, theme.palette.mode === "dark" ? 0.35 : 0.55),
           border: "1px solid",
@@ -49,31 +49,34 @@ export function MortgagePaymentBreakdown(props: { breakdown: MonthlyBreakdown })
             title={`${s.label}: ${moneyDec.format(s.amount)}`}
             sx={{
               width: `${(s.amount / t) * 100}%`,
-              minWidth: s.amount > 0.001 ? 4 : 0,
+              minWidth: s.amount > 0.001 ? 3 : 0,
               bgcolor: s.color,
               transition: "width 0.2s ease",
             }}
           />
         ))}
       </Box>
-      <Stack spacing={0.65}>
+      <Stack spacing={0.4}>
         {segments.map((s) => (
           <Stack key={s.key} direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-            <Stack direction="row" alignItems="center" gap={0.75}>
+            <Stack direction="row" alignItems="center" gap={0.65}>
               <Box
                 sx={{
-                  width: 10,
-                  height: 10,
+                  width: 8,
+                  height: 8,
                   borderRadius: 0.5,
                   bgcolor: s.color,
                   flexShrink: 0,
                 }}
               />
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
                 {s.label}
               </Typography>
             </Stack>
-            <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", fontSize: "0.8rem" }}
+            >
               {moneyDec.format(s.amount)}
             </Typography>
           </Stack>

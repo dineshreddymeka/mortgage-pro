@@ -1,5 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Chip, InputAdornment, Paper, Stack, Typography } from "@mui/material";
+import { Chip, InputAdornment, Stack, Typography } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -72,9 +72,9 @@ const PF_PMI_ID = "pmi";
 const rentalAccordionSx = {
   border: "1px solid",
   borderColor: "divider",
-  borderRadius: 1,
+  borderRadius: 1.5,
   overflow: "hidden",
-  bgcolor: "background.paper",
+  bgcolor: "transparent",
   boxShadow: "none",
   transition: "border-color 160ms ease",
   "&:before": { display: "none" },
@@ -85,15 +85,15 @@ const rentalAccordionSx = {
 } as const;
 
 const accordionSummarySx = {
-  px: 2,
-  py: 0.75,
+  px: 1.25,
+  py: 0.5,
   minHeight: "unset",
   alignItems: "flex-start",
   "&:hover": { bgcolor: "action.hover" },
   "& .MuiAccordionSummary-content": {
     alignItems: "flex-start",
     flexDirection: "column",
-    gap: 0.5,
+    gap: 0.35,
     minWidth: 0,
     width: "100%",
     maxWidth: "100%",
@@ -102,11 +102,11 @@ const accordionSummarySx = {
   },
   "& .MuiAccordionSummary-expandIconWrapper": {
     alignSelf: "flex-start",
-    mt: 0.25,
+    mt: 0.15,
   },
 } as const;
 
-const accordionDetailsSx = { px: 1.5, pt: 0.75, pb: 1 } as const;
+const accordionDetailsSx = { px: 1.25, pt: 0.5, pb: 0.85 } as const;
 
 /** Pro-forma OpEx line id → scroll target (tax / ins / HOA share one block). */
 const OPEX_SCROLL_ANCHOR: Record<string, string> = {
@@ -261,34 +261,10 @@ export function RentalTab({ state, patch }: RentalTabProps) {
   const mortgageFreeAnnual = mortgageFreeMonthly * 12;
 
   return (
-    <Stack spacing={2}>
-      <Paper
-        variant="outlined"
-        elevation={0}
-        sx={{
-          p: 1.75,
-          borderRadius: 1,
-          borderColor: "divider",
-          bgcolor: "transparent",
-          boxShadow: "none",
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em", mb: 0.75 }}>
-          Same scenario as Mortgage
-        </Typography>
-        <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 2.25, color: "text.secondary" }}>
-          <Typography component="li" variant="caption" sx={{ lineHeight: 1.45, display: "list-item" }}>
-            Edits sync both tabs instantly (one saved scenario).
-          </Typography>
-          <Typography component="li" variant="caption" sx={{ lineHeight: 1.45, display: "list-item" }}>
-            <strong>Financing</strong> = loan, rate, term, tax, insurance, HOA.
-          </Typography>
-          <Typography component="li" variant="caption" sx={{ lineHeight: 1.45, display: "list-item" }}>
-            <strong>Upfront cash</strong> = down + closing + misc one-time. Loan <strong>term</strong> drives P&amp;I on
-            both tabs.
-          </Typography>
-        </Stack>
-      </Paper>
+    <Stack spacing={0.75}>
+      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
+        Same scenario as <strong>Mortgage</strong> — financing + upfront sync instantly.
+      </Typography>
 
       <Accordion
         expanded={financingOpen}
@@ -298,7 +274,7 @@ export function RentalTab({ state, patch }: RentalTabProps) {
         sx={rentalAccordionSx}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 22 }} />}
+          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
           aria-controls="rental-financing-panel"
           id="rental-financing-header"
           sx={accordionSummarySx}
@@ -312,21 +288,20 @@ export function RentalTab({ state, patch }: RentalTabProps) {
             color="text.secondary"
             sx={{
               display: { xs: "block", sm: "none" },
-              lineHeight: 1.4,
-              fontSize: "0.72rem",
+              lineHeight: 1.35,
+              fontSize: "0.7rem",
               fontVariantNumeric: "tabular-nums",
             }}
             title={`Price ${money.format(state.homePrice)} · Loan ${money.format(mortgage.loanAmount)} · ${state.interestRateApr}% APR · ${state.termYears} yr · P&I ${moneyDec.format(mortgage.principalAndInterest)}/mo · PITI+HOA ${moneyDec.format(mortgage.total)}/mo`}
           >
-            {money.format(state.homePrice)} · {state.downPaymentPercent.toFixed(1)}% down · ln{" "}
-            {money.format(mortgage.loanAmount)} · {state.interestRateApr}% · {state.termYears}y · P&amp;I{" "}
-            {moneyDec.format(mortgage.principalAndInterest)} · PITI {moneyDec.format(mortgage.total)}
+            {money.format(state.homePrice)} · ln {money.format(mortgage.loanAmount)} · {state.interestRateApr}% ·{" "}
+            {state.termYears}y · P&amp;I {moneyDec.format(mortgage.principalAndInterest)}
           </Typography>
           <Box
             sx={{
               display: { xs: "none", sm: "grid" },
               width: "100%",
-              gap: 1,
+              gap: 0.65,
               gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             }}
           >
@@ -335,19 +310,14 @@ export function RentalTab({ state, patch }: RentalTabProps) {
             <RentalSummaryStat label={"P&I / mo"} value={moneyDec.format(mortgage.principalAndInterest)} />
             <RentalSummaryStat label="PITI+HOA / mo" value={moneyDec.format(mortgage.total)} />
           </Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ lineHeight: 1.35, display: { xs: "none", sm: "block" } }}
-          >
-            {state.interestRateApr}% APR · {state.termYears} yr (collapsed summary above)
-          </Typography>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
           <Box id="rental-edit-financing">
             <MortgageInputsFields
               state={state}
               patch={patch}
+              inputSize="small"
+              compactGrid
               purchasePriceHelperText="Drives cap rate (NOI ÷ this price)"
             />
           </Box>
@@ -356,13 +326,13 @@ export function RentalTab({ state, patch }: RentalTabProps) {
 
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 22 }} />}
+          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
           aria-controls="rental-initial-invest-panel"
           id="rental-initial-invest-header"
           sx={accordionSummarySx}
         >
           <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: "-0.02em" }}>
-            Upfront cash (acquisition)
+            Upfront cash
           </Typography>
           <Typography
             component="div"
@@ -370,50 +340,33 @@ export function RentalTab({ state, patch }: RentalTabProps) {
             color="text.secondary"
             sx={{
               display: { xs: "block", md: "none" },
-              lineHeight: 1.4,
-              fontSize: "0.72rem",
+              lineHeight: 1.35,
+              fontSize: "0.7rem",
               fontVariantNumeric: "tabular-nums",
             }}
             title={`Total cash in ${moneyDec.format(totalCashIn)} · Down ${money.format(state.downPayment)} · Closing ${money.format(state.closingCosts)} · Misc ${money.format(state.miscInitialCash)} · Financed ${money.format(Math.max(0, state.homePrice - state.downPayment))}`}
           >
             Tot {moneyDec.format(totalCashIn)} · D {money.format(state.downPayment)} · Close{" "}
-            {money.format(state.closingCosts)} · Misc {money.format(state.miscInitialCash)} · Ln{" "}
-            {money.format(Math.max(0, state.homePrice - state.downPayment))}
+            {money.format(state.closingCosts)} · Misc {money.format(state.miscInitialCash)}
           </Typography>
           <Box
             sx={{
               display: { xs: "none", md: "grid" },
               width: "100%",
-              gap: 1,
+              gap: 0.65,
               gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
             }}
           >
             <RentalSummaryStat label="Total cash in" value={moneyDec.format(totalCashIn)} emphasize />
             <RentalSummaryStat label="Down" value={money.format(state.downPayment)} />
-            <RentalSummaryStat label="Closing fees" value={money.format(state.closingCosts)} />
-            <RentalSummaryStat label="Misc one-time" value={money.format(state.miscInitialCash)} />
+            <RentalSummaryStat label="Closing" value={money.format(state.closingCosts)} />
+            <RentalSummaryStat label="Misc" value={money.format(state.miscInitialCash)} />
             <RentalSummaryStat label="Financed" value={money.format(Math.max(0, state.homePrice - state.downPayment))} />
           </Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ lineHeight: 1.35, display: { xs: "none", md: "block" } }}
-          >
-            One-time at close (collapsed summary above)
-          </Typography>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
-          <Stack spacing={1}>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, display: "block" }}>
-              <strong>Upfront</strong> is money you bring once at closing (see the <strong>Upfront</strong> tab for a
-              dedicated ledger). <strong>Monthly carrying</strong> (other card) is what it costs each month to own and
-              operate. Price and down also live under <strong>Financing</strong>.
-            </Typography>
-
-            <RentalSubsection
-              title="Purchase & equity"
-              subtitle="Deal price and your equity; down payment caps at purchase price."
-            >
+          <Stack spacing={0.85}>
+            <RentalSubsection title="Purchase & equity">
               <TextField
                 label="Purchase price"
                 size="small"
@@ -495,15 +448,11 @@ export function RentalTab({ state, patch }: RentalTabProps) {
               </Stack>
             </RentalSubsection>
 
-            <RentalSubsection
-              title="Closing fees & miscellaneous one-time"
-              subtitle="Lender/title/transfer estimates plus any other cash at close (repairs, appliances, moving). Not monthly."
-            >
+            <RentalSubsection title="Closing & misc one-time">
               <TextField
                 label="Closing costs (fees)"
                 size="small"
                 fullWidth
-                helperText="Typical lender + title + recording; counts toward cash-on-cash denominator only"
                 value={formatNumberField(state.closingCosts)}
                 onChange={(e) => {
                   const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
@@ -519,7 +468,6 @@ export function RentalTab({ state, patch }: RentalTabProps) {
                 label="Misc. one-time at close"
                 size="small"
                 fullWidth
-                helperText="Optional: rehabs, furniture, prepaid items — same treatment as closing for cash-in"
                 value={formatNumberField(state.miscInitialCash)}
                 onChange={(e) => {
                   const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
@@ -535,8 +483,8 @@ export function RentalTab({ state, patch }: RentalTabProps) {
 
             <Box
               sx={{
-                borderRadius: 1,
-                p: 1.25,
+                borderRadius: 1.5,
+                p: 1,
                 border: "1px solid",
                 borderColor: "divider",
                 bgcolor: "transparent",
@@ -596,93 +544,83 @@ export function RentalTab({ state, patch }: RentalTabProps) {
         </AccordionDetails>
       </Accordion>
 
-      <Box id="rental-metrics-row" className="pp-fade-in" sx={{ py: 0.5 }}>
-        <Typography variant="h6" sx={{ fontSize: { xs: "1.1rem", sm: "1.2rem" }, mb: 0.35 }}>
-          Key metrics
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25, lineHeight: 1.4, maxWidth: 520 }}>
-          Cash flow, NOI, and returns for this scenario.
-        </Typography>
-        <Grid container spacing={1}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <MetricCard
-              label="Mo cash flow"
-              value={moneyDec.format(r.cashFlowMonthly)}
-              detail={`Yr ${moneyDec.format(r.cashFlowAnnual)}`}
-              detailExtra={piSummaryRight}
-              hint={`NOI ${moneyDec.format(r.noiMonthly)} − P&amp;I ${moneyDec.format(piMonthly)} (same ${state.termYears}-yr loan as Mortgage)`}
-              positive={r.cashFlowMonthly >= 0}
-              title={`Mo cash flow = monthly NOI minus monthly P&I. P&I is ${moneyDec.format(piMonthly)} on a ${state.termYears}-year amortizing loan — identical to the Mortgage tab for this scenario.`}
-              note={
-                loanPaidOffByYearsHeld ? (
-                  <>
-                    <strong>Approx. mortgage-free</strong> (years held &gt; {termYearsRounded} yr loan):{" "}
-                    {moneyDec.format(mortgageFreeMonthly)}/mo — effective gross income (vacancy applied), no OpEx or P&amp;I{" "}
-                    (matches When to sell rent after loan payoff). Uses <strong>Years since purchase</strong> on When to sell.
-                  </>
-                ) : undefined
-              }
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <MetricCard
-              label="Yr cash flow"
-              value={moneyDec.format(r.cashFlowAnnual)}
-              detail={`Mo ${moneyDec.format(r.cashFlowMonthly)}`}
-              detailExtra={piSummaryRight}
-              hint={`12 × mo cash flow; P&amp;I still ${moneyDec.format(piMonthly)}/mo (${state.termYears} yr)`}
-              positive={r.cashFlowAnnual >= 0}
-              title={`Year cash flow is twelve times monthly cash flow (NOI − P&I). Loan term is ${state.termYears} years on both tabs.`}
-              note={
-                loanPaidOffByYearsHeld ? (
-                  <>
-                    <strong>Approx. mortgage-free</strong>: {moneyDec.format(mortgageFreeAnnual)}/yr ({moneyDec.format(mortgageFreeMonthly)}
-                    /mo EGI). Main figures above still assume debt service for side-by-side underwriting.
-                  </>
-                ) : undefined
-              }
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <MetricCard
-              label="NOI / yr"
-              value={moneyDec.format(r.noiAnnual)}
-              detail={`${moneyDec.format(r.noiMonthly)}/mo`}
-              hint="Net operating income: after vacancy &amp; OpEx, before P&amp;I"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <MetricCard
-              label="Cap rate"
-              value={`${pct1.format(r.capRate * 100)}%`}
-              detail={`Price ${money.format(state.homePrice)}`}
-              hint="NOI (per year) ÷ purchase price"
-              title="The price on the right is the purchase price used as the divisor for cap rate (same as Financing)."
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <MetricCard
-              label="Cash-on-cash"
-              value={`${pct1.format(r.cashOnCash * 100)}%`}
-              detail={`${money.format(r.initialCashInvested)} in`}
-              hint="Yr cash flow ÷ total cash in (down + closing fees + misc one-time)"
-              title="Denominator is everything in Upfront cash: down payment, closing fees, and miscellaneous one-time at close."
-            />
-          </Grid>
-        </Grid>
+      <Box id="rental-metrics-row" className="pp-fade-in">
+        <Stack direction="row" alignItems="baseline" justifyContent="space-between" gap={1} sx={{ mb: 0.65 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em" }}>
+            Key metrics
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
+            {piSummaryRight}
+          </Typography>
+        </Stack>
+        <Box
+          sx={{
+            display: "grid",
+            gap: 0.75,
+            gridTemplateColumns: {
+              xs: "repeat(2, minmax(0, 1fr))",
+              sm: "repeat(3, minmax(0, 1fr))",
+              md: "repeat(5, minmax(0, 1fr))",
+            },
+          }}
+        >
+          <MetricCard
+            label="Mo CF"
+            value={moneyDec.format(r.cashFlowMonthly)}
+            detail={`Yr ${moneyDec.format(r.cashFlowAnnual)}`}
+            hint="NOI − P&I"
+            positive={r.cashFlowMonthly >= 0}
+            title={`Mo cash flow = NOI − P&I (${moneyDec.format(piMonthly)}/mo, ${state.termYears}-yr).`}
+            note={
+              loanPaidOffByYearsHeld ? (
+                <>
+                  Mortgage-free ≈ {moneyDec.format(mortgageFreeMonthly)}/mo EGI (held &gt; {termYearsRounded} yr).
+                </>
+              ) : undefined
+            }
+          />
+          <MetricCard
+            label="Yr CF"
+            value={moneyDec.format(r.cashFlowAnnual)}
+            detail={`Mo ${moneyDec.format(r.cashFlowMonthly)}`}
+            hint="12 × mo CF"
+            positive={r.cashFlowAnnual >= 0}
+            note={
+              loanPaidOffByYearsHeld ? (
+                <>Mortgage-free ≈ {moneyDec.format(mortgageFreeAnnual)}/yr EGI.</>
+              ) : undefined
+            }
+          />
+          <MetricCard
+            label="NOI / yr"
+            value={moneyDec.format(r.noiAnnual)}
+            detail={`${moneyDec.format(r.noiMonthly)}/mo`}
+            hint="After OpEx, before P&I"
+          />
+          <MetricCard
+            label="Cap rate"
+            value={`${pct1.format(r.capRate * 100)}%`}
+            detail={`Price ${money.format(state.homePrice)}`}
+            hint="NOI ÷ price"
+          />
+          <MetricCard
+            label="Cash-on-cash"
+            value={`${pct1.format(r.cashOnCash * 100)}%`}
+            detail={`${money.format(r.initialCashInvested)} in`}
+            hint="Yr CF ÷ cash in"
+          />
+        </Box>
       </Box>
 
       <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 6 }}>
           <RentalPanelCard
             panelId="rental-edit-income"
-            title={"Income (rent & vacancy)"}
+            title="Income"
             description={
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45, display: "block" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
                 GSI {moneyDec.format(r.grossScheduledIncomeMonthly)} · vac −{moneyDec.format(r.vacancyLossMonthly)} →
-                EGI {moneyDec.format(egi)}. Price &amp; down live in <strong>Upfront cash</strong> or{" "}
-                <strong>Financing</strong>. Metrics and the pro-forma below allow <strong>negative cash flow</strong> when
-                income is below carrying costs.
+                EGI {moneyDec.format(egi)}
               </Typography>
             }
           >
@@ -747,23 +685,14 @@ export function RentalTab({ state, patch }: RentalTabProps) {
               />
             }
             description={
-              <Stack spacing={0.5}>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45, display: "block" }}>
-                  Recurring cash to <strong>run</strong> the property: OpEx {moneyDec.format(totalOpexMo)}/mo + P&amp;I{" "}
-                  {moneyDec.format(piMonthly)}/mo (before rent / EGI on the left).
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45, display: "block" }}>
-                  OpEx vs EGI: {pctOfEgi(totalOpexMo, egi)} — tax, insurance, HOA match <strong>Financing</strong>.
-                </Typography>
-              </Stack>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
+                OpEx {moneyDec.format(totalOpexMo)} + P&amp;I {moneyDec.format(piMonthly)} · OpEx{" "}
+                {pctOfEgi(totalOpexMo, egi)} of EGI
+              </Typography>
             }
           >
-            <Stack spacing={1}>
-                <RentalSubsection
-                  sectionId="rental-edit-debt-service"
-                  title="Debt service"
-                  subtitle={"Principal & interest from loan amount, rate, and term (edit under Financing)."}
-                >
+            <Stack spacing={0.85}>
+                <RentalSubsection sectionId="rental-edit-debt-service" title="Debt service">
                   <Stack direction="row" justifyContent="space-between" alignItems="baseline" gap={1}>
                     <Typography variant="body2" color="text.secondary">
                       P&amp;I / mo
@@ -777,11 +706,7 @@ export function RentalTab({ state, patch }: RentalTabProps) {
                   </Typography>
                 </RentalSubsection>
 
-                <RentalSubsection
-                  sectionId="rental-edit-monthly-taxes"
-                  title="Taxes, insurance, HOA"
-                  subtitle={"Escrow-style recurring; annual tax & insurance entered as yearly totals."}
-                >
+                <RentalSubsection sectionId="rental-edit-monthly-taxes" title="Taxes, insurance, HOA">
                   <Grid container spacing={1}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
@@ -811,7 +736,6 @@ export function RentalTab({ state, patch }: RentalTabProps) {
                         label="Property tax %"
                         size="small"
                         fullWidth
-                        helperText="% of purchase / yr"
                         value={formatPercentField(state.propertyTaxPercent)}
                         onChange={(e) => {
                           const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
@@ -863,11 +787,7 @@ export function RentalTab({ state, patch }: RentalTabProps) {
                   />
                 </RentalSubsection>
 
-                <RentalSubsection
-                  sectionId="rental-edit-reserves-section"
-                  title="Management & reserves"
-                  subtitle="Budget lines tied to rent / scheduled income (pro-forma each month)."
-                >
+                <RentalSubsection sectionId="rental-edit-reserves-section" title="Management & reserves">
                   <RentalFieldRow
                     anchorId="rental-edit-mgmt"
                     label="Mgmt"
@@ -916,26 +836,50 @@ export function RentalTab({ state, patch }: RentalTabProps) {
         </Grid>
       </Grid>
 
-      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, borderColor: "divider", boxShadow: "none" }}>
-        <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
+      <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
+          sx={accordionSummarySx}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Monthly obligations
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
+            Total {moneyDec.format(monthlyCarrying)}/mo · P&amp;I + OpEx
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={accordionDetailsSx}>
           <RentalExpenseComposition slices={r.composition} />
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
 
-      <Card variant="outlined" elevation={0} sx={{ borderRadius: 1, borderColor: "divider", boxShadow: "none" }}>
-        <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.35, letterSpacing: "-0.02em" }}>
-            Monthly pro-forma
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, lineHeight: 1.4 }}>
-            <strong>EGI</strong> (effective gross income) = scheduled rent + other income, minus vacancy. The second
-            table shows where that EGI goes; <strong>% of EGI</strong> is each row&apos;s dollars divided by the same
-            monthly EGI ({moneyDec.format(egi)}). Use the checkboxes to leave a cost or P&amp;I out of the{" "}
-            <strong>NOI</strong> and <strong>cash flow</strong> totals in this table (all included by default). Cards
-            above still use your full inputs. <strong>Tip:</strong> click an <strong>item name</strong> (not the dollar
-            amount) to scroll to where you edit it.
-          </Typography>
-
+      <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
+          sx={accordionSummarySx}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={0.75}
+            alignItems={{ sm: "flex-end" }}
+            justifyContent="space-between"
+            sx={{ width: "100%", gap: 0.75 }}
+          >
+            <Stack spacing={0.15} sx={{ minWidth: 0 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Monthly pro-forma
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                EGI {moneyDec.format(egi)} · toggles for NOI / CF · click item to jump
+              </Typography>
+            </Stack>
+            <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+              <RentalSummaryStat label="NOI" value={moneyDec.format(pfAdj.noiAdj)} />
+              <RentalSummaryStat label="Cash flow" value={moneyDec.format(pfAdj.cfAdj)} emphasize />
+            </Stack>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails sx={accordionDetailsSx}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.35 }}>
             1 · Income → EGI
           </Typography>
@@ -1155,8 +1099,8 @@ export function RentalTab({ state, patch }: RentalTabProps) {
               </TableBody>
             </Table>
           </TableContainer>
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
     </Stack>
   );
 }
@@ -1177,7 +1121,7 @@ function RentalPanelCard(props: {
         height: "100%",
         border: "1px solid",
         borderColor: "divider",
-        borderRadius: 1,
+        borderRadius: 1.5,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -1185,16 +1129,16 @@ function RentalPanelCard(props: {
         bgcolor: "transparent",
       }}
     >
-      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ px: 1.25, py: 0.85, borderBottom: "1px solid", borderColor: "divider" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1} flexWrap="wrap" useFlexGap>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em", flex: "1 1 8rem", minWidth: 0 }}>
             {props.title}
           </Typography>
           {props.headerExtra ?? null}
         </Stack>
-        <Box sx={{ mt: 0.75 }}>{props.description}</Box>
+        <Box sx={{ mt: 0.35 }}>{props.description}</Box>
       </Box>
-      <CardContent sx={{ flex: 1, pt: 2, px: 2, pb: 2, "&:last-child": { pb: 2 } }}>{props.children}</CardContent>
+      <CardContent sx={{ flex: 1, pt: 1, px: 1.25, pb: 1, "&:last-child": { pb: 1 } }}>{props.children}</CardContent>
     </Card>
   );
 }
@@ -1204,9 +1148,9 @@ function RentalSummaryStat(props: { label: string; value: string; emphasize?: bo
     <Box
       sx={{
         minWidth: 0,
-        px: 1.25,
-        py: 1,
-        borderRadius: 1,
+        px: 0.85,
+        py: 0.55,
+        borderRadius: 1.5,
         bgcolor: "transparent",
         border: "1px solid",
         borderColor: "divider",
@@ -1215,7 +1159,7 @@ function RentalSummaryStat(props: { label: string; value: string; emphasize?: bo
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ fontSize: "0.65rem", lineHeight: 1.2, display: "block", textTransform: "none" }}
+        sx={{ fontSize: "0.6rem", lineHeight: 1.15, display: "block", textTransform: "none" }}
       >
         {props.label}
       </Typography>
@@ -1224,10 +1168,10 @@ function RentalSummaryStat(props: { label: string; value: string; emphasize?: bo
         sx={{
           fontWeight: props.emphasize ? 800 : 700,
           fontVariantNumeric: "tabular-nums",
-          fontSize: props.emphasize ? "0.9375rem" : "0.8125rem",
-          lineHeight: 1.3,
+          fontSize: props.emphasize ? "0.875rem" : "0.78rem",
+          lineHeight: 1.25,
           letterSpacing: props.emphasize ? "-0.02em" : undefined,
-          mt: 0.25,
+          mt: 0.15,
         }}
       >
         {props.value}
@@ -1241,10 +1185,10 @@ function RentalSubsection(props: { sectionId?: string; title: string; subtitle?:
     <Box
       id={props.sectionId}
       sx={{
-        borderRadius: 1,
+        borderRadius: 1.5,
         border: "1px solid",
         borderColor: "divider",
-        p: 1.5,
+        p: 1,
         bgcolor: "transparent",
       }}
     >
@@ -1254,7 +1198,7 @@ function RentalSubsection(props: { sectionId?: string; title: string; subtitle?:
           fontWeight: 700,
           letterSpacing: "0.05em",
           textTransform: "uppercase",
-          fontSize: "0.65rem",
+          fontSize: "0.6rem",
           color: "text.secondary",
           display: "block",
         }}
@@ -1262,11 +1206,11 @@ function RentalSubsection(props: { sectionId?: string; title: string; subtitle?:
         {props.title}
       </Typography>
       {props.subtitle ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.35, lineHeight: 1.35 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, lineHeight: 1.3 }}>
           {props.subtitle}
         </Typography>
       ) : null}
-      <Stack spacing={0.75} sx={{ mt: 0.75 }}>
+      <Stack spacing={0.65} sx={{ mt: 0.65 }}>
         {props.children}
       </Stack>
     </Box>
@@ -1373,11 +1317,11 @@ function MetricCard(props: {
       title={props.title}
       sx={{
         height: "100%",
-        borderRadius: 1,
+        borderRadius: 1.5,
         border: "1px solid",
         borderColor: "divider",
-        px: 1.5,
-        py: 1.25,
+        px: 1,
+        py: 0.75,
         bgcolor: "transparent",
         transition: "border-color 0.15s ease",
         "&:hover": { borderColor: "secondary.main" },

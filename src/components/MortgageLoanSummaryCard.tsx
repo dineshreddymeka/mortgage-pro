@@ -65,9 +65,9 @@ function StatTile({
       elevation={0}
       variant="outlined"
       sx={{
-        p: { xs: 0.85, sm: 1 },
+        p: 0.75,
         height: "100%",
-        borderRadius: 1,
+        borderRadius: 1.5,
         borderColor: "divider",
         bgcolor: "transparent",
         boxShadow: "none",
@@ -77,12 +77,12 @@ function StatTile({
         variant="caption"
         sx={{
           fontWeight: 700,
-          letterSpacing: "0.08em",
+          letterSpacing: "0.06em",
           textTransform: "uppercase",
-          fontSize: "0.65rem",
+          fontSize: "0.6rem",
           color: "text.secondary",
           display: "block",
-          mb: 0.2,
+          mb: 0.15,
         }}
       >
         {kicker}
@@ -93,8 +93,8 @@ function StatTile({
           fontWeight: 800,
           fontVariantNumeric: "tabular-nums",
           letterSpacing: "-0.03em",
-          lineHeight: 1.12,
-          fontSize: { xs: "1rem", sm: "1.1rem" },
+          lineHeight: 1.1,
+          fontSize: { xs: "0.95rem", sm: "1.05rem" },
           fontFamily: "var(--pp-font-display)",
           color: "text.primary",
         }}
@@ -102,7 +102,11 @@ function StatTile({
         {value}
       </Typography>
       {hint ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, lineHeight: 1.25, fontSize: "0.68rem" }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 0.15, lineHeight: 1.2, fontSize: "0.65rem" }}
+        >
           {hint}
         </Typography>
       ) : null}
@@ -117,11 +121,11 @@ function SectionTitle({ children, tightTop }: { children: ReactNode; tightTop?: 
       sx={{
         display: "block",
         fontWeight: 700,
-        letterSpacing: "0.08em",
+        letterSpacing: "0.07em",
         color: "text.secondary",
-        mt: tightTop ? 0.35 : 1,
-        mb: 0.35,
-        fontSize: "0.65rem",
+        mt: tightTop ? 0.25 : 0.75,
+        mb: 0.25,
+        fontSize: "0.6rem",
       }}
     >
       {children}
@@ -135,17 +139,17 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       direction="row"
       justifyContent="space-between"
       alignItems="center"
-      gap={1.5}
+      gap={1}
       sx={(t) => ({
-        py: 0.4,
-        px: 0.5,
-        mx: -0.5,
+        py: 0.3,
+        px: 0.35,
+        mx: -0.35,
         borderRadius: 1,
         borderBottom: `1px solid ${alpha(t.palette.divider, 0.9)}`,
         "&:hover": { bgcolor: alpha(t.palette.secondary.main, t.palette.mode === "light" ? 0.06 : 0.1) },
       })}
     >
-      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.25, fontSize: "0.78rem" }}>
+      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2, fontSize: "0.75rem" }}>
         {label}
       </Typography>
       <Typography
@@ -154,8 +158,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
           fontWeight: 700,
           fontVariantNumeric: "tabular-nums",
           textAlign: "right",
-          fontSize: "0.78rem",
-          lineHeight: 1.25,
+          fontSize: "0.75rem",
+          lineHeight: 1.2,
           flexShrink: 0,
         }}
       >
@@ -182,7 +186,7 @@ export function MortgageLoanSummaryCard({
       variant="outlined"
       elevation={0}
       sx={{
-        borderRadius: 1,
+        borderRadius: 1.5,
         overflow: "hidden",
         borderColor: "divider",
         boxShadow: "none",
@@ -191,42 +195,34 @@ export function MortgageLoanSummaryCard({
     >
       <Box
         sx={{
-          px: 1.5,
-          py: 1.1,
+          px: 1.25,
+          py: 0.75,
           borderBottom: "1px solid",
           borderColor: "divider",
-          bgcolor: "transparent",
         }}
       >
-        <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: "0.12em", color: "text.secondary" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em", fontSize: "0.9rem" }}>
           Loan summary
-        </Typography>
-        <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: "-0.02em", mt: 0.15, fontSize: "1rem" }}>
-          At a glance
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.35, lineHeight: 1.3, fontSize: "0.7rem" }}>
-          Key numbers for this scenario.
         </Typography>
       </Box>
 
-      <CardContent sx={{ pt: 1.25, pb: 1.25, px: 1.5, "&:last-child": { pb: 1.25 } }}>
-        <Grid container spacing={0.75}>
+      <CardContent sx={{ pt: 1, pb: 1, px: 1.25, "&:last-child": { pb: 1 } }}>
+        <Grid container spacing={0.65}>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <StatTile kicker="Loan amount" value={money.format(breakdown.loanAmount)} hint="Financed at purchase" />
+            <StatTile kicker="Loan" value={money.format(breakdown.loanAmount)} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <StatTile
-              kicker="P&amp;I / month"
+              kicker="P&amp;I / mo"
               value={hasLoan ? moneyDec.format(breakdown.principalAndInterest) : "—"}
-              hint="Principal + interest"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <StatTile kicker="Cash to close" value={money.format(cashToClose)} hint="Down + closing + misc" />
+            <StatTile kicker="Cash to close" value={money.format(cashToClose)} />
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 0.75 }} />
+        <Divider sx={{ my: 0.65 }} />
 
         <SectionTitle tightTop>Purchase &amp; equity</SectionTitle>
         <Stack spacing={0}>
@@ -234,7 +230,7 @@ export function MortgageLoanSummaryCard({
             label="Down payment"
             value={`${money.format(state.downPayment)} (${state.downPaymentPercent.toFixed(1)}%)`}
           />
-          <DetailRow label="Cash to close (full detail)" value={money.format(cashToClose)} />
+          <DetailRow label="Cash to close" value={money.format(cashToClose)} />
         </Stack>
 
         {hasLoan ? (
@@ -242,40 +238,39 @@ export function MortgageLoanSummaryCard({
             <SectionTitle>Loan terms</SectionTitle>
             <Stack spacing={0}>
               <DetailRow label="Term" value={`${state.termYears} years`} />
-              <DetailRow label="LTV (loan / price)" value={`${ltvPct.toFixed(2)}%`} />
+              <DetailRow label="LTV" value={`${ltvPct.toFixed(2)}%`} />
               <DetailRow label="Note rate" value={`${state.interestRateApr}% APR`} />
-              {breakdown.pmi > 0.001 ? (
-                <DetailRow label="PMI (monthly)" value={moneyDec.format(breakdown.pmi)} />
-              ) : (
-                <DetailRow label="PMI (monthly)" value="$0.00" />
-              )}
+              <DetailRow
+                label="PMI / mo"
+                value={breakdown.pmi > 0.001 ? moneyDec.format(breakdown.pmi) : "$0.00"}
+              />
             </Stack>
 
-            <SectionTitle>Life of loan (P&amp;I)</SectionTitle>
+            <SectionTitle>Life of loan</SectionTitle>
             <Stack spacing={0}>
               <DetailRow label="Total interest" value={money.format(lifeInterest)} />
-              <DetailRow label="Total principal paid" value={money.format(lifePrincipal)} />
+              <DetailRow label="Total principal" value={money.format(lifePrincipal)} />
             </Stack>
 
             {prepaySummary ? (
               <>
-                <SectionTitle>Prepayment (modeled)</SectionTitle>
+                <SectionTitle>Prepayment</SectionTitle>
                 <Stack spacing={0}>
                   <DetailRow label="Extra principal" value={`${money.format(extraPrincipalMonthly)}/mo`} />
-                  <DetailRow label="Payoff timing" value={formatYearsMonthsFromMonths(prepaySummary.payoffMo)} />
+                  <DetailRow label="Payoff" value={formatYearsMonthsFromMonths(prepaySummary.payoffMo)} />
                   <DetailRow
-                    label="Time vs no prepay"
+                    label="Time saved"
                     value={
                       prepaySummary.monthsSaved > 0
-                        ? `${prepaySummary.monthsSaved} mo shorter`
-                        : "Same length (try a larger add-on)"
+                        ? `${prepaySummary.monthsSaved} mo`
+                        : "Same length"
                     }
                   />
                   <DetailRow
-                    label="Interest vs no prepay"
+                    label="Interest saved"
                     value={
                       prepaySummary.interestSaved > 0
-                        ? `${money.format(prepaySummary.interestSaved)} less`
+                        ? money.format(prepaySummary.interestSaved)
                         : money.format(0)
                     }
                   />
@@ -284,8 +279,8 @@ export function MortgageLoanSummaryCard({
             ) : null}
           </>
         ) : (
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, lineHeight: 1.35 }}>
-            Enter purchase price and down payment to see loan terms and life-of-loan totals.
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.35, lineHeight: 1.3 }}>
+            Enter price and down payment to see loan terms.
           </Typography>
         )}
       </CardContent>
