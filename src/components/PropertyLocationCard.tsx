@@ -1,6 +1,7 @@
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -14,6 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import { useEffect, useRef, useState } from "react";
+import { buildGoogleMapsUrl } from "../lib/googleMapsLink";
 import type { AppPersisted } from "../storage/mortgageState";
 
 export type PropertyLocationCardProps = {
@@ -94,6 +96,12 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
   const coords = toLatLng(lat, lng);
   const showMap = hasKey && coords !== null;
   const showManualField = !hasKey || mapsStatus === "error";
+  const googleMapsUrl = buildGoogleMapsUrl({
+    address,
+    placeId: state.propertyPlaceId,
+    latitude: lat,
+    longitude: lng,
+  });
 
   useEffect(() => {
     writeMapCollapsed(mapCollapsed);
@@ -368,6 +376,22 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
                 Maps unavailable: {mapsError}. Address can still be entered manually.
               </Typography>
             </Alert>
+          ) : null}
+
+          {googleMapsUrl ? (
+            <Button
+              component="a"
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              variant="outlined"
+              endIcon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
+              aria-label="Open property location in Google Maps in a new tab"
+              sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+            >
+              Open in Google Maps
+            </Button>
           ) : null}
 
           {hasKey ? (

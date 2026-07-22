@@ -41,6 +41,9 @@ id: "001"                 ← root identity
 
 Category tabs (Property · Financing · Upfront · Rental · Exit) are UI only — they read/write the same `scenario` properties. Firestore keeps an internal doc path for multi-user uniqueness; `id` / `houseId` is the stable `001` / `002` users navigate.
 
+See [`docs/kpi-data-inventory.md`](docs/kpi-data-inventory.md) for the maintained
+inventory of persisted scenario properties, derived KPIs, formulas, and ownership rules.
+
 ## Firestore (multi-property sync)
 
 Optional cloud sync for multiple saved properties. Uses the **Firebase web client SDK** only — never the Admin / service-account private key in this app.
