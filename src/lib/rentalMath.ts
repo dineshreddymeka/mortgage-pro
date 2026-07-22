@@ -1,4 +1,6 @@
 import type { MonthlyBreakdown } from "./mortgageMath";
+import { computeNetCashToClose } from "./buyingCostsMath";
+import { resolveLoanProduct, resolveUpfrontAdjustments } from "./resolveLoanScenario";
 import type { AppPersisted } from "../storage/mortgageState";
 
 /** P&amp;I row id for `sellRentalYieldInclude` (matches pro-forma). */
@@ -111,8 +113,7 @@ export function computeRentalAnalysis(
   const cashFlowMonthly = noiMonthly - pi - pmi;
   const cashFlowAnnual = cashFlowMonthly * 12;
 
-  const initialCashInvested =
-    Math.max(0, s.downPayment) + Math.max(0, s.closingCosts) + Math.max(0, s.miscInitialCash);
+  const initialCashInvested = computeInitialCashInvested(s);
   const cashOnCash =
     initialCashInvested > 0 ? cashFlowAnnual / initialCashInvested : 0;
 
@@ -151,6 +152,12 @@ export function computeRentalAnalysis(
 function clamp(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, n));
+}
+
+export function computeInitialCashInvested(state: AppPersisted): number {
+  const lp = resolveLoanProduct(state);
+  const net = computeNetCashToClose(state.downPayment, state.closingCosts, state.miscInitialCash, resolveUpfrontAdjustments(state, lp.pointsUpfrontCost));
+  return net.grossCashRequired - net.sellerCredit - net.lenderCredit;
 }
 
 /**

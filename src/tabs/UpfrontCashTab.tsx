@@ -5,6 +5,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
 import { UpfrontCashScenarioPanel } from "../components/UpfrontCashScenarioPanel";
+import { UpfrontCreditsPanel } from "../components/UpfrontCreditsPanel";
+import { deriveScenario } from "../lib/deriveScenario";
+import { estimateLocationCosts } from "../lib/locationCostEstimator";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 
@@ -64,8 +67,10 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
 }
 
 export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
-  const loanAmount = Math.max(0, state.homePrice - state.downPayment);
-  const cashToClose = state.downPayment + state.closingCosts + state.miscInitialCash;
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const loanAmount = derived.loanAmount;
+  const cashToClose = derived.netCashToClose;
+  const locationEst = estimateLocationCosts(state.propertyState, state.propertyPostalCode);
 
   const widgets = useMemo(
     () => [
@@ -108,10 +113,17 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
         ),
       },
       {
+        id: "credits",
+        title: "Credits & rehab",
+        description: "Earnest · seller · lender · rehab",
+        defaultLayout: { x: 0, y: 7, w: 12, h: 9, minW: 4, minH: 6 },
+        content: <UpfrontCreditsPanel state={state} patch={patch} />,
+      },
+      {
         id: "inputs-model",
         title: "Inputs & modeled costs",
         description: "Edit left · compare model on the right",
-        defaultLayout: { x: 0, y: 7, w: 12, h: 18, minW: 6, minH: 10 },
+        defaultLayout: { x: 0, y: 16, w: 12, h: 18, minW: 6, minH: 10 },
         content: (
           <Grid container spacing={1.5} alignItems="flex-start">
             <Grid size={{ xs: 12, md: 5 }}>
@@ -228,6 +240,7 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                 patch={patch}
                 loanAmount={loanAmount}
                 cashToClose={cashToClose}
+                closingCostMultiplier={locationEst.closingCostMultiplier}
                 hideEditHint
               />
             </Grid>
@@ -235,7 +248,7 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
         ),
       },
     ],
-    [cashToClose, loanAmount, patch, state]
+    [cashToClose, loanAmount, locationEst.closingCostMultiplier, patch, state]
   );
 
   return <WidgetBoard boardId="upfront" widgets={widgets} rowHeight={28} />;

@@ -26,5 +26,7 @@
   "propertyAddress": "",
   "propertyPlaceId": "",
   "propertyLatitude": null,
-  "propertyLongitude": null
+  "propertyLongitude": null,
+  "propertyState": "",
+  "propertyPostalCode": ""
 }

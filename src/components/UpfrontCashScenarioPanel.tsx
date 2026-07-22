@@ -28,6 +28,7 @@ export type UpfrontCashScenarioPanelProps = {
   patch: (partial: Partial<AppPersisted>) => void;
   loanAmount: number;
   cashToClose: number;
+  closingCostMultiplier?: number;
   /** Hide the line about where to edit closing/misc (when this panel is already on the dedicated tab). */
   hideEditHint?: boolean;
 };
@@ -37,6 +38,7 @@ export function UpfrontCashScenarioPanel({
   patch,
   loanAmount,
   cashToClose,
+  closingCostMultiplier = 1,
   hideEditHint = false,
 }: UpfrontCashScenarioPanelProps) {
   const baseEst = useMemo(
@@ -47,6 +49,7 @@ export function UpfrontCashScenarioPanel({
         propertyTaxAnnual: state.propertyTaxAnnual,
         insuranceAnnual: state.insuranceAnnual,
         hoaMonthly: state.hoaMonthly,
+        closingCostMultiplier,
       }),
     [
       state.homePrice,
@@ -54,6 +57,7 @@ export function UpfrontCashScenarioPanel({
       state.propertyTaxAnnual,
       state.insuranceAnnual,
       state.hoaMonthly,
+      closingCostMultiplier,
     ]
   );
 

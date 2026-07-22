@@ -1,5 +1,7 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { computeInvestmentMetrics } from "./investmentMath";
+import { miForMonth } from "./loanProducts";
+import { resolveLoanProduct } from "./resolveLoanScenario";
 import { computeMonthlyPayment, monthlyPiPayment } from "./mortgageMath";
 import {
   cashFlowMonthlyFromYieldToggles,
@@ -48,12 +50,12 @@ function clampPct(n: number): number {
 export function pmiForProjectionMonth(
   balanceBeforePayment: number,
   originalLoanAmount: number,
-  configuredPmiMonthly: number
+  configuredPmiMonthly: number,
+  pmiDropLtvThreshold: number | null = 0.78,
+  pmiDropMinMonths: number | null = null,
+  month = 1
 ): number {
-  const pmi = Math.max(0, Number(configuredPmiMonthly) || 0);
-  if (pmi <= 0 || originalLoanAmount <= 0) return 0;
-  const ltvOfOriginal = balanceBeforePayment / originalLoanAmount;
-  return ltvOfOriginal <= 0.78 + 1e-9 ? 0 : pmi;
+  return miForMonth(balanceBeforePayment, originalLoanAmount, configuredPmiMonthly, pmiDropLtvThreshold, pmiDropMinMonths, month);
 }
 
 /** Extra principal from biweekly-style pay (13 equivalent full P&I payments per year). */
@@ -127,14 +129,14 @@ export function buildMonthlyProjection(
 ): MonthlyProjectionRow[] {
   const maxMonths = Math.max(1, Math.min(DEFAULT_MAX_MONTHS, options.maxMonths ?? DEFAULT_MAX_MONTHS));
   const hp = Math.max(0, state.homePrice);
-  const loanAmount = Math.max(0, hp - Math.max(0, state.downPayment));
+  const lp = resolveLoanProduct(state);
+  const loanAmount = lp.totalLoanAmount;
   if (hp <= 0 && loanAmount <= 0) return [];
-
-  const termYears = Math.min(30, Math.max(1, Math.round(state.termYears)));
+  const termYears = Math.min(30, Math.max(1, Math.round(state.loan?.termYears ?? state.termYears)));
   const nMax = Math.max(1, termYears * 12);
-  const apr = state.interestRateApr;
-  const monthlyRate = apr / 100 / 12;
+  const monthlyRate = lp.noteApr / 100 / 12;
   const scheduledPi = monthlyPiPayment(loanAmount, monthlyRate, nMax);
+  const configuredPmi = state.pmiMonthly > 0 && state.loan?.useScenarioPmi !== false && !state.loan?.miMonthlyOverride ? state.pmiMonthly : state.loan?.miMonthlyOverride ?? lp.miMonthly;
   const extraMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
   const biweeklyExtra =
     state.paymentPlan?.frequency === "biweekly" ? biweeklyEquivalentExtraPrincipal(scheduledPi) : 0;
@@ -170,7 +172,7 @@ export function buildMonthlyProjection(
       extraPrincipal = Math.max(0, principal - scheduledPrincipal);
       principalAndInterest = principal + interest;
       balance = Math.max(0, balance - principal);
-      pmi = pmiForProjectionMonth(balanceBefore, loanAmount, state.pmiMonthly);
+      pmi = pmiForProjectionMonth(balanceBefore, loanAmount, configuredPmi, lp.pmiDropLtvThreshold, lp.pmiDropMinMonths, month);
     }
 
     const analysis = scaledRentalAnalysis(state, loanActive ? scheduledPi : 0, loanActive ? pmi : 0, rentG, expG);

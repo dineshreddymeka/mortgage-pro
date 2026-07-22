@@ -1,4 +1,5 @@
 import scenarioDefaultsJson from "../defaults/scenario-defaults.json";
+import { normalizePostal, normalizeStateCode } from "../lib/locationCostEstimator";
 import { impliedAnnualAppreciationPercent } from "../lib/mortgageMath";
 
 export const STORAGE_KEY = "mortgage-pro:v1";
@@ -36,6 +37,37 @@ export type PaymentPlanPersisted = {
   lumpSums: PaymentPlanLumpSum[];
 };
 
+export type LoanProductTypePersisted = "conventional" | "fha" | "va" | "usda";
+
+export type LoanArmPersisted = {
+  initialFixedYears: number;
+  margin: number;
+  indexRate: number;
+  periodicCap: number;
+  lifetimeCap: number;
+};
+
+export type LoanScenarioPersisted = {
+  productType: LoanProductTypePersisted;
+  noteApr?: number;
+  termYears?: number;
+  rateType?: "fixed" | "arm";
+  arm?: LoanArmPersisted;
+  pointsPercent?: number;
+  buydown?: "none" | "2-1" | "3-2-1";
+  financeUpfrontFees?: boolean;
+  vaFirstUse?: boolean;
+  useScenarioPmi?: boolean;
+  miMonthlyOverride?: number;
+};
+
+export type UpfrontScenarioPersisted = {
+  earnestMoney?: number;
+  sellerCredit?: number;
+  lenderCredit?: number;
+  rehabCashIn?: number;
+};
+
 export type AppPersisted = {
   v: typeof SCHEMA_VERSION;
   homePrice: number;
@@ -71,6 +103,14 @@ export type AppPersisted = {
   growth?: GrowthAssumptionsPersisted;
   /** Optional pay cadence + lump-sum principal (Financing tab). Omitted until edited. */
   paymentPlan?: PaymentPlanPersisted;
+  loan?: LoanScenarioPersisted;
+  upfront?: UpfrontScenarioPersisted;
+  earnestMoney?: number;
+  sellerCredit?: number;
+  lenderCredit?: number;
+  rehabCashIn?: number;
+  propertyState: string;
+  propertyPostalCode: string;
   monthlyRent: number;
   otherMonthlyIncome: number;
   vacancyRatePercent: number;
@@ -136,6 +176,14 @@ export const KNOWN_SCENARIO_KEYS = [
   "refi",
   "growth",
   "paymentPlan",
+  "loan",
+  "upfront",
+  "earnestMoney",
+  "sellerCredit",
+  "lenderCredit",
+  "rehabCashIn",
+  "propertyState",
+  "propertyPostalCode",
   "monthlyRent",
   "otherMonthlyIncome",
   "vacancyRatePercent",
@@ -235,6 +283,8 @@ export function emptyAppState(): AppPersisted {
     propertyPlaceId: "",
     propertyLatitude: null,
     propertyLongitude: null,
+    propertyState: "",
+    propertyPostalCode: "",
   };
 }
 
@@ -255,6 +305,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     refi: rawRefi,
     growth: rawGrowth,
     paymentPlan: rawPaymentPlan,
+    loan: rawLoan,
+    upfront: rawUpfront,
     customHousingBudgetMonthly: rawBudget,
     ...mergedRest
   } = merged;
@@ -264,6 +316,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const refi = parseRefiScenario(rawRefi);
   const growth = parseGrowthAssumptions(rawGrowth);
   const paymentPlan = parsePaymentPlan(rawPaymentPlan);
+  const loan = parseLoanScenario(rawLoan);
+  const upfront = parseUpfrontScenario(rawUpfront, mergedRest);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   const normalized: AppPersisted = {
@@ -279,6 +333,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(refi ? { refi } : {}),
     ...(growth ? { growth } : {}),
     ...(paymentPlan ? { paymentPlan } : {}),
+    ...(loan ? { loan } : {}),
+    ...(upfront ? { upfront } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
   return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
@@ -387,7 +443,12 @@ type RentalOnly = Pick<
 
 type PropertyLocation = Pick<
   AppPersisted,
-  "propertyAddress" | "propertyPlaceId" | "propertyLatitude" | "propertyLongitude"
+  | "propertyAddress"
+  | "propertyPlaceId"
+  | "propertyLatitude"
+  | "propertyLongitude"
+  | "propertyState"
+  | "propertyPostalCode"
 >;
 
 function strField(x: unknown, fallback: string): string {
@@ -413,6 +474,8 @@ function normalizePropertyLocation(
     propertyPlaceId: strField(data.propertyPlaceId, base.propertyPlaceId),
     propertyLatitude: nullableCoord(data.propertyLatitude, base.propertyLatitude),
     propertyLongitude: nullableCoord(data.propertyLongitude, base.propertyLongitude),
+    propertyState: normalizeStateCode(strField(data.propertyState, base.propertyState)),
+    propertyPostalCode: normalizePostal(strField(data.propertyPostalCode, base.propertyPostalCode)),
   };
 }
 
@@ -521,6 +584,65 @@ function parsePaymentPlan(raw: unknown): PaymentPlanPersisted | undefined {
   return { frequency, lumpSums };
 }
 
+const LOAN_PRODUCT_TYPES = new Set<LoanProductTypePersisted>(["conventional", "fha", "va", "usda"]);
+
+function parseLoanArm(raw: unknown): LoanArmPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  return {
+    initialFixedYears: Math.max(1, Math.min(10, Math.round(num(o.initialFixedYears, 5)))),
+    margin: clampPct(num(o.margin, 2.25)),
+    indexRate: clampPct(num(o.indexRate, 4)),
+    periodicCap: clampPct(num(o.periodicCap, 2)),
+    lifetimeCap: clampPct(num(o.lifetimeCap, 5)),
+  };
+}
+
+function parseLoanScenario(raw: unknown): LoanScenarioPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const productRaw = typeof o.productType === "string" ? o.productType.toLowerCase() : "conventional";
+  const productType = LOAN_PRODUCT_TYPES.has(productRaw as LoanProductTypePersisted) ? (productRaw as LoanProductTypePersisted) : "conventional";
+  if (Object.keys(o).length === 0) return undefined;
+  const out: LoanScenarioPersisted = { productType };
+  if (o.noteApr !== undefined) out.noteApr = clampPct(num(o.noteApr, 0));
+  if (o.termYears !== undefined) out.termYears = Math.max(1, Math.min(40, Math.round(num(o.termYears, 30))));
+  if (o.rateType === "arm" || o.rateType === "fixed") out.rateType = o.rateType;
+  const arm = parseLoanArm(o.arm);
+  if (arm) out.arm = arm;
+  if (o.pointsPercent !== undefined) out.pointsPercent = clampPct(num(o.pointsPercent, 0));
+  if (o.buydown === "2-1" || o.buydown === "3-2-1" || o.buydown === "none") out.buydown = o.buydown;
+  if (o.financeUpfrontFees === true) out.financeUpfrontFees = true;
+  if (o.vaFirstUse === false) out.vaFirstUse = false;
+  if (o.useScenarioPmi === true || o.useScenarioPmi === false) out.useScenarioPmi = o.useScenarioPmi;
+  if (o.miMonthlyOverride !== undefined) out.miMonthlyOverride = Math.max(0, Math.round(num(o.miMonthlyOverride, 0)));
+  if (productType === "conventional" && Object.keys(out).length === 1) return undefined;
+  return out;
+}
+
+function parseUpfrontUsd(raw: unknown): number | undefined {
+  if (raw === null || raw === undefined || raw === "") return undefined;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const rounded = Math.max(0, Math.round(n));
+  return rounded > 0 ? rounded : undefined;
+}
+
+function parseUpfrontScenario(raw: unknown, legacy: Record<string, unknown>): UpfrontScenarioPersisted | undefined {
+  const block = raw !== null && raw !== undefined && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const earnestMoney = parseUpfrontUsd(block.earnestMoney) ?? parseUpfrontUsd(legacy.earnestMoney);
+  const sellerCredit = parseUpfrontUsd(block.sellerCredit) ?? parseUpfrontUsd(legacy.sellerCredit);
+  const lenderCredit = parseUpfrontUsd(block.lenderCredit) ?? parseUpfrontUsd(legacy.lenderCredit);
+  const rehabCashIn = parseUpfrontUsd(block.rehabCashIn) ?? parseUpfrontUsd(legacy.rehabCashIn);
+  if (!earnestMoney && !sellerCredit && !lenderCredit && !rehabCashIn) return undefined;
+  return {
+    ...(earnestMoney ? { earnestMoney } : {}),
+    ...(sellerCredit ? { sellerCredit } : {}),
+    ...(lenderCredit ? { lenderCredit } : {}),
+    ...(rehabCashIn ? { rehabCashIn } : {}),
+  };
+}
+
 function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): RentalOnly {
   return {
     monthlyRent: num(data.monthlyRent, base.monthlyRent),
@@ -563,6 +685,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const refi = parseRefiScenario(data.refi);
   const growth = parseGrowthAssumptions(data.growth);
   const paymentPlan = parsePaymentPlan(data.paymentPlan);
+  const loan = parseLoanScenario(data.loan);
+  const upfront = parseUpfrontScenario(data.upfront, data);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
   const loc = normalizePropertyLocation(data, base);
   return {
@@ -583,6 +707,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(refi ? { refi } : {}),
     ...(growth ? { growth } : {}),
     ...(paymentPlan ? { paymentPlan } : {}),
+    ...(loan ? { loan } : {}),
+    ...(upfront ? { upfront } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
   };

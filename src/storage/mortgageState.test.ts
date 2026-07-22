@@ -124,6 +124,19 @@ describe("mortgageState serialization and migration", () => {
     expect(resolved!.propertyAddress).toBe("456 Oak Ave");
   });
 
+  it("parses loan, upfront, and location fields", () => {
+    const parsed = parseMortgageState(JSON.stringify({
+      ...fixtureV2Full,
+      loan: { productType: "fha", financeUpfrontFees: true },
+      upfront: { earnestMoney: 5000 },
+      propertyState: "tx",
+      propertyPostalCode: "78701",
+    }));
+    expect(parsed.loan?.productType).toBe("fha");
+    expect(parsed.upfront?.earnestMoney).toBe(5000);
+    expect(parsed.propertyState).toBe("TX");
+  });
+
   it("mergeParsedWithSchemaDefaults adds missing fields from current defaults", () => {
     const partial = { ...fixtureV2Full, pmiMonthly: undefined } as unknown as AppPersisted;
     const merged = mergeParsedWithSchemaDefaults(partial);

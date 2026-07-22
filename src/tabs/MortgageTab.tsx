@@ -14,6 +14,7 @@ import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabili
 import { MortgageLoanCompareCards } from "../components/MortgageLoanCompareCards";
 import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCard";
 import { PaymentPlanPanel } from "../components/PaymentPlanPanel";
+import { LoanProductPanel } from "../components/LoanProductPanel";
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
@@ -129,7 +130,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
   ]);
 
   const ltvPct = state.homePrice > 0 ? (breakdown.loanAmount / state.homePrice) * 100 : 0;
-  const cashToClose = state.downPayment + state.closingCosts + state.miscInitialCash;
+  const cashToClose = derived.netCashToClose;
 
   const widgets = useMemo(
     () => [
@@ -162,10 +163,17 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         ),
       },
       {
+        id: "loan-product",
+        title: "Loan product",
+        description: `${derived.loanProduct.productType} · ${derived.loanProduct.miLabel}`,
+        defaultLayout: { x: 0, y: 16, w: 12, h: 11, minW: 6, minH: 8 },
+        content: <LoanProductPanel state={state} patch={patch} />,
+      },
+      {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 0, y: 16, w: 12, h: 12, minW: 4, minH: 8 },
+        defaultLayout: { x: 0, y: 27, w: 12, h: 12, minW: 4, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <MortgageAffordabilityDtiPanel
@@ -186,7 +194,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         id: "term-tools",
         title: "Term tools",
         description: "15 vs 30 · paydown · refi",
-        defaultLayout: { x: 0, y: 28, w: 12, h: 14, minW: 6, minH: 8 },
+        defaultLayout: { x: 0, y: 39, w: 12, h: 14, minW: 6, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>

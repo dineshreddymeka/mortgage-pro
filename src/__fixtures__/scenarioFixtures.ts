@@ -45,6 +45,8 @@ export const fixtureV2Full: AppPersisted = {
   propertyPlaceId: "place-abc",
   propertyLatitude: 37.77,
   propertyLongitude: -122.42,
+  propertyState: "CA",
+  propertyPostalCode: "94107",
   buyingCostLineOverrides: { appraisal: 750, recording: 400 },
 };
 
