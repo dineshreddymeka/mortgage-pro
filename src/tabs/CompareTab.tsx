@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -12,7 +13,7 @@ import { houseLabel, type PropertyMeta } from "../storage/firestoreProperties";
 const COMPARE_SELECTION_KEY = "mortgage-pro:compare-selected-ids";
 
 export type CompareTabProps = {
-  /** All active-house comparison rows (candidates). */
+  /** All house comparison rows available (cloud portfolio and/or local active house). */
   rows: HouseComparisonRow[];
   properties: PropertyMeta[];
   activePropertyId: string | null;
@@ -108,33 +109,23 @@ export function CompareTab({
     else setSelection([...selectedIds, id]);
   }
 
-  if (!cloudReady) {
+  if (candidateIds.length === 0 || rows.length === 0) {
     return (
       <Box className="pp-fade-in" sx={{ py: 3, px: 0.5 }}>
         <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", letterSpacing: "-0.03em", mb: 0.5 }}>
           Compare houses
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, lineHeight: 1.45 }}>
-          Connect Firestore to sync your portfolio, then pick which houses to compare side by side.
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (candidateIds.length === 0) {
-    return (
-      <Box className="pp-fade-in" sx={{ py: 3, px: 0.5 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", letterSpacing: "-0.03em", mb: 0.5 }}>
-          Compare houses
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, lineHeight: 1.45 }}>
-          Add an active house from the portfolio to compare. Archived houses stay out of this view.
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 480, lineHeight: 1.45 }}>
+          {cloudReady
+            ? "Add an active house from the portfolio to compare. Archived houses stay out of this view."
+            : "No house data to compare yet. Enter values on Mortgage, or connect Firestore to sync a multi-house portfolio."}
         </Typography>
       </Box>
     );
   }
 
   const allSelected = candidateIds.length > 0 && candidateIds.every((id) => selectedSet.has(id));
+  const multiHouse = candidateIds.length > 1;
 
   return (
     <Box className="pp-fade-in" sx={{ pt: 0.25 }}>
@@ -155,82 +146,99 @@ export function CompareTab({
                 color: "text.secondary",
               }}
             >
-              Choose houses
+              Compare tab
             </Typography>
             <Typography sx={{ fontWeight: 700, fontSize: "1.02rem", letterSpacing: "-0.03em" }}>
-              Compare {selectedRows.length} of {candidateIds.length}
+              {multiHouse
+                ? `Compare ${selectedRows.length} of ${candidateIds.length} houses`
+                : selectedRows[0]?.label ?? "House metrics"}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-              Toggle houses below · tap a column header in the table to open that house
+              {multiHouse
+                ? "Toggle houses below · tap a column header to open that house"
+                : "Side-by-side metrics for your active house. Add more houses in the portfolio to compare."}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={allSelected}
-              onClick={() => setSelection(candidateIds)}
-              sx={{ minHeight: 30, fontWeight: 700, fontSize: "0.75rem" }}
-            >
-              Select all
-            </Button>
-            <Button
-              size="small"
-              variant="text"
-              disabled={selectedIds.length === 0}
-              onClick={() => setSelection([])}
-              sx={{ minHeight: 30, fontWeight: 700, fontSize: "0.75rem" }}
-            >
-              Clear
-            </Button>
-          </Stack>
+          {multiHouse ? (
+            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={allSelected}
+                onClick={() => setSelection(candidateIds)}
+                sx={{ minHeight: 30, fontWeight: 700, fontSize: "0.75rem" }}
+              >
+                Select all
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                disabled={selectedIds.length === 0}
+                onClick={() => setSelection([])}
+                sx={{ minHeight: 30, fontWeight: 700, fontSize: "0.75rem" }}
+              >
+                Clear
+              </Button>
+            </Stack>
+          ) : null}
         </Stack>
 
-        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
-          {candidateIds.map((id) => {
-            const checked = selectedSet.has(id);
-            const active = id === activePropertyId;
-            return (
-              <Chip
-                key={id}
-                clickable
-                color={checked ? "secondary" : "default"}
-                variant={checked ? "filled" : "outlined"}
-                onClick={() => toggleId(id)}
-                label={
-                  <Stack direction="row" alignItems="center" spacing={0.35}>
-                    <Checkbox
-                      size="small"
-                      checked={checked}
-                      tabIndex={-1}
-                      disableRipple
-                      sx={{
-                        p: 0.1,
-                        color: "inherit",
-                        "&.Mui-checked": { color: "inherit" },
-                      }}
-                    />
-                    <span>{labelFor(id)}</span>
-                    {active ? (
-                      <Typography
-                        component="span"
-                        sx={{ fontSize: "0.62rem", fontWeight: 700, opacity: 0.85 }}
-                      >
-                        · active
-                      </Typography>
-                    ) : null}
-                  </Stack>
-                }
-                sx={{
-                  height: 36,
-                  borderRadius: "10px",
-                  fontWeight: 700,
-                  "& .MuiChip-label": { px: 0.75 },
-                }}
-              />
-            );
-          })}
-        </Stack>
+        {!cloudReady ? (
+          <Alert severity="info" variant="outlined" sx={{ py: 0.35, px: 1.1 }}>
+            <Typography variant="caption" component="div" sx={{ lineHeight: 1.4 }}>
+              Showing the current house from this browser. Connect Firestore (portfolio sync) to add
+              more houses and pick which ones to compare.
+            </Typography>
+          </Alert>
+        ) : null}
+
+        {multiHouse ? (
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
+            {candidateIds.map((id) => {
+              const checked = selectedSet.has(id);
+              const active = id === activePropertyId;
+              return (
+                <Chip
+                  key={id}
+                  clickable
+                  color={checked ? "secondary" : "default"}
+                  variant={checked ? "filled" : "outlined"}
+                  onClick={() => toggleId(id)}
+                  label={
+                    <Stack direction="row" alignItems="center" spacing={0.35}>
+                      <Checkbox
+                        size="small"
+                        checked={checked}
+                        tabIndex={-1}
+                        disableRipple
+                        sx={{
+                          p: 0.1,
+                          color: "inherit",
+                          "&.Mui-checked": { color: "inherit" },
+                        }}
+                      />
+                      <span>{labelFor(id)}</span>
+                      {active ? (
+                        <Typography
+                          component="span"
+                          sx={{ fontSize: "0.62rem", fontWeight: 700, opacity: 0.85 }}
+                        >
+                          · active
+                        </Typography>
+                      ) : null}
+                    </Stack>
+                  }
+                  sx={{
+                    height: 36,
+                    borderRadius: "10px",
+                    fontWeight: 700,
+                    "& .MuiChip-label": { px: 0.75 },
+                  }}
+                />
+              );
+            })}
+          </Stack>
+        ) : null}
       </Stack>
 
       {selectedRows.length === 0 ? (
