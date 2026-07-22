@@ -26,6 +26,7 @@ import Typography from "@mui/material/Typography";
 import { alpha, type Theme } from "@mui/material/styles";
 import { useMemo, type ReactNode } from "react";
 import { CategoryJump } from "../components/CategoryJump";
+import { RentVsBuyPanel } from "../components/RentVsBuyPanel";
 import { deriveScenario } from "../lib/deriveScenario";
 import {
   cumulativeCashFlowThroughExitMonths,
@@ -1048,6 +1049,15 @@ export function WhenToSellTab({
           </Typography>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
+
+      <WidgetPanel
+        id="rent-vs-buy"
+        title="Rent vs buy"
+        description="Hold vs rent & invest"
+        h={14}
+      >
+        <RentVsBuyPanel state={state} patch={patch} />
       </WidgetPanel>
       </WidgetBoardFromPanels>
     </Stack>

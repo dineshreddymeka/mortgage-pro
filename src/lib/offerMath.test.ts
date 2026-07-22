@@ -5,7 +5,10 @@ import { emptyAppState } from "../storage/mortgageState";
 import { computeMonthlyPayment } from "./mortgageMath";
 import {
   computeMaxOfferOutputs,
+  maxHomePriceForTargetCashFlow,
+  maxHomePriceForTargetCashOnCash,
   maxHomePriceForTargetDscr,
+  maxHomePriceForTargetPayment,
   readOfferTargets,
   housingBudgetBaseParams,
 } from "./offerMath";
@@ -17,35 +20,65 @@ import {
 } from "./rentalMath";
 
 describe("offerMath", () => {
-  it("readOfferTargets reads optional persisted target DSCR", () => {
+  it("readOfferTargets reads optional persisted targets", () => {
     expect(readOfferTargets(fixtureV2Full)).toBeNull();
-    const withTarget = { ...fixtureV2Full, offerTargets: { targetDscr: 1.25 } } as AppPersisted & {
-      offerTargets: { targetDscr: number };
-    };
-    expect(readOfferTargets(withTarget)).toEqual({ targetDscr: 1.25 });
+    const withTarget = {
+      ...fixtureV2Full,
+      offerTargets: {
+        targetDscr: 1.25,
+        targetCashFlowMonthly: 400,
+        targetCashOnCashPercent: 8,
+        targetPaymentMonthly: 2800,
+      },
+    } as AppPersisted;
+    expect(readOfferTargets(withTarget)).toEqual({
+      targetDscr: 1.25,
+      targetCashFlowMonthly: 400,
+      targetCashOnCashPercent: 8,
+      targetPaymentMonthly: 2800,
+    });
   });
 
   it("computeMaxOfferOutputs derives DTI and budget caps without persisting", () => {
     const out = computeMaxOfferOutputs(fixtureV2Full);
     expect(out.fromDti28Pct).toBeGreaterThan(0);
     expect(out.fromCustomHousingBudget).toBeGreaterThan(0);
-    expect(out.targetDscr).toBeNull();
+    expect(out.targets).toBeNull();
     expect(out.fromTargetDscr).toBe(0);
+    expect(out.fromTargetCashFlow).toBe(0);
+    expect(out.bindingCap).toBeGreaterThan(0);
   });
 
-  it("computeMaxOfferOutputs uses target DSCR when offerTargets is set", () => {
+  it("computeMaxOfferOutputs uses all offerTargets when set", () => {
     const withTarget = {
       ...fixtureV2Full,
-      offerTargets: { targetDscr: 1.25 },
-    } as AppPersisted & { offerTargets: { targetDscr: number } };
+      offerTargets: {
+        targetDscr: 1.25,
+        targetCashFlowMonthly: 200,
+        targetCashOnCashPercent: 5,
+        targetPaymentMonthly: 3500,
+      },
+    } as AppPersisted;
     const out = computeMaxOfferOutputs(withTarget);
-    expect(out.targetDscr).toBe(1.25);
+    expect(out.targets?.targetDscr).toBe(1.25);
     expect(out.fromTargetDscr).toBeGreaterThan(0);
+    expect(out.fromTargetCashFlow).toBeGreaterThan(0);
+    expect(out.fromTargetCashOnCash).toBeGreaterThan(0);
+    expect(out.fromTargetPayment).toBeGreaterThan(0);
+    expect(out.bindingCap).toBeGreaterThan(0);
+    expect(out.bindingCap).toBeLessThanOrEqual(out.fromDti28Pct);
   });
 
   it("maxHomePriceForTargetDscr returns 0 when target cannot be met", () => {
     const base = housingBudgetBaseParams(emptyAppState());
     expect(maxHomePriceForTargetDscr(99, emptyAppState(), base)).toBe(0);
+  });
+
+  it("target search helpers return 0 for empty scenario", () => {
+    const base = housingBudgetBaseParams(emptyAppState());
+    expect(maxHomePriceForTargetCashFlow(100, emptyAppState(), base)).toBe(0);
+    expect(maxHomePriceForTargetCashOnCash(10, emptyAppState(), base)).toBe(0);
+    expect(maxHomePriceForTargetPayment(2000, emptyAppState(), base)).toBe(0);
   });
 });
 

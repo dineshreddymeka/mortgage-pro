@@ -227,7 +227,13 @@ export function buildScenarioExcelBlob(
     ["maxOffer", "fromDti28Pct", c.maxOffer.fromDti28Pct],
     ["maxOffer", "fromCustomBudget", c.maxOffer.fromCustomHousingBudget],
     ["maxOffer", "fromTargetDscr", c.maxOffer.fromTargetDscr],
-    ["maxOffer", "targetDscr", c.maxOffer.targetDscr],
+    ["maxOffer", "fromTargetCashFlow", c.maxOffer.fromTargetCashFlow],
+    ["maxOffer", "fromTargetCashOnCash", c.maxOffer.fromTargetCashOnCash],
+    ["maxOffer", "fromTargetPayment", c.maxOffer.fromTargetPayment],
+    ["maxOffer", "bindingCap", c.maxOffer.bindingCap],
+    ["maxOffer", "targets", c.maxOffer.targets ? JSON.stringify(c.maxOffer.targets) : null],
+    ["decisionTools", "rentVsBuy", c.decisionTools.rentVsBuy ? JSON.stringify(c.decisionTools.rentVsBuy) : null],
+    ["decisionTools", "stressTestDeltas", c.decisionTools.stressTestDeltas ? JSON.stringify(c.decisionTools.stressTestDeltas) : null],
   ]);
 
   const mp = c.mortgage;

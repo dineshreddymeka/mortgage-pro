@@ -19,6 +19,7 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { CategoryJump } from "../components/CategoryJump";
 import { GrowthAssumptionsPanel } from "../components/GrowthAssumptionsPanel";
+import { StressTestPanel } from "../components/StressTestPanel";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
 import {
   RentalMetricCard,
@@ -983,6 +984,10 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           </TableContainer>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
+
+      <WidgetPanel id="stress-test" title="Stress test" description="Delta what-if via deriveScenario" h={16}>
+        <StressTestPanel state={state} patch={patch} />
       </WidgetPanel>
       </WidgetBoardFromPanels>
     </Stack>

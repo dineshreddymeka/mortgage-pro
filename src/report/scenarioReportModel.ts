@@ -149,13 +149,40 @@ function buildExitSection(state: AppPersisted, derived: DerivedScenario, milesto
 
 function buildMaxOfferSection(derived: DerivedScenario): ScenarioReportSection {
   const m = derived.maxOffer;
+  const targets = m.targets;
   return {
     id: "max-offer",
     title: "Affordability caps (derived)",
     rows: [
       row("Max price @ 28% front-end DTI", money.format(m.fromDti28Pct)),
       row("Max price @ custom housing budget", money.format(m.fromCustomHousingBudget)),
-      row("Max price @ target DSCR", m.fromTargetDscr != null ? money.format(m.fromTargetDscr) : "—", m.targetDscr != null ? `Target DSCR ${m.targetDscr.toFixed(2)}` : undefined),
+      row(
+        "Max price @ target DSCR",
+        m.fromTargetDscr > 0 ? money.format(m.fromTargetDscr) : "—",
+        targets?.targetDscr != null ? `Target DSCR ${targets.targetDscr.toFixed(2)}` : undefined
+      ),
+      row(
+        "Max price @ target cash flow",
+        m.fromTargetCashFlow > 0 ? money.format(m.fromTargetCashFlow) : "—",
+        targets?.targetCashFlowMonthly != null
+          ? `Target ${money.format(targets.targetCashFlowMonthly)}/mo`
+          : undefined
+      ),
+      row(
+        "Max price @ target CoC",
+        m.fromTargetCashOnCash > 0 ? money.format(m.fromTargetCashOnCash) : "—",
+        targets?.targetCashOnCashPercent != null
+          ? `Target ${targets.targetCashOnCashPercent.toFixed(1)}%`
+          : undefined
+      ),
+      row(
+        "Max price @ target payment",
+        m.fromTargetPayment > 0 ? money.format(m.fromTargetPayment) : "—",
+        targets?.targetPaymentMonthly != null
+          ? `Target ${money.format(targets.targetPaymentMonthly)}/mo`
+          : undefined
+      ),
+      row("Binding cap (lowest active)", m.bindingCap > 0 ? money.format(m.bindingCap) : "—"),
     ],
   };
 }

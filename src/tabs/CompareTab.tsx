@@ -7,16 +7,25 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HouseComparisonPanel } from "../components/HouseComparisonBar";
+import { computeStressTestComparison } from "../lib/stressTestMath";
 import type { HouseComparisonRow } from "../lib/houseComparison";
+import type { AppPersisted } from "../storage/mortgageState";
 import { houseLabel, type PropertyMeta } from "../storage/firestoreProperties";
 
 const COMPARE_SELECTION_KEY = "mortgage-pro:compare-selected-ids";
+
+const money0 = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 export type CompareTabProps = {
   /** All house comparison rows available (cloud portfolio and/or local active house). */
   rows: HouseComparisonRow[];
   properties: PropertyMeta[];
   activePropertyId: string | null;
+  activeState?: AppPersisted;
   cloudReady: boolean;
   onSelect: (id: string) => void;
 };
@@ -45,6 +54,7 @@ export function CompareTab({
   rows,
   properties,
   activePropertyId,
+  activeState,
   cloudReady,
   onSelect,
 }: CompareTabProps) {
@@ -109,6 +119,13 @@ export function CompareTab({
     if (selectedSet.has(id)) setSelection(selectedIds.filter((x) => x !== id));
     else setSelection([...selectedIds, id]);
   }
+
+  const activeStress = useMemo(() => {
+    if (!activeState?.stressTestDeltas) return null;
+    const hasDelta = Object.values(activeState.stressTestDeltas).some((v) => v !== 0);
+    if (!hasDelta || activeState.homePrice <= 0) return null;
+    return computeStressTestComparison(activeState, activeState.stressTestDeltas);
+  }, [activeState]);
 
   if (candidateIds.length === 0 || rows.length === 0) {
     return (
@@ -241,6 +258,15 @@ export function CompareTab({
           </Stack>
         ) : null}
       </Stack>
+
+      {activeStress ? (
+        <Alert severity="warning" variant="outlined" sx={{ mb: 1.25, borderRadius: 1.5 }}>
+          Active house stress test: payment {money0.format(activeStress.baseline.paymentMonthly)} →{" "}
+          {money0.format(activeStress.stressed.paymentMonthly)} · cash flow{" "}
+          {money0.format(activeStress.baseline.cashFlowMonthly)} →{" "}
+          {money0.format(activeStress.stressed.cashFlowMonthly)} (edit deltas on Rental tab)
+        </Alert>
+      ) : null}
 
       {selectedRows.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2, maxWidth: 420, lineHeight: 1.45 }}>

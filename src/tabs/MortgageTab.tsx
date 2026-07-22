@@ -182,9 +182,9 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
               currentHousingPaymentMonthly={breakdown.total}
             />
             <MaxOfferPanel
+              state={state}
+              patch={patch}
               maxOffer={derived.maxOffer}
-              annualGrossIncome={state.annualGrossIncome}
-              customHousingBudgetMonthly={state.customHousingBudgetMonthly}
               currentHomePrice={state.homePrice}
             />
           </Stack>

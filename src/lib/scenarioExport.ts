@@ -39,6 +39,16 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "Binary search max purchase price where PITI+HOA+PMI ≤ customHousingBudgetMonthly.",
   maxOfferTargetDscr:
     "Binary search max purchase price where modeled DSCR ≥ offerTargets.targetDscr (optional scenario field).",
+  maxOfferTargetCashFlow:
+    "Binary search max purchase price where modeled monthly cash flow ≥ offerTargets.targetCashFlowMonthly.",
+  maxOfferTargetCashOnCash:
+    "Binary search max purchase price where cash-on-cash ≥ offerTargets.targetCashOnCashPercent.",
+  maxOfferTargetPayment:
+    "Binary search max purchase price where total housing payment ≤ offerTargets.targetPaymentMonthly.",
+  rentVsBuy:
+    "Compare buy (projection equity + cumulative CF) vs rent & invest same upfront cash over rentVsBuy.horizonYears.",
+  stressTest:
+    "Apply stressTestDeltas to a scenario copy and re-run deriveScenario for baseline vs stressed metrics.",
   totalGainWhenToSell:
     "At exit: netProceeds + sum of monthly amounts through exit − initial cash. While the loan is active: yield-adjusted cash flow (NOI − P&I with toggles). After the loan is paid off: effective gross income only (vacancy applied; no operating expenses or P&I).",
   monthlyProjection:
@@ -140,7 +150,15 @@ export function buildFullScenarioExport(
         fromDti28Pct: maxOffer.fromDti28Pct,
         fromCustomHousingBudget: maxOffer.fromCustomHousingBudget,
         fromTargetDscr: maxOffer.fromTargetDscr,
-        targetDscr: maxOffer.targetDscr,
+        fromTargetCashFlow: maxOffer.fromTargetCashFlow,
+        fromTargetCashOnCash: maxOffer.fromTargetCashOnCash,
+        fromTargetPayment: maxOffer.fromTargetPayment,
+        bindingCap: maxOffer.bindingCap,
+        targets: maxOffer.targets,
+      },
+      decisionTools: {
+        rentVsBuy: state.rentVsBuy ?? null,
+        stressTestDeltas: state.stressTestDeltas ?? null,
       },
       whenToSell: {
         exitHorizonYears_clampedToTerm: termYears,

@@ -37,6 +37,31 @@ export type PaymentPlanPersisted = {
   lumpSums: PaymentPlanLumpSum[];
 };
 
+/** Optional max-offer targets (Financing tab) — persisted assumptions, not derived caps. */
+export type OfferTargetsPersisted = {
+  targetDscr?: number;
+  targetCashFlowMonthly?: number;
+  targetCashOnCashPercent?: number;
+  targetPaymentMonthly?: number;
+};
+
+/** Rent-vs-buy comparison assumptions (Exit tab). */
+export type RentVsBuyAssumptionsPersisted = {
+  comparableRentMonthly?: number;
+  investmentReturnPercent?: number;
+  horizonYears?: number;
+};
+
+/** Stress-test deltas applied to scenario copies (Rental / Compare). */
+export type StressTestDeltasPersisted = {
+  rateDeltaPct?: number;
+  rentDeltaPct?: number;
+  vacancyDeltaPct?: number;
+  appreciationDeltaPct?: number;
+  expenseDeltaPct?: number;
+  homePriceDeltaPct?: number;
+};
+
 export type LoanProductTypePersisted = "conventional" | "fha" | "va" | "usda";
 
 export type LoanArmPersisted = {
@@ -151,6 +176,12 @@ export type AppPersisted = {
    * Omitted keys use the formula amount. Persisted with the scenario.
    */
   buyingCostLineOverrides?: Partial<Record<string, number>>;
+  /** Optional max-offer targets (derived caps computed on read via offerMath). */
+  offerTargets?: OfferTargetsPersisted;
+  /** Optional rent-vs-buy assumptions (Exit tab decision tool). */
+  rentVsBuy?: RentVsBuyAssumptionsPersisted;
+  /** Optional stress-test deltas (% / points) applied to scenario copies. */
+  stressTestDeltas?: StressTestDeltasPersisted;
 };
 
 /** @deprecated Use AppPersisted */
@@ -203,6 +234,9 @@ export const KNOWN_SCENARIO_KEYS = [
   "propertyLatitude",
   "propertyLongitude",
   "buyingCostLineOverrides",
+  "offerTargets",
+  "rentVsBuy",
+  "stressTestDeltas",
 ] as const;
 
 const KNOWN_SCENARIO_KEY_SET = new Set<string>(KNOWN_SCENARIO_KEYS);
@@ -307,6 +341,9 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     paymentPlan: rawPaymentPlan,
     loan: rawLoan,
     upfront: rawUpfront,
+    offerTargets: rawOfferTargets,
+    rentVsBuy: rawRentVsBuy,
+    stressTestDeltas: rawStressDeltas,
     customHousingBudgetMonthly: rawBudget,
     ...mergedRest
   } = merged;
@@ -318,6 +355,9 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const paymentPlan = parsePaymentPlan(rawPaymentPlan);
   const loan = parseLoanScenario(rawLoan);
   const upfront = parseUpfrontScenario(rawUpfront, mergedRest);
+  const offerTargets = parseOfferTargets(rawOfferTargets);
+  const rentVsBuy = parseRentVsBuyAssumptions(rawRentVsBuy);
+  const stressTestDeltas = parseStressTestDeltas(rawStressDeltas);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   const normalized: AppPersisted = {
@@ -335,6 +375,9 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(paymentPlan ? { paymentPlan } : {}),
     ...(loan ? { loan } : {}),
     ...(upfront ? { upfront } : {}),
+    ...(offerTargets ? { offerTargets } : {}),
+    ...(rentVsBuy ? { rentVsBuy } : {}),
+    ...(stressTestDeltas ? { stressTestDeltas } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
   return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
@@ -643,6 +686,64 @@ function parseUpfrontScenario(raw: unknown, legacy: Record<string, unknown>): Up
   };
 }
 
+function parseOptionalPositiveNumber(raw: unknown): number | undefined {
+  if (raw === null || raw === undefined || raw === "") return undefined;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return n;
+}
+
+function parseOfferTargets(raw: unknown): OfferTargetsPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: OfferTargetsPersisted = {};
+  const dscr = parseOptionalPositiveNumber(o.targetDscr);
+  if (dscr !== undefined && dscr > 0) out.targetDscr = dscr;
+  const cf = parseOptionalPositiveNumber(o.targetCashFlowMonthly);
+  if (cf !== undefined) out.targetCashFlowMonthly = Math.round(cf);
+  const coc = parseOptionalPositiveNumber(o.targetCashOnCashPercent);
+  if (coc !== undefined && coc > 0) out.targetCashOnCashPercent = coc;
+  const pmt = parseOptionalPositiveNumber(o.targetPaymentMonthly);
+  if (pmt !== undefined && pmt > 0) out.targetPaymentMonthly = Math.round(pmt);
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseRentVsBuyAssumptions(raw: unknown): RentVsBuyAssumptionsPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: RentVsBuyAssumptionsPersisted = {};
+  const rent = parseOptionalPositiveNumber(o.comparableRentMonthly);
+  if (rent !== undefined) out.comparableRentMonthly = Math.round(rent);
+  const ret = parseOptionalPositiveNumber(o.investmentReturnPercent);
+  if (ret !== undefined) out.investmentReturnPercent = Math.min(30, ret);
+  if (o.horizonYears !== undefined && o.horizonYears !== null) {
+    const n = Number(o.horizonYears);
+    if (Number.isFinite(n) && n > 0) out.horizonYears = Math.min(30, Math.max(1, Math.round(n)));
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseStressTestDeltas(raw: unknown): StressTestDeltasPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: StressTestDeltasPersisted = {};
+  const keys: (keyof StressTestDeltasPersisted)[] = [
+    "rateDeltaPct",
+    "rentDeltaPct",
+    "vacancyDeltaPct",
+    "appreciationDeltaPct",
+    "expenseDeltaPct",
+    "homePriceDeltaPct",
+  ];
+  for (const key of keys) {
+    if (o[key] === undefined || o[key] === null) continue;
+    const n = Number(o[key]);
+    if (!Number.isFinite(n) || n === 0) continue;
+    out[key] = n;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): RentalOnly {
   return {
     monthlyRent: num(data.monthlyRent, base.monthlyRent),
@@ -687,6 +788,9 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const paymentPlan = parsePaymentPlan(data.paymentPlan);
   const loan = parseLoanScenario(data.loan);
   const upfront = parseUpfrontScenario(data.upfront, data);
+  const offerTargets = parseOfferTargets(data.offerTargets);
+  const rentVsBuy = parseRentVsBuyAssumptions(data.rentVsBuy);
+  const stressTestDeltas = parseStressTestDeltas(data.stressTestDeltas);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
   const loc = normalizePropertyLocation(data, base);
   return {
@@ -709,6 +813,9 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(paymentPlan ? { paymentPlan } : {}),
     ...(loan ? { loan } : {}),
     ...(upfront ? { upfront } : {}),
+    ...(offerTargets ? { offerTargets } : {}),
+    ...(rentVsBuy ? { rentVsBuy } : {}),
+    ...(stressTestDeltas ? { stressTestDeltas } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
   };

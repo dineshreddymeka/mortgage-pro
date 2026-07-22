@@ -84,6 +84,19 @@ describe("mortgageState serialization and migration", () => {
     expect(preserved.homePrice).toBe(fixtureV2Full.homePrice);
   });
 
+  it("parses decision-tool assumptions without persisting derived results", () => {
+    const raw = {
+      ...fixtureV2Full,
+      offerTargets: { targetCashFlowMonthly: 500, targetDscr: 1.2 },
+      rentVsBuy: { comparableRentMonthly: 2500, horizonYears: 5 },
+      stressTestDeltas: { rateDeltaPct: 1, rentDeltaPct: -5 },
+    };
+    const parsed = parseMortgageState(JSON.stringify(raw));
+    expect(parsed.offerTargets).toEqual(raw.offerTargets);
+    expect(parsed.rentVsBuy).toEqual(raw.rentVsBuy);
+    expect(parsed.stressTestDeltas).toEqual(raw.stressTestDeltas);
+  });
+
   it("emptyAppState reset clears editable fields to zero/empty", () => {
     const cleared = emptyAppState();
     expect(cleared.homePrice).toBe(0);

@@ -544,6 +544,7 @@ export default function App() {
                 rows={compareRows}
                 properties={properties}
                 activePropertyId={activePropertyId}
+                activeState={state}
                 cloudReady={cloudStatus === "ready"}
                 onSelect={houseHandlers.onSelect}
               />
