@@ -7,7 +7,6 @@ import Alert from "@mui/material/Alert";
 import {
   Box,
   Button,
-  Container,
   IconButton,
   Snackbar,
   Stack,
@@ -113,8 +112,26 @@ export default function App() {
     }
   }
 
+  const houseHandlers = {
+    onSelect: (id: string) => {
+      void selectProperty(id).catch(() =>
+        setToast({ message: "Could not open that house.", severity: "error" })
+      );
+    },
+    onCreate: () => {
+      void createNewProperty()
+        .then((id) => {
+          if (id) {
+            setToast({ message: "New house added. All tabs start fresh.", severity: "success" });
+            setTab(0);
+          }
+        })
+        .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
+    },
+  };
+
   return (
-    <Box sx={{ minHeight: "100dvh", bgcolor: "transparent" }}>
+    <Box sx={{ minHeight: "100dvh", bgcolor: "transparent", display: "flex", flexDirection: "column" }}>
       <Box
         component="header"
         sx={{
@@ -129,7 +146,7 @@ export default function App() {
           WebkitBackdropFilter: "saturate(180%) blur(20px)",
         }}
       >
-        <Container maxWidth="xl" sx={{ py: 0.65, px: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 0.65, maxWidth: 1400, mx: "auto", width: "100%" }}>
           <Stack
             direction="row"
             spacing={1}
@@ -255,136 +272,143 @@ export default function App() {
               </Tooltip>
             </Stack>
           </Stack>
-        </Container>
+        </Box>
+      </Box>
 
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          maxWidth: 1400,
+          width: "100%",
+          mx: "auto",
+          minHeight: 0,
+        }}
+      >
         <HouseNavBar
           cloudStatus={cloudStatus}
           cloudError={cloudError}
           properties={properties}
           activePropertyId={activePropertyId}
-          onSelect={(id) => {
-            void selectProperty(id).catch(() =>
-              setToast({ message: "Could not open that house.", severity: "error" })
-            );
-          }}
-          onCreate={() => {
-            void createNewProperty()
-              .then((id) => {
-                if (id) {
-                  setToast({ message: "New house added. All tabs start fresh.", severity: "success" });
-                  setTab(0);
-                }
-              })
-              .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
-          }}
+          onSelect={houseHandlers.onSelect}
+          onCreate={houseHandlers.onCreate}
         />
-      </Box>
 
-      <Container maxWidth="xl" sx={{ pb: 1.5, px: { xs: 1.5, sm: 2 }, pt: 1 }}>
         <Box
-          role="tablist"
-          aria-label="Main sections"
+          component="main"
           sx={{
-            display: "inline-flex",
-            maxWidth: "100%",
-            p: 0.35,
-            gap: 0.25,
-            borderRadius: "10px",
-            bgcolor: (t) =>
-              t.palette.mode === "light" ? alpha("#787880", 0.12) : alpha("#787880", 0.28),
-            border: "1px solid",
-            borderColor: "divider",
-            overflowX: "auto",
-            scrollbarWidth: "none",
-            "&::-webkit-scrollbar": { display: "none" },
-            mb: 0.75,
+            flex: 1,
+            minWidth: 0,
+            px: { xs: 1.5, sm: 2 },
+            pt: 1,
+            pb: 1.5,
           }}
         >
-          {TABS.map(({ label, id }, i) => {
-            const selected = tab === i;
-            return (
-              <Button
-                key={id}
-                size="small"
-                disableElevation
-                id={`tab-${id}`}
-                aria-controls={`tabpanel-${id}`}
-                aria-selected={selected}
-                role="tab"
-                onClick={() => setTab(i)}
-                sx={{
-                  py: 0.45,
-                  px: { xs: 1, sm: 1.35 },
-                  minWidth: "auto",
-                  minHeight: 28,
-                  borderRadius: "8px",
-                  bgcolor: selected
-                    ? (t) =>
-                        t.palette.mode === "light"
-                          ? alpha("#ffffff", 0.95)
-                          : alpha("#636366", 0.72)
-                    : "transparent !important",
-                  boxShadow: selected
-                    ? (t) =>
-                        t.palette.mode === "light"
-                          ? "0 1px 2px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)"
-                          : "0 1px 2px rgba(0,0,0,0.35)"
-                    : "none !important",
-                  color: selected ? "text.primary" : "text.secondary",
-                  fontWeight: selected ? 600 : 500,
-                  fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-                  letterSpacing: "-0.015em",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  "&:hover": {
-                    color: "text.primary",
+          <Box
+            role="tablist"
+            aria-label="Main sections"
+            sx={{
+              display: "inline-flex",
+              maxWidth: "100%",
+              p: 0.35,
+              gap: 0.25,
+              borderRadius: "10px",
+              bgcolor: (t) =>
+                t.palette.mode === "light" ? alpha("#787880", 0.12) : alpha("#787880", 0.28),
+              border: "1px solid",
+              borderColor: "divider",
+              overflowX: "auto",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              mb: 0.75,
+            }}
+          >
+            {TABS.map(({ label, id }, i) => {
+              const selected = tab === i;
+              return (
+                <Button
+                  key={id}
+                  size="small"
+                  disableElevation
+                  id={`tab-${id}`}
+                  aria-controls={`tabpanel-${id}`}
+                  aria-selected={selected}
+                  role="tab"
+                  onClick={() => setTab(i)}
+                  sx={{
+                    py: 0.45,
+                    px: { xs: 1, sm: 1.35 },
+                    minWidth: "auto",
+                    minHeight: 28,
+                    borderRadius: "8px",
                     bgcolor: selected
-                      ? undefined
-                      : (t) => alpha(t.palette.text.primary, 0.04),
-                  },
-                }}
-              >
-                {label}
-              </Button>
-            );
-          })}
-        </Box>
+                      ? (t) =>
+                          t.palette.mode === "light"
+                            ? alpha("#ffffff", 0.95)
+                            : alpha("#636366", 0.72)
+                      : "transparent !important",
+                    boxShadow: selected
+                      ? (t) =>
+                          t.palette.mode === "light"
+                            ? "0 1px 2px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)"
+                            : "0 1px 2px rgba(0,0,0,0.35)"
+                      : "none !important",
+                    color: selected ? "text.primary" : "text.secondary",
+                    fontWeight: selected ? 600 : 500,
+                    fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+                    letterSpacing: "-0.015em",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    "&:hover": {
+                      color: "text.primary",
+                      bgcolor: selected
+                        ? undefined
+                        : (t) => alpha(t.palette.text.primary, 0.04),
+                    },
+                  }}
+                >
+                  {label}
+                </Button>
+              );
+            })}
+          </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={tab !== 0}
-          id="tabpanel-mortgage"
-          aria-labelledby="tab-mortgage"
-        >
-          {tab === 0 ? <MortgageTab state={state} patch={patch} /> : null}
-        </Box>
-        <Box
-          role="tabpanel"
-          hidden={tab !== 1}
-          id="tabpanel-upfront"
-          aria-labelledby="tab-upfront"
-        >
-          {tab === 1 ? <UpfrontCashTab state={state} patch={patch} /> : null}
-        </Box>
-        <Box role="tabpanel" hidden={tab !== 2} id="tabpanel-rental" aria-labelledby="tab-rental">
-          {tab === 2 ? <RentalTab state={state} patch={patch} /> : null}
-        </Box>
-        <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
-          {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
-        </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== 0}
+            id="tabpanel-mortgage"
+            aria-labelledby="tab-mortgage"
+          >
+            {tab === 0 ? <MortgageTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== 1}
+            id="tabpanel-upfront"
+            aria-labelledby="tab-upfront"
+          >
+            {tab === 1 ? <UpfrontCashTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box role="tabpanel" hidden={tab !== 2} id="tabpanel-rental" aria-labelledby="tab-rental">
+            {tab === 2 ? <RentalTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
+            {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
+          </Box>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
-        >
-          Estimates only. {activeHouseLabel}: all tabs (Mortgage, Upfront, Rental, When to sell)
-          save together
-          {cloudStatus === "ready" ? " to Firestore." : " in this browser."}
-          {cloudError ? ` ${cloudError}` : ""}
-        </Typography>
-      </Container>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
+          >
+            Estimates only. {activeHouseLabel}: all tabs save together
+            {cloudStatus === "ready" ? " to Firestore." : " in this browser."}
+            {cloudError ? ` ${cloudError}` : ""}
+          </Typography>
+        </Box>
+      </Box>
 
       <Snackbar
         open={toast != null}
