@@ -15,11 +15,11 @@ import {
 } from "@mui/material";
 import { alpha, useColorScheme, useTheme } from "@mui/material/styles";
 import { useMemo, useState } from "react";
+import { CompareTab } from "./tabs/CompareTab";
 import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
-import { HouseComparisonBar } from "./components/HouseComparisonBar";
 import { HouseNavBar } from "./components/HouseNavBar";
 import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
@@ -39,6 +39,7 @@ const TABS = [
   { label: "Upfront", id: "upfront" },
   { label: "Rental", id: "rental" },
   { label: "When to sell", id: "sell" },
+  { label: "Compare", id: "compare" },
 ] as const;
 
 export default function App() {
@@ -423,6 +424,21 @@ export default function App() {
           <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
             {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
           </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== 4}
+            id="tabpanel-compare"
+            aria-labelledby="tab-compare"
+          >
+            {tab === 4 ? (
+              <CompareTab
+                rows={comparisons}
+                activePropertyId={activePropertyId}
+                cloudReady={cloudStatus === "ready"}
+                onSelect={houseHandlers.onSelect}
+              />
+            ) : null}
+          </Box>
 
           <Typography
             variant="caption"
@@ -436,14 +452,6 @@ export default function App() {
           </Typography>
         </Box>
       </Box>
-
-      {cloudStatus === "ready" && comparisons.length > 0 ? (
-        <HouseComparisonBar
-          rows={comparisons}
-          activePropertyId={activePropertyId}
-          onSelect={houseHandlers.onSelect}
-        />
-      ) : null}
 
       <Snackbar
         open={toast != null}
