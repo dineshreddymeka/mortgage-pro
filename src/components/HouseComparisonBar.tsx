@@ -51,6 +51,18 @@ const METRICS: {
     label: "1% rule",
     format: (r) => formatOnePercentRuleDisplay(r.onePercentRuleRatio) ?? "—",
   },
+  {
+    key: "afterTaxCashFlowAnnual",
+    label: "AT CF/yr",
+    format: (r) =>
+      r.afterTaxCashFlowAnnual != null ? `${money0.format(r.afterTaxCashFlowAnnual)}/yr` : "—",
+  },
+  {
+    key: "afterTaxRealWealthYear5",
+    label: "AT gain Y5",
+    format: (r) =>
+      r.afterTaxRealWealthYear5 != null ? money0.format(r.afterTaxRealWealthYear5) : "—",
+  },
 ];
 
 export type HouseComparisonPanelProps = {

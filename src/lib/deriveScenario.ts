@@ -1,5 +1,7 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { computeNetCashToClose } from "./buyingCostsMath";
+import type { DerivedTaxMetrics } from "./deriveTaxMetrics";
+import { deriveTaxMetrics } from "./deriveTaxMetrics";
 import type { LoanProductResult } from "./loanProducts";
 import { amortizeWithRateSchedule } from "./loanProducts";
 import type { ExitYearInvestment } from "./projectionEngine";
@@ -54,6 +56,7 @@ export type DerivedScenario = {
   exitInvestments: ExitYearInvestment[];
   rentalIncome: ResolvedRentalIncome;
   dealStrategy: DealStrategySnapshots;
+  tax: DerivedTaxMetrics | null;
 };
 
 function flat(schedule: number[]) {
@@ -102,6 +105,23 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
   const rental15 = computeRentalAnalysis(effective, monthlyPayment15);
   const monthlyProjection = buildMonthlyProjection(effective, { yieldInclude: effective.sellRentalYieldInclude });
   const dealStrategy = resolveDealStrategySnapshots(effective);
+  const sellRows = buildSellYearlyRows(
+    lp.totalLoanAmount,
+    lp.noteApr,
+    hp,
+    effective.sellAnnualAppreciationPercent,
+    effective.sellClosingCostPercent,
+    30,
+    termYears
+  );
+  const realWealthSnapshots = buildRealWealthExitSnapshots(
+    effective,
+    lp.totalLoanAmount,
+    lp.noteApr,
+    sellRows,
+    REAL_WEALTH_MILESTONE_YEARS,
+    effective.sellRentalYieldInclude
+  );
   return {
     purchasePrice: hp,
     downPayment: dp,
@@ -121,13 +141,14 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
     rental30,
     yieldCashFlowAnnual15: cashFlowAnnualFromYieldToggles(rental15, effective.sellRentalYieldInclude),
     yieldCashFlowAnnual30: cashFlowAnnualFromYieldToggles(rental30, effective.sellRentalYieldInclude),
-    sellRows: buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, effective.sellAnnualAppreciationPercent, effective.sellClosingCostPercent, 30, termYears),
-    realWealthSnapshots: buildRealWealthExitSnapshots(effective, lp.totalLoanAmount, lp.noteApr, buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, effective.sellAnnualAppreciationPercent, effective.sellClosingCostPercent, 30, termYears), REAL_WEALTH_MILESTONE_YEARS, effective.sellRentalYieldInclude),
+    sellRows,
+    realWealthSnapshots,
     impliedAnnualAppreciationPercent: impliedAnnualAppreciationPercent(hp, effective.currentHomeValue, effective.yearsOwned),
     maxOffer: computeMaxOfferOutputs(effective),
     monthlyProjection,
     exitInvestments: investmentMetricsByExitYear(effective, monthlyProjection, REAL_WEALTH_MILESTONE_YEARS, rental.initialCashInvested),
     rentalIncome,
     dealStrategy,
+    tax: deriveTaxMetrics(effective, rental, realWealthSnapshots),
   };
 }

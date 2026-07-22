@@ -26,6 +26,37 @@ export type GrowthAssumptionsPersisted = {
   expenseGrowthPercent: number;
 };
 
+/** Optional §1031 inputs when tax modeling is enabled (Exit tab). */
+export type Tax1031AssumptionsPersisted = {
+  replacementPropertyCost?: number;
+  bootReceived?: number;
+};
+
+/**
+ * Optional simplified tax assumptions (Rental / Exit). Omitted until the user enables modeling;
+ * derived depreciation, QBI, sale tax, and after-tax metrics are never persisted.
+ */
+export type TaxAssumptionsPersisted = {
+  enabled: true;
+  /** Non-depreciable land as % of basis (0–100). Default 20 when enabled. */
+  landPercent?: number;
+  /** Capitalized improvements added to depreciable basis ($). */
+  improvementsBasis?: number;
+  /** §199A eligibility (simplified). Default true when enabled. */
+  qbiEligible?: boolean;
+  /** Taxable income cap before QBI; 0 = use NOI − depreciation. */
+  taxableIncomeBeforeQbi?: number;
+  /** Marginal ordinary rate for after-tax cash flow estimate (0 = skip). */
+  marginalIncomeTaxRatePercent?: number;
+  /** Long-term capital gain rate on non-recapture gain (%). */
+  capitalGainsRatePercent?: number;
+  /** Unrecaptured §1250 rate (%). */
+  recaptureRatePercent?: number;
+  /** Long-term vs short-term on remaining capital gain. */
+  isLongTerm?: boolean;
+  exchange1031?: Tax1031AssumptionsPersisted;
+};
+
 export type PaymentPlanLumpSum = {
   month: number;
   amount: number;
@@ -180,6 +211,8 @@ export type AppPersisted = {
   refi?: RefiScenarioPersisted;
   /** Optional rent / OpEx growth (%/yr). Omitted until edited; 0 = flat baseline. */
   growth?: GrowthAssumptionsPersisted;
+  /** Optional simplified tax modeling inputs. Omitted until enabled on Rental / Exit. */
+  tax?: TaxAssumptionsPersisted;
   /** Optional pay cadence + lump-sum principal (Financing tab). Omitted until edited. */
   paymentPlan?: PaymentPlanPersisted;
   loan?: LoanScenarioPersisted;
@@ -264,6 +297,7 @@ export const KNOWN_SCENARIO_KEYS = [
   "customHousingBudgetMonthly",
   "refi",
   "growth",
+  "tax",
   "paymentPlan",
   "loan",
   "upfront",
@@ -398,6 +432,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     sellRentalYieldInclude: rawYield,
     refi: rawRefi,
     growth: rawGrowth,
+    tax: rawTax,
     paymentPlan: rawPaymentPlan,
     loan: rawLoan,
     upfront: rawUpfront,
@@ -414,6 +449,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const sellRentalYieldInclude = parseBooleanIncludeMap(rawYield);
   const refi = parseRefiScenario(rawRefi);
   const growth = parseGrowthAssumptions(rawGrowth);
+  const tax = parseTaxAssumptions(rawTax);
   const paymentPlan = parsePaymentPlan(rawPaymentPlan);
   const loan = parseLoanScenario(rawLoan);
   const upfront = parseUpfrontScenario(rawUpfront, mergedRest);
@@ -436,6 +472,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(sellRentalYieldInclude ? { sellRentalYieldInclude } : {}),
     ...(refi ? { refi } : {}),
     ...(growth ? { growth } : {}),
+    ...(tax ? { tax } : {}),
     ...(paymentPlan ? { paymentPlan } : {}),
     ...(loan ? { loan } : {}),
     ...(upfront ? { upfront } : {}),
@@ -665,6 +702,54 @@ function parseGrowthAssumptions(raw: unknown): GrowthAssumptionsPersisted | unde
   const expenseGrowthPercent = expense ?? 0;
   if (rentGrowthPercent <= 0 && expenseGrowthPercent <= 0) return undefined;
   return { rentGrowthPercent, expenseGrowthPercent };
+}
+
+function parseTax1031(raw: unknown): Tax1031AssumptionsPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const replacement = parseOptionalNonNegInt(o.replacementPropertyCost);
+  const boot = parseOptionalNonNegInt(o.bootReceived);
+  if (replacement === undefined && boot === undefined) return undefined;
+  return {
+    ...(replacement !== undefined ? { replacementPropertyCost: replacement } : {}),
+    ...(boot !== undefined ? { bootReceived: boot } : {}),
+  };
+}
+
+function parseTaxAssumptions(raw: unknown): TaxAssumptionsPersisted | undefined {
+  if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  if (o.enabled !== true) return undefined;
+  const exchange1031 = parseTax1031(o.exchange1031);
+  const landPercent = o.landPercent !== undefined ? clampPct(num(o.landPercent, 20)) : undefined;
+  const improvementsBasis =
+    o.improvementsBasis !== undefined ? Math.max(0, Math.round(num(o.improvementsBasis, 0))) : undefined;
+  const taxableIncomeBeforeQbi =
+    o.taxableIncomeBeforeQbi !== undefined
+      ? Math.max(0, Math.round(num(o.taxableIncomeBeforeQbi, 0)))
+      : undefined;
+  const marginalIncomeTaxRatePercent =
+    o.marginalIncomeTaxRatePercent !== undefined ? clampPct(num(o.marginalIncomeTaxRatePercent, 0)) : undefined;
+  const capitalGainsRatePercent =
+    o.capitalGainsRatePercent !== undefined ? clampPct(num(o.capitalGainsRatePercent, 15)) : undefined;
+  const recaptureRatePercent =
+    o.recaptureRatePercent !== undefined ? clampPct(num(o.recaptureRatePercent, 25)) : undefined;
+  return {
+    enabled: true,
+    ...(landPercent !== undefined ? { landPercent } : {}),
+    ...(improvementsBasis !== undefined && improvementsBasis > 0 ? { improvementsBasis } : {}),
+    ...(o.qbiEligible === false ? { qbiEligible: false } : {}),
+    ...(taxableIncomeBeforeQbi !== undefined && taxableIncomeBeforeQbi > 0
+      ? { taxableIncomeBeforeQbi }
+      : {}),
+    ...(marginalIncomeTaxRatePercent !== undefined && marginalIncomeTaxRatePercent > 0
+      ? { marginalIncomeTaxRatePercent }
+      : {}),
+    ...(capitalGainsRatePercent !== undefined ? { capitalGainsRatePercent } : {}),
+    ...(recaptureRatePercent !== undefined ? { recaptureRatePercent } : {}),
+    ...(o.isLongTerm === false ? { isLongTerm: false } : {}),
+    ...(exchange1031 ? { exchange1031 } : {}),
+  };
 }
 
 function parsePaymentPlan(raw: unknown): PaymentPlanPersisted | undefined {
@@ -991,6 +1076,7 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const y = parseBooleanIncludeMap(data.sellRentalYieldInclude);
   const refi = parseRefiScenario(data.refi);
   const growth = parseGrowthAssumptions(data.growth);
+  const tax = parseTaxAssumptions(data.tax);
   const paymentPlan = parsePaymentPlan(data.paymentPlan);
   const loan = parseLoanScenario(data.loan);
   const upfront = parseUpfrontScenario(data.upfront, data);
@@ -1018,6 +1104,7 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(y !== undefined ? { sellRentalYieldInclude: y } : {}),
     ...(refi ? { refi } : {}),
     ...(growth ? { growth } : {}),
+    ...(tax ? { tax } : {}),
     ...(paymentPlan ? { paymentPlan } : {}),
     ...(loan ? { loan } : {}),
     ...(upfront ? { upfront } : {}),

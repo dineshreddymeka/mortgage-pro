@@ -27,6 +27,7 @@ import { alpha, type Theme } from "@mui/material/styles";
 import { useMemo, type ReactNode } from "react";
 import { CategoryJump } from "../components/CategoryJump";
 import { RentVsBuyPanel } from "../components/RentVsBuyPanel";
+import { TaxAssumptionsPanel } from "../components/TaxAssumptionsPanel";
 import { deriveScenario } from "../lib/deriveScenario";
 import {
   cumulativeCashFlowThroughExitMonths,
@@ -724,6 +725,10 @@ export function WhenToSellTab({
           </Grid>
         </Grid>
       </Paper>
+      </WidgetPanel>
+
+      <WidgetPanel id="tax-modeling" title="Tax & after-tax exit" description="Optional sale tax · 1031 · not tax advice" h={16}>
+        <TaxAssumptionsPanel state={state} patch={patch} derivedTax={derived.tax} variant="exit" />
       </WidgetPanel>
 
       <WidgetPanel id="total-gain" title="Total gain by exit year" description="Sale + rent − upfront" h={20}>

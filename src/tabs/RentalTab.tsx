@@ -20,6 +20,7 @@ import { useCallback, useMemo, useState } from "react";
 import { CategoryJump } from "../components/CategoryJump";
 import { GrowthAssumptionsPanel } from "../components/GrowthAssumptionsPanel";
 import { StressTestPanel } from "../components/StressTestPanel";
+import { TaxAssumptionsPanel } from "../components/TaxAssumptionsPanel";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
 import { RentalIncomeModePanel } from "../components/RentalIncomeModePanel";
 import { DealStrategyPanel } from "../components/DealStrategyPanel";
@@ -750,6 +751,20 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
         }
       >
         <GrowthAssumptionsPanel state={state} patch={patch} />
+      </RentalPanelCard>
+
+      <RentalPanelCard
+        panelId="rental-edit-tax"
+        title="Tax modeling"
+        description={
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
+            {derived.tax
+              ? `Dep ${moneyDec.format(derived.tax.operating.depreciation.annualDepreciation)}/yr · QBI ${moneyDec.format(derived.tax.operating.qbi?.qbiDeduction ?? 0)}`
+              : "Off — enable for depreciation, QBI, and after-tax cash flow estimates"}
+          </Typography>
+        }
+      >
+        <TaxAssumptionsPanel state={state} patch={patch} derivedTax={derived.tax} variant="rental" />
       </RentalPanelCard>
 
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>

@@ -67,6 +67,18 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "Monthly IRR on cash flows: t=0 = −initial cash (down + closing + misc); months 1..exit = projected cash flow; last month adds net sale proceeds. Annualized as (1+r_month)^12 − 1.",
   equityMultiple:
     "Equity multiple = (cumulative projected cash flow through exit + net sale proceeds) / initial cash invested.",
+  taxDepreciation27_5:
+    "Straight-line residential rental depreciation over 27.5 years on building basis (purchase + improvements minus land %).",
+  taxSimplifiedQbi:
+    "§199A simplified: 20% of qualified business income capped at 20% of taxable income before the deduction.",
+  taxSaleSummary:
+    "Sale tax snapshot: land/building split → accumulated depreciation → §1250 recapture → LTCG on remaining gain.",
+  tax1031Exchange:
+    "§1031: recognized gain = min(realized gain, boot received); deferred gain = realized − recognized; substituted basis on replacement.",
+  taxAfterTaxCashFlow:
+    "After-tax annual cash flow ≈ pre-tax cash flow − marginal rate × max(0, QBI − depreciation − QBI deduction). Requires marginal rate.",
+  taxAfterTaxExit:
+    "After-tax net proceeds = pre-tax net proceeds − estimated sale tax (full sale or boot-only under 1031). After-tax total gain subtracts cumulative operating tax when marginal rate is set.",
 };
 
 export function buildFullScenarioExport(
@@ -99,6 +111,7 @@ export function buildFullScenarioExport(
     exitInvestments,
     rentalIncome,
     dealStrategy,
+    tax,
   } = derived;
 
   const house = buildHouseRoot(state, houseMeta);
@@ -195,6 +208,32 @@ export function buildFullScenarioExport(
         month60: monthlyProjection[59] ?? null,
         fullMonthlyRows: monthlyProjection,
       },
+      tax: tax
+        ? {
+            enabled: true,
+            assumptionsPersisted: state.tax,
+            operating: {
+              landBuildingBasis: tax.operating.basis,
+              depreciation: tax.operating.depreciation,
+              qbi: tax.operating.qbi,
+              preTaxCashFlowAnnual: tax.operating.preTaxCashFlowAnnual,
+              estimatedAnnualOperatingTax: tax.operating.estimatedAnnualOperatingTax,
+              afterTaxCashFlowAnnual: tax.operating.afterTaxCashFlowAnnual,
+            },
+            exitSnapshots: tax.exitSnapshots.map((s) => ({
+              year: s.year,
+              monthsHeld: s.monthsHeld,
+              salePrice: s.salePrice,
+              netProceedsPreTax: s.netProceedsPreTax,
+              estimatedSaleTax: s.estimatedSaleTax,
+              afterTaxNetProceeds: s.afterTaxNetProceeds,
+              afterTaxRealWealthMade: s.afterTaxRealWealthMade,
+              recaptureGain: s.saleTaxSummary.recapture.recaptureGain,
+              capitalGainTax: s.saleTaxSummary.capitalGainTax.estimatedTax,
+              exchange1031: s.exchange1031,
+            })),
+          }
+        : null,
     },
   };
 }

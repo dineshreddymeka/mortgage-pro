@@ -70,6 +70,27 @@ describe("mortgageState serialization and migration", () => {
     expect(restored.dealStrategy).toEqual(withBlocks.dealStrategy);
   });
 
+  it("preserves enabled tax assumptions through serialize/parse", () => {
+    const withTax = {
+      ...fixtureV2Full,
+      tax: {
+        enabled: true as const,
+        landPercent: 25,
+        marginalIncomeTaxRatePercent: 32,
+        exchange1031: { bootReceived: 10_000 },
+      },
+    };
+    const restored = roundTrip(withTax);
+    expect(restored.tax).toEqual(withTax.tax);
+  });
+
+  it("drops tax block when enabled is not true", () => {
+    const parsed = parseMortgageState(
+      JSON.stringify({ ...fixtureV2Full, tax: { enabled: false, landPercent: 30 } })
+    );
+    expect(parsed.tax).toBeUndefined();
+  });
+
   it("migrates known v1 mortgage JSON to current schema with rental defaults", () => {
     const parsed = parseMortgageState(JSON.stringify(fixtureV1MortgageOnly));
     expect(parsed.v).toBe(SCHEMA_VERSION);
@@ -117,6 +138,7 @@ describe("mortgageState serialization and migration", () => {
     expect(cleared.refi).toBeUndefined();
     expect(cleared.growth).toBeUndefined();
     expect(cleared.paymentPlan).toBeUndefined();
+    expect(cleared.tax).toBeUndefined();
     expect(cleared.rentalProFormaInclude).toBeUndefined();
     expect(cleared.v).toBe(SCHEMA_VERSION);
   });

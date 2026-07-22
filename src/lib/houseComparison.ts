@@ -18,6 +18,10 @@ export type HouseComparisonRow = {
   dscr: number | null;
   grossRentMultiplier: number | null;
   onePercentRuleRatio: number | null;
+  /** Present when tax modeling is enabled on the scenario. */
+  afterTaxCashFlowAnnual: number | null;
+  /** After-tax total gain at 5-yr exit milestone when tax modeling enabled. */
+  afterTaxRealWealthYear5: number | null;
 };
 
 export function buildHouseComparisonRow(
@@ -33,6 +37,7 @@ export function buildHouseComparisonRow(
   const resolvedId = houseId ?? formatHouseId(houseNumber);
   const label =
     typeof name === "string" && name.trim() ? name.trim().slice(0, 80) : houseLabel(resolvedId);
+  const taxExit5 = derived.tax?.exitSnapshots.find((s) => s.year === 5);
 
   return {
     id,
@@ -50,6 +55,8 @@ export function buildHouseComparisonRow(
     dscr: rental.dscr,
     grossRentMultiplier: rental.grossRentMultiplier,
     onePercentRuleRatio: rental.onePercentRuleRatio,
+    afterTaxCashFlowAnnual: derived.tax?.operating.afterTaxCashFlowAnnual ?? null,
+    afterTaxRealWealthYear5: taxExit5?.afterTaxRealWealthMade ?? null,
   };
 }
 
@@ -62,7 +69,9 @@ export type ComparisonMetricKey =
   | "cashOnCash"
   | "dscr"
   | "grossRentMultiplier"
-  | "onePercentRuleRatio";
+  | "onePercentRuleRatio"
+  | "afterTaxCashFlowAnnual"
+  | "afterTaxRealWealthYear5";
 
 /** Lower is better for cost metrics; higher is better for income/yield. */
 export function isBetterMetric(

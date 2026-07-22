@@ -20,6 +20,7 @@ describe("deriveScenario", () => {
     expect(d.maxOffer.fromDti28Pct).toBeGreaterThan(0);
     expect(d.monthlyProjection.length).toBe(360);
     expect(d.exitInvestments.length).toBeGreaterThan(0);
+    expect(d.tax).toBeNull();
   });
 
   it("handles zero/reset scenario without Infinity derived metrics", () => {
@@ -58,6 +59,14 @@ describe("deriveScenario", () => {
     expect(exported.calculated.maxOffer.fromDti28Pct).toBe(d.maxOffer.fromDti28Pct);
     expect(exported.calculated.projection.monthCount).toBe(d.monthlyProjection.length);
     expect(exported.calculated.whenToSell.exitInvestmentMetrics.length).toBe(d.exitInvestments.length);
+    expect(exported.calculated.tax).toBeNull();
+  });
+
+  it("includes derived tax block in export when enabled", () => {
+    const state = { ...fixtureV2Full, tax: { enabled: true as const, marginalIncomeTaxRatePercent: 24 } };
+    const exported = buildFullScenarioExport(state);
+    expect(exported.calculated.tax?.enabled).toBe(true);
+    expect(exported.calculated.tax?.operating.afterTaxCashFlowAnnual).not.toBeNull();
   });
 
   it("includes rental income mode and deal strategy snapshots in derived output", () => {

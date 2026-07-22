@@ -15,11 +15,22 @@ describe("houseComparison", () => {
     expect(row.onePercentRuleRatio).not.toBeNull();
   });
 
+  it("includes after-tax metrics when tax modeling enabled", () => {
+    const row = buildHouseComparisonRow("a", 1, {
+      ...fixtureV2Full,
+      tax: { enabled: true, marginalIncomeTaxRatePercent: 24 },
+    });
+    expect(row.afterTaxCashFlowAnnual).not.toBeNull();
+    expect(row.afterTaxRealWealthYear5).not.toBeNull();
+  });
+
   it("empty scenario yields null investor metrics without NaN", () => {
     const row = buildHouseComparisonRow("z", 1, emptyAppState());
     expect(row.dscr).toBeNull();
     expect(row.grossRentMultiplier).toBeNull();
     expect(row.onePercentRuleRatio).toBeNull();
+    expect(row.afterTaxCashFlowAnnual).toBeNull();
+    expect(row.afterTaxRealWealthYear5).toBeNull();
   });
 
   it("isBetterMetric treats GRM as lower-is-better and DSCR as higher-is-better", () => {
