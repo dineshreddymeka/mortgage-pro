@@ -15,12 +15,15 @@ import {
 import { onAuthStateChanged, signInAnonymously, type User } from "firebase/auth";
 import { getFirebase } from "../lib/firebase";
 import type { AppPersisted } from "./mortgageState";
-import { packHouseCategories, resolveScenarioFromHouseDoc } from "./houseTree";
+import { LEGACY_CATEGORY_KEYS, resolveScenarioFromHouseDoc } from "./houseTree";
 
 /**
  * Firestore collection of house root documents.
- * Each doc is one house rooted by business `id` (`001`, `002`, …); category tab data
- * lives as child maps (`property`, `financing`, `upfront`, `rental`, `exit`).
+ *
+ * One structure as source of truth:
+ *   id (`001`) + meta + scenario (all tab inputs in one object)
+ *
+ * Reuse `scenario` fields — do not fork copies into many category maps.
  */
 export const PROPERTIES_COLLECTION = "properties";
 export const ACTIVE_PROPERTY_KEY = "mortgage-pro:active-property-id";
@@ -30,7 +33,7 @@ export type PropertyMeta = {
   id: string;
   /**
    * Business house id — the root identity users see (`001`, `002`, …).
-   * Stored on the doc as both `id` (business) and `houseId` (alias).
+   * Stored on the doc as both `id` (business) and `houseId` (alias for older clients).
    */
   houseId: string;
   houseNumber: number;
@@ -43,12 +46,11 @@ export type PropertyMeta = {
 
 /**
  * House root document (runtime view).
- * Category fields are stored as sibling maps on the Firestore doc; `scenario` is the
- * flattened in-app shape used by tabs/components after unpack.
+ * `scenario` is the single AppPersisted blob for every tab / reusable panel input.
  */
 export type PropertyDoc = PropertyMeta & {
   userId: string;
-  /** Flattened category data for the UI (from house child nodes, or legacy `scenario`). */
+  /** All tab inputs — point of truth (never drop fields when saving). */
   scenario: AppPersisted;
 };
 
@@ -436,7 +438,6 @@ export async function createProperty(
   const n = houseNumber ?? (await nextHouseNumber(userId));
   const houseId = formatHouseId(n);
   const now = Date.now();
-  const categories = packHouseCategories(scenario);
   const ref = await addDoc(collection(fb.db, PROPERTIES_COLLECTION), {
     userId,
     /** Business root id (`001`) — same value as `houseId`. */
@@ -446,7 +447,8 @@ export async function createProperty(
     name: houseLabel(houseId),
     archived: false,
     archivedAt: null,
-    ...categories,
+    /** Single structure for all inputs — do not split across category maps. */
+    scenario,
     updatedAt: now,
     lastOpenedAt: now,
     createdAt: serverTimestamp(),
@@ -455,9 +457,9 @@ export async function createProperty(
 }
 
 /**
- * Persist all category data under this house root (`id` = `001`…).
- * Writes `property` / `financing` / `upfront` / `rental` / `exit` child maps and clears
- * the legacy flat `scenario` blob. Archiving never clears category data.
+ * Persist the full scenario under this house root (`id` = `001`…).
+ * One point of truth: the `scenario` object keeps every input field.
+ * Clears any legacy category maps so we don’t maintain duplicate copies.
  */
 export async function savePropertyScenario(
   id: string,
@@ -468,15 +470,16 @@ export async function savePropertyScenario(
   const fb = getFirebase();
   if (!fb) return;
 
-  const categories = packHouseCategories(scenario);
   const payload: Record<string, unknown> = {
     userId,
-    ...categories,
-    // Migrate away from flat blob — house category nodes are the source of truth.
-    scenario: deleteField(),
+    scenario,
     updatedAt: Date.now(),
     lastOpenedAt: Date.now(),
   };
+  // Drop split category maps if an earlier revision wrote them.
+  for (const key of LEGACY_CATEGORY_KEYS) {
+    payload[key] = deleteField();
+  }
   if (options?.houseNumber !== undefined) {
     const n = options.houseNumber;
     const houseId = options.houseId ?? formatHouseId(n);

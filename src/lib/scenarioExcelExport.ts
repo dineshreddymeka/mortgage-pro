@@ -153,7 +153,13 @@ export function buildScenarioExcelBlob(
     ],
   ]);
 
-  append(wb, "House_inputs", flattenRecord(ex.house as unknown as Record<string, unknown>));
+  append(wb, "House", [
+    ["Key", "Value"],
+    ["id", ex.house.id],
+    ["v", ex.house.v],
+    ...(ex.house.houseNumber !== undefined ? [["houseNumber", ex.house.houseNumber] as Cell[]] : []),
+    ...(ex.house.name ? [["name", ex.house.name] as Cell[]] : []),
+  ]);
   append(wb, "Scenario_inputs", flattenRecord(ex.scenario as unknown as Record<string, unknown>));
 
   append(

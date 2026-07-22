@@ -125,9 +125,9 @@ export function buildFullScenarioExport(
     exportKind: "property-pro-full-export",
     exportVersion: 3,
     exportedAt: new Date().toISOString(),
-    /** House root keyed by business `id` (`001`); category tabs are child maps. */
+    /** House root: `id` + one `scenario` (all inputs). */
     house,
-    /** @deprecated Prefer `house` — flat fields kept for older Excel helpers. */
+    /** Same scenario blob as `house.scenario` (Excel / older helpers). */
     scenario: state,
     formulas: SCENARIO_EXPORT_FORMULAS,
     calculated: {
