@@ -59,22 +59,17 @@ describe("scenario import parsing", () => {
     expect(result.warnings.some((warning) => warning.message.includes("folded"))).toBe(true);
   });
 
-  it("preserves unknown fields from a future scenario", () => {
+  it("inspects but does not rewrite a future schema", () => {
     const future = {
       ...fixtureFutureV99,
       futureAnalysisPanel: { method: "vNext", assumptions: [1, 2, 3] },
     };
     const result = parseScenarioImportText(JSON.stringify(future), fixtureV2Full);
 
-    expect(result.status).toBe("ready");
-    if (result.status !== "ready") return;
-    expect(
-      (result.scenario as unknown as Record<string, unknown>).futureAnalysisPanel
-    ).toEqual(
-      future.futureAnalysisPanel
-    );
-    expect(result.preview.unknownFieldCount).toBe(1);
+    expect(result.status).toBe("error");
+    if (result.status !== "error") return;
     expect(result.warnings.some((warning) => warning.message.includes("newer"))).toBe(true);
+    expect(result.errors.some((issue) => issue.message.includes("repaired safely"))).toBe(true);
   });
 
   it("rejects malformed, unrecognized, and invalid scenario JSON", () => {

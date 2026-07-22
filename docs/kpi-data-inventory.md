@@ -29,6 +29,23 @@ Canonical implementation:
 - Firestore persistence: `src/storage/firestoreProperties.ts`
 - Derived pipeline: `src/lib/deriveScenario.ts`
 - Exports: `src/lib/scenarioExport.ts`, `src/lib/scenarioExcelExport.ts`
+- Canonical validation: `src/storage/scenarioValidation.ts`
+- Import preview/application: `src/lib/scenarioImport.ts`
+- Round-trip verification: `src/lib/dataConsistency.ts`
+
+## Import, validation, and verification ownership
+
+- Supported JSON roots include `house.scenario` exports, raw scenarios, legacy
+  top-level `scenario` envelopes, Firestore-like house roots, and legacy category maps.
+- Import applies only a validated/repaired `scenario`. Source IDs and names are preview
+  data; owner, archive, collaboration, revision, and current-house metadata are preserved.
+- `validatePropertyProScenario()` is the canonical field/type/range/relationship validator.
+  Blocking or ambiguous issues prevent Apply; deterministic migrations are warnings.
+- Future-version scenarios can be inspected but are not rewritten by an older client.
+  Unknown fields on supported/current schemas are retained.
+- `verifyScenarioRoundTrip()` checks export → import → normalization without mutating state.
+- Downloadable JSON, Firestore, Excel, PDF, Compare, and UI all read the same scenario.
+  `formulas` and `calculated` are audit outputs and never imported into persisted inputs.
 - Read-only consistency verifier/importer: `src/lib/dataConsistency.ts`
 
 ## Persisted scenario inventory
@@ -201,6 +218,8 @@ When adding or changing a financial input or KPI:
 4. Define empty/zero behavior and mobile presentation.
 5. Add formula tests and scenario round-trip/no-field-loss tests.
 6. Update this document in the same pull request.
+7. Add canonical validation rules for every new optional block or persisted property.
+8. Keep current, reset, legacy, malformed, and future-version import fixtures passing.
 
 Run `npm run verify:data` to enforce the fixture, schema, defaults/reset, parser,
 export/import, and documented-field inventory contract in CI.

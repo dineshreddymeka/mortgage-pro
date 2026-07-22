@@ -1,4 +1,5 @@
 import ContentPasteOutlinedIcon from "@mui/icons-material/ContentPasteOutlined";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -28,6 +29,7 @@ import {
   type ScenarioImportMode,
   type ScenarioImportResult,
 } from "../lib/scenarioImport";
+import { downloadScenarioJson } from "../lib/scenarioExport";
 import type { AppPersisted } from "../storage/mortgageState";
 
 const money = new Intl.NumberFormat(undefined, {
@@ -177,6 +179,20 @@ export function ScenarioImportPanel({
             }}
           >
             Import scenario
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DownloadOutlinedIcon />}
+            onClick={() =>
+              downloadScenarioJson(state, `house-${houseId}.json`, {
+                id: houseId,
+                houseId,
+                name: houseName,
+              })
+            }
+          >
+            Download JSON backup
           </Button>
           <Typography variant="caption" color="text.secondary">
             Current target: {houseName} ({houseId})

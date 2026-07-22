@@ -237,3 +237,19 @@ export function buildFullScenarioExport(
     },
   };
 }
+
+/** Download the canonical house envelope plus derived audit data as JSON. */
+export function downloadScenarioJson(
+  state: AppPersisted,
+  filename: string,
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+) {
+  const json = JSON.stringify(buildFullScenarioExport(state, houseMeta), null, 2);
+  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}

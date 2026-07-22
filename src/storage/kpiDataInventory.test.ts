@@ -29,4 +29,11 @@ describe("KPI and data structure inventory", () => {
     expect(inventory).toContain("scenario: { ...all user inputs }");
     expect(inventory).toContain("never stored as competing copies");
   });
+
+  it("documents canonical import validation and metadata boundaries", () => {
+    expect(inventory).toContain("src/storage/scenarioValidation.ts");
+    expect(inventory).toContain("src/lib/scenarioImport.ts");
+    expect(inventory).toContain("owner, archive, collaboration");
+    expect(inventory).toContain("Future-version scenarios can be inspected");
+  });
 });

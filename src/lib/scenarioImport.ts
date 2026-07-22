@@ -1,11 +1,10 @@
 import { deriveScenario } from "./deriveScenario";
 import {
   KNOWN_SCENARIO_KEYS,
-  parseMortgageState,
-  SCHEMA_VERSION,
   type AppPersisted,
 } from "../storage/mortgageState";
 import { hasHouseCategoryNodes } from "../storage/houseTree";
+import { validatePropertyProScenario } from "../storage/scenarioValidation";
 
 export const MAX_SCENARIO_IMPORT_BYTES = 5 * 1024 * 1024;
 
@@ -69,74 +68,6 @@ const FORMAT_LABELS: Record<ScenarioImportFormat, string> = {
 const CATEGORY_KEYS = ["property", "financing", "upfront", "rental", "exit"] as const;
 const KNOWN_KEY_SET = new Set<string>(KNOWN_SCENARIO_KEYS);
 const RECOGNITION_KEYS = new Set<string>(KNOWN_SCENARIO_KEYS.filter((key) => key !== "v"));
-
-const NON_NEGATIVE_NUMBER_FIELDS = [
-  "homePrice",
-  "downPayment",
-  "downPaymentPercent",
-  "interestRateApr",
-  "termYears",
-  "propertyTaxAnnual",
-  "propertyTaxPercent",
-  "insuranceAnnual",
-  "hoaMonthly",
-  "pmiMonthly",
-  "extraPrincipalMonthly",
-  "annualGrossIncome",
-  "monthlyNonMortgageDebt",
-  "monthlyRent",
-  "otherMonthlyIncome",
-  "vacancyRatePercent",
-  "closingCosts",
-  "miscInitialCash",
-  "propertyMgmtPercent",
-  "maintenancePercent",
-  "capexPercent",
-  "sellClosingCostPercent",
-  "currentHomeValue",
-  "yearsOwned",
-] as const;
-
-const PERCENT_FIELDS = [
-  "downPaymentPercent",
-  "interestRateApr",
-  "propertyTaxPercent",
-  "vacancyRatePercent",
-  "propertyMgmtPercent",
-  "maintenancePercent",
-  "capexPercent",
-  "sellClosingCostPercent",
-] as const;
-
-const SIGNED_NUMBER_FIELDS = [
-  "sellAnnualAppreciationPercent",
-  "propertyLatitude",
-  "propertyLongitude",
-] as const;
-
-const STRING_FIELDS = [
-  "propertyAddress",
-  "propertyPlaceId",
-  "propertyState",
-  "propertyPostalCode",
-] as const;
-
-const OPTIONAL_OBJECT_FIELDS = [
-  "refi",
-  "growth",
-  "tax",
-  "paymentPlan",
-  "loan",
-  "upfront",
-  "rentalProFormaInclude",
-  "sellRentalYieldInclude",
-  "buyingCostLineOverrides",
-  "offerTargets",
-  "rentVsBuy",
-  "stressTestDeltas",
-  "rentalIncome",
-  "dealStrategy",
-] as const;
 
 function isObject(value: unknown): value is JsonObject {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -216,94 +147,6 @@ function detectImport(root: JsonObject, warnings: ScenarioImportIssue[]): Detect
   }
 
   return null;
-}
-
-function validateSourceTypes(source: JsonObject, warnings: ScenarioImportIssue[]): ScenarioImportIssue[] {
-  const errors: ScenarioImportIssue[] = [];
-
-  for (const key of NON_NEGATIVE_NUMBER_FIELDS) {
-    const raw = source[key];
-    if (raw === undefined || raw === null || raw === "") continue;
-    const numeric = typeof raw === "number" ? raw : Number(raw);
-    if (!Number.isFinite(numeric)) {
-      errors.push({ path: key, message: `${key} must be a finite number.` });
-    } else if (typeof raw !== "number") {
-      warnings.push({ path: key, message: `${key} was converted from text to a number.` });
-    }
-  }
-
-  for (const key of STRING_FIELDS) {
-    const raw = source[key];
-    if (raw !== undefined && raw !== null && typeof raw !== "string") {
-      errors.push({ path: key, message: `${key} must be text.` });
-    }
-  }
-
-  for (const key of SIGNED_NUMBER_FIELDS) {
-    const raw = source[key];
-    if (raw === undefined || raw === null || raw === "") continue;
-    const numeric = typeof raw === "number" ? raw : Number(raw);
-    if (!Number.isFinite(numeric)) {
-      errors.push({ path: key, message: `${key} must be a finite number or null.` });
-    } else if (typeof raw !== "number") {
-      warnings.push({ path: key, message: `${key} was converted from text to a number.` });
-    }
-  }
-
-  for (const key of OPTIONAL_OBJECT_FIELDS) {
-    const raw = source[key];
-    if (raw !== undefined && raw !== null && !isObject(raw)) {
-      errors.push({ path: key, message: `${key} must be a JSON object.` });
-    }
-  }
-
-  if (source.v !== undefined && typeof source.v !== "number") {
-    errors.push({ path: "v", message: "Scenario version must be a number." });
-  } else if (typeof source.v === "number" && source.v < 1) {
-    errors.push({ path: "v", message: "Scenario version must be 1 or newer." });
-  }
-
-  return errors;
-}
-
-function validateNormalizedScenario(scenario: AppPersisted): ScenarioImportIssue[] {
-  const errors: ScenarioImportIssue[] = [];
-  const record = scenario as unknown as JsonObject;
-
-  for (const key of NON_NEGATIVE_NUMBER_FIELDS) {
-    const value = record[key];
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-      errors.push({ path: key, message: `${key} did not resolve to a finite number.` });
-    } else if (value < 0) {
-      errors.push({ path: key, message: `${key} cannot be negative.` });
-    }
-  }
-
-  for (const key of PERCENT_FIELDS) {
-    const value = record[key];
-    if (typeof value === "number" && value > 100) {
-      errors.push({ path: key, message: `${key} cannot exceed 100%.` });
-    }
-  }
-
-  if (
-    scenario.propertyLatitude !== null &&
-    (!Number.isFinite(scenario.propertyLatitude) ||
-      scenario.propertyLatitude < -90 ||
-      scenario.propertyLatitude > 90)
-  ) {
-    errors.push({ path: "propertyLatitude", message: "Latitude must be between -90 and 90." });
-  }
-  if (
-    scenario.propertyLongitude !== null &&
-    (!Number.isFinite(scenario.propertyLongitude) ||
-      scenario.propertyLongitude < -180 ||
-      scenario.propertyLongitude > 180)
-  ) {
-    errors.push({ path: "propertyLongitude", message: "Longitude must be between -180 and 180." });
-  }
-
-  return errors;
 }
 
 function buildVersionLabel(detected: DetectedImport): string {
@@ -414,17 +257,24 @@ export function parseScenarioImportText(
     warnings.push({ message: "Legacy category sections will be folded into one current scenario." });
   }
 
-  const sourceTypeErrors = validateSourceTypes(detected.scenarioSource, warnings);
-  if (sourceTypeErrors.length > 0) {
-    return { status: "error", errors: sourceTypeErrors, warnings };
-  }
-
-  const sourceVersion = detected.scenarioSource.v;
-  if (typeof sourceVersion === "number" && sourceVersion > SCHEMA_VERSION) {
-    warnings.push({
-      path: "v",
-      message: `Scenario v${sourceVersion} is newer than this app (v${SCHEMA_VERSION}); known fields will be normalized and unknown fields preserved.`,
-    });
+  const validation = validatePropertyProScenario(rootValue);
+  warnings.push(
+    ...validation.issues
+      .filter((issue) => issue.severity === "warning")
+      .map(({ path, message }) => ({ path, message }))
+  );
+  const validationErrors = validation.issues
+    .filter((issue) => issue.severity === "error")
+    .map(({ path, message }) => ({ path, message }));
+  if (!validation.valid || validationErrors.length > 0 || !validation.repairedScenario) {
+    return {
+      status: "error",
+      errors:
+        validationErrors.length > 0
+          ? validationErrors
+          : [{ message: "The scenario could not be repaired safely." }],
+      warnings,
+    };
   }
 
   const suppliedKnown = Object.keys(detected.scenarioSource).filter((key) => KNOWN_KEY_SET.has(key));
@@ -444,11 +294,7 @@ export function parseScenarioImportText(
     });
   }
 
-  const scenario = parseMortgageState(JSON.stringify(detected.scenarioSource));
-  const validationErrors = validateNormalizedScenario(scenario);
-  if (validationErrors.length > 0) {
-    return { status: "error", errors: validationErrors, warnings };
-  }
+  const scenario = validation.repairedScenario;
 
   let kpis: ScenarioImportKpi[];
   try {
