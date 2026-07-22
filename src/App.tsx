@@ -70,6 +70,7 @@ export default function App() {
     state,
     patch,
     reset,
+    replace,
     saveToBrowser,
     saveToCloud,
     properties,
@@ -80,6 +81,7 @@ export default function App() {
     activeHouseLabel,
     selectProperty,
     createNewProperty,
+    createPropertyFromImport,
     archiveHouse,
     restoreHouse,
     renameActiveHouse,
@@ -517,6 +519,8 @@ export default function App() {
                 cloudReady={cloudStatus === "ready"}
                 onReloadPortfolio={() => void reloadPortfolio()}
                 onNotify={(message, severity = "success") => setToast({ message, severity })}
+                onReplaceScenario={replace}
+                onCreateImportedHouse={createPropertyFromImport}
                 onRename={async (name) => {
                   try {
                     const next = await renameActiveHouse(name);

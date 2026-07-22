@@ -467,7 +467,8 @@ export async function getProperty(id: string, viewerUid?: string): Promise<Prope
 export async function createProperty(
   userId: string,
   scenario: AppPersisted,
-  houseNumber?: number
+  houseNumber?: number,
+  name?: string
 ): Promise<string> {
   const fb = getFirebase();
   if (!fb) throw new Error("Firebase is not configured");
@@ -481,7 +482,7 @@ export async function createProperty(
     id: houseId,
     houseId,
     houseNumber: n,
-    name: houseLabel(houseId),
+    name: normalizePropertyName(name ?? "", houseId),
     archived: false,
     archivedAt: null,
     /** Single structure for all inputs — do not split across category maps. */

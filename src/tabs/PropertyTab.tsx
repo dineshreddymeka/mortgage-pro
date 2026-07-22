@@ -5,6 +5,7 @@ import { HouseCollaborationPanel } from "../components/HouseCollaborationPanel";
 import { PropertyLocationCard } from "../components/PropertyLocationCard";
 import { LocationCostPanel } from "../components/LocationCostPanel";
 import { PropertyNameCard } from "../components/PropertyNameCard";
+import { ScenarioImportPanel } from "../components/ScenarioImportPanel";
 import { ShareSnapshotPanel } from "../components/ShareSnapshotPanel";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 import type { HouseAccessRole } from "../collaboration/types";
@@ -23,6 +24,11 @@ export type PropertyTabProps = {
   onReloadPortfolio?: () => void;
   onNotify?: (message: string, severity?: "success" | "error") => void;
   onRename: (name: string) => Promise<string | null>;
+  onReplaceScenario: (scenario: AppPersisted) => void;
+  onCreateImportedHouse: (
+    scenario: AppPersisted,
+    suggestedName: string | null
+  ) => Promise<string | null>;
 };
 
 export function PropertyTab({
@@ -38,6 +44,8 @@ export function PropertyTab({
   onReloadPortfolio,
   onNotify,
   onRename,
+  onReplaceScenario,
+  onCreateImportedHouse,
 }: PropertyTabProps) {
   const widgets = useMemo(
     () => [
@@ -71,11 +79,29 @@ export function PropertyTab({
         ),
       },
       {
+        id: "scenario-import",
+        title: "Scenario import",
+        description: "Validate, preview, then explicitly apply JSON",
+        collapsible: true,
+        defaultLayout: { x: 0, y: 13, w: 12, h: 7, minW: 4, minH: 4 },
+        content: (
+          <ScenarioImportPanel
+            state={state}
+            houseId={houseId}
+            houseName={propertyName}
+            cloudReady={cloudReady}
+            replaceCurrent={onReplaceScenario}
+            createNew={onCreateImportedHouse}
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
         id: "collaboration",
         title: "Collaborators",
         description: "Invite by UID or email hash · member edits only",
         collapsible: true,
-        defaultLayout: { x: 0, y: 13, w: 12, h: 12, minW: 4, minH: 6 },
+        defaultLayout: { x: 0, y: 20, w: 12, h: 12, minW: 4, minH: 6 },
         content: (
           <HouseCollaborationPanel
             propertyDocId={propertyDocId}
@@ -92,7 +118,7 @@ export function PropertyTab({
         title: "Property location",
         description: "Address + map for this house",
         collapsible: true,
-        defaultLayout: { x: 0, y: 25, w: 12, h: 12, minW: 4, minH: 2 },
+        defaultLayout: { x: 0, y: 32, w: 12, h: 12, minW: 4, minH: 2 },
         content: <PropertyLocationCard state={state} patch={patch} />,
       },
       {
@@ -100,7 +126,7 @@ export function PropertyTab({
         title: "Location cost hints",
         description: "State / postal benchmarks",
         collapsible: true,
-        defaultLayout: { x: 0, y: 37, w: 12, h: 8, minW: 4, minH: 5 },
+        defaultLayout: { x: 0, y: 44, w: 12, h: 8, minW: 4, minH: 5 },
         content: <LocationCostPanel state={state} patch={patch} />,
       },
       {
@@ -108,7 +134,7 @@ export function PropertyTab({
         title: "External estimates",
         description: "Tax, insurance, rent, value comps — explicit apply only",
         collapsible: true,
-        defaultLayout: { x: 0, y: 45, w: 12, h: 12, minW: 4, minH: 6 },
+        defaultLayout: { x: 0, y: 52, w: 12, h: 12, minW: 4, minH: 6 },
         content: (
           <ExternalEstimateSuggestionsPanel
             state={state}
@@ -123,7 +149,7 @@ export function PropertyTab({
         title: "Share snapshots",
         description: "Immutable read-only links for this house",
         collapsible: true,
-        defaultLayout: { x: 0, y: 57, w: 12, h: 12, minW: 4, minH: 6 },
+        defaultLayout: { x: 0, y: 64, w: 12, h: 12, minW: 4, minH: 6 },
         content: (
           <ShareSnapshotPanel
             state={state}
@@ -144,6 +170,8 @@ export function PropertyTab({
       onNotify,
       onReloadPortfolio,
       onRename,
+      onReplaceScenario,
+      onCreateImportedHouse,
       ownerUid,
       patch,
       propertyDocId,

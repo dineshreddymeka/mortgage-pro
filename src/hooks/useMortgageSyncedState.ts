@@ -397,6 +397,38 @@ export function useMortgageSyncedState() {
     return id;
   }, [replace, saveOptions, refreshComparisons, refreshLists]);
 
+  const createPropertyFromImport = useCallback(
+    async (next: AppPersisted, suggestedName: string | null) => {
+      const uid = userIdRef.current;
+      if (!uid || !cloudReadyRef.current) return null;
+      if (activeIdRef.current) {
+        await savePropertyScenario(
+          activeIdRef.current,
+          uid,
+          stateRef.current,
+          saveOptions(activeIdRef.current)
+        );
+      }
+
+      const id = await createProperty(uid, next, undefined, suggestedName ?? undefined);
+      localCollaborationRef.current = null;
+      skipNextCloudSave.current = true;
+      replace(next);
+      writeActivePropertyId(id);
+      setActivePropertyId(id);
+      activeIdRef.current = id;
+
+      try {
+        await refreshLists(uid);
+        await refreshComparisons(uid);
+      } catch (error) {
+        console.warn("[firestore] imported house list refresh failed", error);
+      }
+      return id;
+    },
+    [replace, refreshComparisons, refreshLists, saveOptions]
+  );
+
   const archiveHouse = useCallback(
     async (id: string) => {
       const uid = userIdRef.current;
@@ -523,6 +555,7 @@ export function useMortgageSyncedState() {
     activeHouseLabel,
     selectProperty,
     createNewProperty,
+    createPropertyFromImport,
     archiveHouse,
     restoreHouse,
     renameActiveHouse,
