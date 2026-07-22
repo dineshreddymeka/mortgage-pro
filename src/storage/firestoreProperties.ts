@@ -21,6 +21,7 @@ export const ACTIVE_PROPERTY_KEY = "mortgage-pro:active-property-id";
 export type PropertyMeta = {
   id: string;
   name: string;
+  houseNumber: number;
   updatedAt: number;
   lastOpenedAt: number;
 };
@@ -42,6 +43,16 @@ function asMillis(value: unknown): number {
   return 0;
 }
 
+function asHouseNumber(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (Number.isFinite(n) && n >= 1) return Math.floor(n);
+  return fallback;
+}
+
+export function houseLabel(houseNumber: number): string {
+  return `House ${houseNumber}`;
+}
+
 export function readActivePropertyId(): string | null {
   try {
     const id = localStorage.getItem(ACTIVE_PROPERTY_KEY);
@@ -58,16 +69,6 @@ export function writeActivePropertyId(id: string | null): void {
   } catch {
     /* ignore quota / private mode */
   }
-}
-
-export function defaultPropertyName(scenario: AppPersisted): string {
-  const address = (scenario.propertyAddress ?? "").trim();
-  if (address) return address.length > 48 ? `${address.slice(0, 45)}…` : address;
-  const price = Number(scenario.homePrice);
-  if (Number.isFinite(price) && price > 0) {
-    return `Property · $${Math.round(price).toLocaleString("en-US")}`;
-  }
-  return "Untitled property";
 }
 
 /** Resolve a signed-in user (anonymous). Returns null if Firebase/Auth is unavailable. */
@@ -105,17 +106,49 @@ export async function listProperties(userId: string): Promise<PropertyMeta[]> {
   // Filter only (no orderBy) so a composite index is not required; sort in the client.
   const q = query(collection(fb.db, PROPERTIES_COLLECTION), where("userId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs
-    .map((d) => {
+
+  const rows = snap.docs
+    .map((d, index) => {
       const data = d.data();
+      const houseNumber = asHouseNumber(data.houseNumber, index + 1);
       return {
         id: d.id,
-        name: String(data.name ?? "Untitled property"),
+        houseNumber,
+        name: String(data.name ?? houseLabel(houseNumber)),
         updatedAt: asMillis(data.updatedAt),
         lastOpenedAt: asMillis(data.lastOpenedAt),
+        _created: asMillis(data.createdAt),
       };
     })
-    .sort((a, b) => b.lastOpenedAt - a.lastOpenedAt);
+    .sort((a, b) => {
+      if (a.houseNumber !== b.houseNumber) return a.houseNumber - b.houseNumber;
+      return a._created - b._created;
+    });
+
+  // Normalize missing / duplicate numbers to 1..n for stable nav labels.
+  const used = new Set<number>();
+  let next = 1;
+  return rows.map((row) => {
+    let n = row.houseNumber;
+    if (!Number.isFinite(n) || n < 1 || used.has(n)) {
+      while (used.has(next)) next += 1;
+      n = next;
+    }
+    used.add(n);
+    return {
+      id: row.id,
+      houseNumber: n,
+      name: houseLabel(n),
+      updatedAt: row.updatedAt,
+      lastOpenedAt: row.lastOpenedAt,
+    };
+  });
+}
+
+export async function nextHouseNumber(userId: string): Promise<number> {
+  const list = await listProperties(userId);
+  if (list.length === 0) return 1;
+  return Math.max(...list.map((p) => p.houseNumber)) + 1;
 }
 
 export async function getProperty(id: string): Promise<PropertyDoc | null> {
@@ -124,10 +157,12 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
   const snap = await getDoc(doc(fb.db, PROPERTIES_COLLECTION, id));
   if (!snap.exists()) return null;
   const data = snap.data();
+  const houseNumber = asHouseNumber(data.houseNumber, 1);
   return {
     id: snap.id,
     userId: String(data.userId ?? ""),
-    name: String(data.name ?? "Untitled property"),
+    houseNumber,
+    name: String(data.name ?? houseLabel(houseNumber)),
     scenario: data.scenario as AppPersisted,
     updatedAt: asMillis(data.updatedAt),
     lastOpenedAt: asMillis(data.lastOpenedAt),
@@ -137,15 +172,17 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
 export async function createProperty(
   userId: string,
   scenario: AppPersisted,
-  name?: string
+  houseNumber?: number
 ): Promise<string> {
   const fb = getFirebase();
   if (!fb) throw new Error("Firebase is not configured");
 
+  const n = houseNumber ?? (await nextHouseNumber(userId));
   const now = Date.now();
   const ref = await addDoc(collection(fb.db, PROPERTIES_COLLECTION), {
     userId,
-    name: (name ?? defaultPropertyName(scenario)).trim() || "Untitled property",
+    houseNumber: n,
+    name: houseLabel(n),
     scenario,
     updatedAt: now,
     lastOpenedAt: now,
@@ -154,11 +191,12 @@ export async function createProperty(
   return ref.id;
 }
 
+/** Persist full scenario (all tabs). Does not rename the house unless `name` / `houseNumber` passed. */
 export async function savePropertyScenario(
   id: string,
   userId: string,
   scenario: AppPersisted,
-  name?: string
+  options?: { name?: string; houseNumber?: number }
 ): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
@@ -169,8 +207,12 @@ export async function savePropertyScenario(
     updatedAt: Date.now(),
     lastOpenedAt: Date.now(),
   };
-  if (name !== undefined) {
-    payload.name = name.trim() || "Untitled property";
+  if (options?.name !== undefined) {
+    payload.name = options.name.trim() || "House";
+  }
+  if (options?.houseNumber !== undefined) {
+    payload.houseNumber = options.houseNumber;
+    payload.name = houseLabel(options.houseNumber);
   }
 
   await setDoc(doc(fb.db, PROPERTIES_COLLECTION, id), payload, { merge: true });
