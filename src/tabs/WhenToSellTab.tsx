@@ -7,7 +7,6 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid2";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -25,10 +24,17 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { alpha, type Theme } from "@mui/material/styles";
 import { useMemo, type ReactNode } from "react";
-import { CategoryJump } from "../components/CategoryJump";
+import { DollarPercentField } from "../components/DollarPercentField";
+import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { RentVsBuyPanel } from "../components/RentVsBuyPanel";
 import { TaxAssumptionsPanel } from "../components/TaxAssumptionsPanel";
 import { deriveScenario } from "../lib/deriveScenario";
+import {
+  formatPercentField,
+  parseNumericInput,
+  syncDownPaymentDollarPatch,
+  syncDownPaymentPercentPatch,
+} from "../lib/mortgageInputSync";
 import {
   cumulativeCashFlowThroughExitMonths,
   RENTAL_YIELD_PI_ID,
@@ -219,15 +225,10 @@ export type WhenToSellTabProps = {
   onGoToRental?: () => void;
 };
 
-/** Category: Exit — sale assumptions + gain. Other categories jump to their tabs. */
-export function WhenToSellTab({
-  state,
-  patch,
-  onGoToFinancing,
-  onGoToUpfront,
-  onGoToRental,
-}: WhenToSellTabProps) {
+/** Category: Exit — sale assumptions + gain. Shared inputs editable inline in workspace accordions. */
+export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
+  const incomeLocked = derived.rentalIncome.mode !== "simple";
   const loanAmount = derived.loanAmount;
   const apr = state.interestRateApr;
   const basePrice = derived.purchasePrice;
@@ -329,8 +330,8 @@ export function WhenToSellTab({
   return (
     <Stack spacing={0.65}>
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-        Category: <strong>Exit</strong> — sale timing &amp; gain. Edit loan on Financing, cash on Upfront,
-        rent on Rental.
+        Category: <strong>Exit</strong> — sale timing &amp; gain. Expand workspace inputs to edit shared
+        assumptions.
       </Typography>
 
       <WidgetBoardFromPanels boardId="when-to-sell">
@@ -414,11 +415,56 @@ export function WhenToSellTab({
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0.75, pt: 0, pb: 0.5, borderTop: 1, borderColor: "divider" }}>
-                <CategoryJump
-                  category="Upfront"
-                  detail={`Total cash in ${money.format(upfrontTotal)} — edit closing & misc on Upfront.`}
-                  onJump={() => onGoToUpfront?.()}
-                />
+                <Grid container spacing={0.5}>
+                  <Grid size={12}>
+                    <DollarPercentField
+                      label="Down payment"
+                      size="small"
+                      basis={state.homePrice}
+                      dollarValue={state.downPayment}
+                      percentValue={state.downPaymentPercent}
+                      capDollarAtBasis
+                      onDollarChange={(dp) => patch(syncDownPaymentDollarPatch(dp, state.homePrice))}
+                      onPercentChange={(pct) =>
+                        patch(syncDownPaymentPercentPatch(pct, state.homePrice, state.downPayment))
+                      }
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Closing costs"
+                      size="small"
+                      fullWidth
+                      value={formatNumberField(state.closingCosts)}
+                      onChange={(e) => {
+                        const n = parseNumericInput(e.target.value);
+                        if (n !== null) patch({ closingCosts: Math.max(0, n) });
+                      }}
+                      slotProps={{
+                        input: {
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Misc. one-time"
+                      size="small"
+                      fullWidth
+                      value={formatNumberField(state.miscInitialCash)}
+                      onChange={(e) => {
+                        const n = parseNumericInput(e.target.value);
+                        if (n !== null) patch({ miscInitialCash: Math.max(0, n) });
+                      }}
+                      slotProps={{
+                        input: {
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
               </AccordionDetails>
             </Accordion>
           </Grid>
@@ -459,35 +505,7 @@ export function WhenToSellTab({
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0.75, pt: 0, pb: 0.5, borderTop: 1, borderColor: "divider" }}>
-                <CategoryJump
-                  category="Financing"
-                  detail="Loan size, rate, term, and carrying costs are edited on the Financing tab."
-                  onJump={() => onGoToFinancing?.()}
-                />
-                <Divider sx={{ my: 0.65 }} />
-
-            <Stack spacing={0.35}>
-              <Stack direction="row" justifyContent="space-between" alignItems="baseline" gap={1}>
-                <Typography variant="body2" color="text.secondary">
-                  Principal &amp; interest (30-yr)
-                </Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                  {money.format(monthly30.principalAndInterest)}/mo
-                </Typography>
-              </Stack>
-              <Stack direction="row" justifyContent="space-between" alignItems="baseline" gap={1}>
-                <Typography variant="body2" color="text.secondary">
-                  Principal &amp; interest (15-yr)
-                </Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                  {money.format(monthly15.principalAndInterest)}/mo
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, pt: 0.25, fontSize: "0.72rem" }}>
-                Tax, insurance, HOA ({money.format(monthly30.propertyTax + monthly30.insurance + monthly30.hoa)}/mo) — edit on{" "}
-                <strong>Financing</strong>.
-              </Typography>
-            </Stack>
+                <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
               </AccordionDetails>
             </Accordion>
           </Grid>
@@ -641,11 +659,130 @@ export function WhenToSellTab({
                 </Box>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0.75, pt: 0.5, pb: 0.75, borderTop: 1, borderColor: "divider" }}>
-                <CategoryJump
-                  category="Rental"
-                  detail="Rent, other income, and vacancy are edited on the Rental tab. Below, choose what counts toward exit gain."
-                  onJump={() => onGoToRental?.()}
-                />
+                <Grid container spacing={0.5}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      label="Rent"
+                      size="small"
+                      fullWidth
+                      value={formatNumberField(state.monthlyRent)}
+                      onChange={(e) => {
+                        if (incomeLocked) return;
+                        const n = parseNumericInput(e.target.value);
+                        if (n !== null) patch({ monthlyRent: Math.min(999_999, Math.max(0, Math.round(n))) });
+                      }}
+                      slotProps={{
+                        input: {
+                          readOnly: incomeLocked,
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        },
+                      }}
+                      helperText={incomeLocked ? "Synced from income mode" : undefined}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      label="Other income"
+                      size="small"
+                      fullWidth
+                      value={formatNumberField(state.otherMonthlyIncome)}
+                      onChange={(e) => {
+                        if (incomeLocked) return;
+                        const n = parseNumericInput(e.target.value);
+                        if (n !== null)
+                          patch({ otherMonthlyIncome: Math.min(3_000, Math.max(0, Math.round(n))) });
+                      }}
+                      slotProps={{
+                        input: {
+                          readOnly: incomeLocked,
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        },
+                      }}
+                      helperText={incomeLocked ? "Synced from income mode" : undefined}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      label="Vacancy"
+                      size="small"
+                      fullWidth
+                      value={formatPercentField(state.vacancyRatePercent)}
+                      onChange={(e) => {
+                        if (incomeLocked) return;
+                        const n = parseNumericInput(e.target.value);
+                        if (n !== null) patch({ vacancyRatePercent: Math.min(100, Math.max(0, n)) });
+                      }}
+                      slotProps={{
+                        input: {
+                          readOnly: incomeLocked,
+                          endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                        },
+                      }}
+                      helperText={incomeLocked ? "Synced from income mode" : undefined}
+                    />
+                  </Grid>
+                </Grid>
+                <Accordion
+                  defaultExpanded={false}
+                  disableGutters
+                  elevation={0}
+                  sx={{ ...sectionAccordionSx, width: "100%", mt: 0.75 }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: "1.1rem" }} />} sx={sectionAccordionSummarySx}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>
+                      Expense assumptions
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ px: 0.5, pt: 0.25, pb: 0.65 }}>
+                    <Grid container spacing={0.5}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <TextField
+                          label="Mgmt"
+                          size="small"
+                          fullWidth
+                          value={formatPercentField(state.propertyMgmtPercent)}
+                          onChange={(e) => {
+                            const n = parseNumericInput(e.target.value);
+                            if (n !== null) patch({ propertyMgmtPercent: Math.min(50, Math.max(0, n)) });
+                          }}
+                          slotProps={{
+                            input: { endAdornment: <InputAdornment position="end">%</InputAdornment> },
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <TextField
+                          label="Maint."
+                          size="small"
+                          fullWidth
+                          value={formatPercentField(state.maintenancePercent)}
+                          onChange={(e) => {
+                            const n = parseNumericInput(e.target.value);
+                            if (n !== null) patch({ maintenancePercent: Math.min(50, Math.max(0, n)) });
+                          }}
+                          slotProps={{
+                            input: { endAdornment: <InputAdornment position="end">%</InputAdornment> },
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <TextField
+                          label="CapEx"
+                          size="small"
+                          fullWidth
+                          value={formatPercentField(state.capexPercent)}
+                          onChange={(e) => {
+                            const n = parseNumericInput(e.target.value);
+                            if (n !== null) patch({ capexPercent: Math.min(30, Math.max(0, n)) });
+                          }}
+                          slotProps={{
+                            input: { endAdornment: <InputAdornment position="end">%</InputAdornment> },
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
                 <Accordion defaultExpanded={false} disableGutters elevation={0} sx={{ ...sectionAccordionSx, width: "100%", mt: 0.75 }}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: "1.1rem" }} />} sx={sectionAccordionSummarySx}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>

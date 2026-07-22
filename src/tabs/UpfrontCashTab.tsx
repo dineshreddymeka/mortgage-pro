@@ -4,10 +4,18 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
+import { DollarPercentField } from "../components/DollarPercentField";
 import { UpfrontCashScenarioPanel } from "../components/UpfrontCashScenarioPanel";
 import { UpfrontCreditsPanel } from "../components/UpfrontCreditsPanel";
 import { deriveScenario } from "../lib/deriveScenario";
 import { estimateLocationCosts } from "../lib/locationCostEstimator";
+import {
+  formatNumberField,
+  parseNumericInput,
+  syncDownPaymentDollarPatch,
+  syncDownPaymentPercentPatch,
+  syncHomePricePatch,
+} from "../lib/mortgageInputSync";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 
@@ -28,17 +36,6 @@ export type UpfrontCashTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
 };
-
-function formatNumberField(value: number): string {
-  if (!Number.isFinite(value)) return "";
-  return String(value);
-}
-
-function formatPercentField(value: number): string {
-  if (!Number.isFinite(value)) return "";
-  const rounded = Math.round(value * 100) / 100;
-  return String(rounded);
-}
 
 function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
@@ -135,14 +132,11 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                     fullWidth
                     value={formatNumberField(state.homePrice)}
                     onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (!Number.isFinite(n)) return;
-                      const hp = Math.max(0, n);
-                      patch({
-                        homePrice: hp,
-                        downPayment: Math.round((hp * state.downPaymentPercent) / 100),
-                        propertyTaxAnnual: Math.round((hp * state.propertyTaxPercent) / 100),
-                      });
+                      const n = parseNumericInput(e.target.value);
+                      if (n === null) return;
+                      patch(
+                        syncHomePricePatch(n, state.downPaymentPercent, state.propertyTaxPercent)
+                      );
                     }}
                     slotProps={{
                       input: {
@@ -152,50 +146,17 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
+                  <DollarPercentField
                     label="Down payment"
                     size="small"
-                    fullWidth
-                    value={formatNumberField(state.downPayment)}
-                    onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (!Number.isFinite(n)) return;
-                      const hp = state.homePrice;
-                      const dp = Math.max(0, n);
-                      const capped = hp > 0 ? Math.min(dp, hp) : dp;
-                      patch({
-                        downPayment: capped,
-                        downPaymentPercent: hp > 0 ? (capped / hp) * 100 : 0,
-                      });
-                    }}
-                    slotProps={{
-                      input: {
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Down %"
-                    size="small"
-                    fullWidth
-                    value={formatPercentField(state.downPaymentPercent)}
-                    onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (!Number.isFinite(n)) return;
-                      const pct = Math.min(100, Math.max(0, n));
-                      const hp = state.homePrice;
-                      patch({
-                        downPaymentPercent: pct,
-                        downPayment: hp > 0 ? Math.round((hp * pct) / 100) : state.downPayment,
-                      });
-                    }}
-                    slotProps={{
-                      input: {
-                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                      },
-                    }}
+                    basis={state.homePrice}
+                    dollarValue={state.downPayment}
+                    percentValue={state.downPaymentPercent}
+                    capDollarAtBasis
+                    onDollarChange={(dp) => patch(syncDownPaymentDollarPatch(dp, state.homePrice))}
+                    onPercentChange={(pct) =>
+                      patch(syncDownPaymentPercentPatch(pct, state.homePrice, state.downPayment))
+                    }
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -205,8 +166,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                     fullWidth
                     value={formatNumberField(state.closingCosts)}
                     onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (Number.isFinite(n)) patch({ closingCosts: Math.max(0, n) });
+                      const n = parseNumericInput(e.target.value);
+                      if (n !== null) patch({ closingCosts: Math.max(0, n) });
                     }}
                     slotProps={{
                       input: {
@@ -222,8 +183,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                     fullWidth
                     value={formatNumberField(state.miscInitialCash)}
                     onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (Number.isFinite(n)) patch({ miscInitialCash: Math.max(0, n) });
+                      const n = parseNumericInput(e.target.value);
+                      if (n !== null) patch({ miscInitialCash: Math.max(0, n) });
                     }}
                     slotProps={{
                       input: {
