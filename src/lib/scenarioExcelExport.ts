@@ -111,6 +111,14 @@ function rentalCompareSheet(
       r15.initialCashInvested,
     ],
     ["Cash_on_cash", scenario.cashOnCash, r30.cashOnCash, r15.cashOnCash],
+    ["DSCR", scenario.dscr, r30.dscr, r15.dscr],
+    ["GRM", scenario.grossRentMultiplier, r30.grossRentMultiplier, r15.grossRentMultiplier],
+    [
+      "One_percent_rule_ratio",
+      scenario.onePercentRuleRatio,
+      r30.onePercentRuleRatio,
+      r15.onePercentRuleRatio,
+    ],
     ["Yield_adj_annual_CF_WTS", "", yield30, yield15],
   ];
 }
@@ -213,6 +221,13 @@ export function buildScenarioExcelBlob(
       "yieldAdjAnnualCF_15",
       c.rental.whenToSell_yieldAdjustedAnnualCashFlow_15yrPath,
     ],
+    ["rental", "dscr", c.rental.dscr],
+    ["rental", "grm", c.rental.grossRentMultiplier],
+    ["rental", "onePercentRuleRatio", c.rental.onePercentRuleRatio],
+    ["maxOffer", "fromDti28Pct", c.maxOffer.fromDti28Pct],
+    ["maxOffer", "fromCustomBudget", c.maxOffer.fromCustomHousingBudget],
+    ["maxOffer", "fromTargetDscr", c.maxOffer.fromTargetDscr],
+    ["maxOffer", "targetDscr", c.maxOffer.targetDscr],
   ]);
 
   const mp = c.mortgage;

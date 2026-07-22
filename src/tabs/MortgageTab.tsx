@@ -6,6 +6,8 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Grid from "@mui/material/Grid2";
 import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
+import { AmortizationScheduleSection } from "../components/AmortizationScheduleSection";
+import { MaxOfferPanel } from "../components/MaxOfferPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
 import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";
@@ -164,11 +166,19 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         description: "DTI from income and other debt",
         defaultLayout: { x: 0, y: 16, w: 12, h: 12, minW: 4, minH: 8 },
         content: (
-          <MortgageAffordabilityDtiPanel
-            state={state}
-            patch={patch}
-            currentHousingPaymentMonthly={breakdown.total}
-          />
+          <Stack spacing={0.75}>
+            <MortgageAffordabilityDtiPanel
+              state={state}
+              patch={patch}
+              currentHousingPaymentMonthly={breakdown.total}
+            />
+            <MaxOfferPanel
+              maxOffer={derived.maxOffer}
+              annualGrossIncome={state.annualGrossIncome}
+              customHousingBudgetMonthly={state.customHousingBudgetMonthly}
+              currentHomePrice={state.homePrice}
+            />
+          </Stack>
         ),
       },
       {
@@ -206,6 +216,41 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                 <MortgageLoanCompareCards state={state} />
               </AccordionDetails>
             </Accordion>
+
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Full amortization schedule</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Monthly P&I · CSV export
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric label="Months" value={String(schedule.length)} />
+                      <AccordionSummaryMetric label="Life int" value={money.format(lifeInterest)} />
+                    </Stack>
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <AmortizationScheduleSection
+                    schedule={schedule}
+                    baselineSchedule={extraPrincipalMonthly > 0 ? baselineSchedule : null}
+                    totalInterest={lifeInterest}
+                    totalPrincipal={lifePrincipal}
+                    homePrice={state.homePrice}
+                    extraPrincipalMonthly={extraPrincipalMonthly}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
 
             {breakdown.loanAmount > 0 ? (
               <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -300,7 +345,8 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
       ltvPct,
       patch,
       prepaySummary,
-      schedule,
+      baselineSchedule,
+      derived,
       state,
       yearlyDetailed,
       yearlyDetailed15,

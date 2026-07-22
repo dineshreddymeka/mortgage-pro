@@ -4,9 +4,15 @@ import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import {
   bestHouseIdForMetric,
+  comparisonMetricValue,
   type ComparisonMetricKey,
   type HouseComparisonRow,
 } from "../lib/houseComparison";
+import {
+  formatDscrDisplay,
+  formatGrmDisplay,
+  formatOnePercentRuleDisplay,
+} from "./RentalMetricCard";
 
 const money0 = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -19,13 +25,32 @@ const pct1 = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 1,
 });
 
-const METRICS: { key: ComparisonMetricKey; label: string; format: (n: number) => string }[] = [
-  { key: "homePrice", label: "Price", format: (n) => money0.format(n) },
-  { key: "paymentMonthly", label: "Payment", format: (n) => `${money0.format(n)}/mo` },
-  { key: "cashInvested", label: "Cash in", format: (n) => money0.format(n) },
-  { key: "rentMonthly", label: "Rent", format: (n) => `${money0.format(n)}/mo` },
-  { key: "cashFlowMonthly", label: "Cash flow", format: (n) => `${money0.format(n)}/mo` },
-  { key: "cashOnCash", label: "CoC", format: (n) => pct1.format(n) },
+const METRICS: {
+  key: ComparisonMetricKey;
+  label: string;
+  format: (row: HouseComparisonRow) => string;
+}[] = [
+  { key: "homePrice", label: "Price", format: (r) => money0.format(r.homePrice) },
+  { key: "paymentMonthly", label: "Payment", format: (r) => `${money0.format(r.paymentMonthly)}/mo` },
+  { key: "cashInvested", label: "Cash in", format: (r) => money0.format(r.cashInvested) },
+  { key: "rentMonthly", label: "Rent", format: (r) => `${money0.format(r.rentMonthly)}/mo` },
+  { key: "cashFlowMonthly", label: "Cash flow", format: (r) => `${money0.format(r.cashFlowMonthly)}/mo` },
+  { key: "cashOnCash", label: "CoC", format: (r) => pct1.format(r.cashOnCash) },
+  {
+    key: "dscr",
+    label: "DSCR",
+    format: (r) => formatDscrDisplay(r.dscr) ?? "—",
+  },
+  {
+    key: "grossRentMultiplier",
+    label: "GRM",
+    format: (r) => formatGrmDisplay(r.grossRentMultiplier) ?? "—",
+  },
+  {
+    key: "onePercentRuleRatio",
+    label: "1% rule",
+    format: (r) => formatOnePercentRuleDisplay(r.onePercentRuleRatio) ?? "—",
+  },
 ];
 
 export type HouseComparisonPanelProps = {
@@ -198,7 +223,7 @@ export function HouseComparisonPanel({
                 {sorted.map((row) => {
                   const active = row.id === activePropertyId;
                   const best = bestByMetric[metric.key] === row.id;
-                  const value = row[metric.key];
+                  const raw = comparisonMetricValue(row, metric.key);
                   return (
                     <Box
                       component="td"
@@ -213,7 +238,7 @@ export function HouseComparisonPanel({
                         fontSize: "0.78rem",
                         fontWeight: best || active ? 700 : 500,
                         letterSpacing: "-0.03em",
-                        color: best ? "success.main" : "text.primary",
+                        color: best ? "success.main" : raw == null ? "text.disabled" : "text.primary",
                         bgcolor: best
                           ? (t) => alpha(t.palette.success.main, 0.08)
                           : active
@@ -223,7 +248,7 @@ export function HouseComparisonPanel({
                         borderColor: "divider",
                       }}
                     >
-                      {metric.format(value)}
+                      {metric.format(row)}
                     </Box>
                   );
                 })}

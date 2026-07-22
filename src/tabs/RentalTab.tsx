@@ -19,6 +19,12 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { CategoryJump } from "../components/CategoryJump";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
+import {
+  RentalMetricCard,
+  formatDscrDisplay,
+  formatGrmDisplay,
+  formatOnePercentRuleDisplay,
+} from "../components/RentalMetricCard";
 import { deriveScenario } from "../lib/deriveScenario";
 import type { MonthlyBreakdown } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
@@ -386,11 +392,12 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
             gridTemplateColumns: {
               xs: "repeat(2, minmax(0, 1fr))",
               sm: "repeat(3, minmax(0, 1fr))",
-              md: "repeat(5, minmax(0, 1fr))",
+              md: "repeat(4, minmax(0, 1fr))",
+              lg: "repeat(8, minmax(0, 1fr))",
             },
           }}
         >
-          <MetricCard
+          <RentalMetricCard
             label="Mo CF"
             value={moneyDec.format(r.cashFlowMonthly)}
             detail={`Yr ${moneyDec.format(r.cashFlowAnnual)}`}
@@ -405,7 +412,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
               ) : undefined
             }
           />
-          <MetricCard
+          <RentalMetricCard
             label="Yr CF"
             value={moneyDec.format(r.cashFlowAnnual)}
             detail={`Mo ${moneyDec.format(r.cashFlowMonthly)}`}
@@ -417,23 +424,54 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
               ) : undefined
             }
           />
-          <MetricCard
+          <RentalMetricCard
             label="NOI / yr"
             value={moneyDec.format(r.noiAnnual)}
             detail={`${moneyDec.format(r.noiMonthly)}/mo`}
             hint="After OpEx, before P&I"
           />
-          <MetricCard
+          <RentalMetricCard
             label="Cap rate"
-            value={`${pct1.format(r.capRate * 100)}%`}
-            detail={`Price ${money.format(state.homePrice)}`}
+            value={state.homePrice > 0 ? `${pct1.format(r.capRate * 100)}%` : null}
+            detail={state.homePrice > 0 ? `Price ${money.format(state.homePrice)}` : undefined}
             hint="NOI ÷ price"
+            noDataHint="Set price"
           />
-          <MetricCard
+          <RentalMetricCard
             label="Cash-on-cash"
-            value={`${pct1.format(r.cashOnCash * 100)}%`}
-            detail={`${money.format(r.initialCashInvested)} in`}
+            value={r.initialCashInvested > 0 ? `${pct1.format(r.cashOnCash * 100)}%` : null}
+            detail={r.initialCashInvested > 0 ? `${money.format(r.initialCashInvested)} in` : undefined}
             hint="Yr CF ÷ cash in"
+            noDataHint="Add cash in"
+          />
+          <RentalMetricCard
+            label="DSCR"
+            value={formatDscrDisplay(r.dscr)}
+            detail={r.dscr != null ? "NOI ÷ debt svc" : undefined}
+            hint="Annual NOI ÷ annual P&I+PMI"
+            noDataHint={mortgage.loanAmount <= 0 ? "All-cash" : "—"}
+            positive={r.dscr != null ? r.dscr >= 1 : undefined}
+          />
+          <RentalMetricCard
+            label="GRM"
+            value={formatGrmDisplay(r.grossRentMultiplier)}
+            detail={r.grossRentMultiplier != null ? "Price ÷ yr GSI" : undefined}
+            hint="Lower = less rent per $"
+            noDataHint="Need price & rent"
+          />
+          <RentalMetricCard
+            label="1% rule"
+            value={formatOnePercentRuleDisplay(r.onePercentRuleRatio)}
+            detail={
+              r.onePercentRuleRatio != null
+                ? r.onePercentRuleRatio >= 0.01
+                  ? "Meets 1%"
+                  : "Below 1%"
+                : undefined
+            }
+            hint="Rent ÷ price"
+            noDataHint="Need price & rent"
+            positive={r.onePercentRuleRatio != null ? r.onePercentRuleRatio >= 0.01 : undefined}
           />
         </Box>
       </Box>
@@ -1123,115 +1161,5 @@ function RentalFieldRow(props: {
         />
       </Grid>
     </Grid>
-  );
-}
-
-function MetricCard(props: {
-  label: string;
-  value: string;
-  detail?: string;
-  /** Second line under `detail` (e.g. P&amp;I + loan term). */
-  detailExtra?: string;
-  hint: string;
-  positive?: boolean;
-  /** Native tooltip for extra context (e.g. what the detail dollars mean). */
-  title?: string;
-  /** Optional callout below hint (e.g. post-payoff cash flow). */
-  note?: ReactNode;
-}) {
-  const hasRight = Boolean(props.detail || props.detailExtra);
-  return (
-    <Box
-      title={props.title}
-      sx={{
-        height: "100%",
-        borderRadius: 1.5,
-        border: "1px solid",
-        borderColor: "divider",
-        px: 1,
-        py: 0.75,
-        bgcolor: "transparent",
-        transition: "border-color 0.15s ease",
-        "&:hover": { borderColor: "secondary.main" },
-      }}
-    >
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontSize: "0.65rem", lineHeight: 1.2, letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 700 }}
-        >
-          {props.label}
-        </Typography>
-        <Stack
-          direction="row"
-          alignItems={hasRight ? "flex-start" : "baseline"}
-          justifyContent="space-between"
-          gap={0.5}
-          sx={{ mt: 0.125 }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 700,
-              fontVariantNumeric: "tabular-nums",
-              fontSize: "0.9375rem",
-              letterSpacing: "-0.02em",
-              fontFamily: "var(--pp-font-display)",
-              color:
-                props.positive === undefined
-                  ? "text.primary"
-                  : props.positive
-                    ? "success.main"
-                    : "error.main",
-            }}
-          >
-            {props.value}
-          </Typography>
-          {hasRight ? (
-            <Stack alignItems="flex-end" spacing={0.125} sx={{ minWidth: 0, textAlign: "right" }}>
-              {props.detail ? (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.65rem", lineHeight: 1.2 }}
-                >
-                  {props.detail}
-                </Typography>
-              ) : null}
-              {props.detailExtra ? (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    fontVariantNumeric: "tabular-nums",
-                    fontSize: "0.6rem",
-                    lineHeight: 1.2,
-                    opacity: 0.92,
-                  }}
-                >
-                  {props.detailExtra}
-                </Typography>
-              ) : null}
-            </Stack>
-          ) : null}
-        </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem", lineHeight: 1.25, display: "block", mt: 0.25 }}>
-          {props.hint}
-        </Typography>
-        {props.note ? (
-          <Typography
-            variant="caption"
-            sx={{
-              display: "block",
-              mt: 0.45,
-              fontSize: "0.65rem",
-              lineHeight: 1.35,
-              color: "success.main",
-            }}
-          >
-            {props.note}
-          </Typography>
-        ) : null}
-    </Box>
   );
 }

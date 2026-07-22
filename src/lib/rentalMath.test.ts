@@ -52,4 +52,11 @@ describe("rentalMath", () => {
     const oneMonthLater = cumulativeCashFlowThroughExitMonths(r, {}, 15, 15 * 12 + 1);
     expect(oneMonthLater - atPayoff).toBeCloseTo(monthAfterPayoff, 5);
   });
+
+  it("computeRentalAnalysis exposes DSCR, GRM, and 1% rule on the analysis object", () => {
+    const r = computeRentalAnalysis(fixtureV2Full, mortgage);
+    expect(r.dscr).toBeGreaterThan(0);
+    expect(r.grossRentMultiplier).toBeGreaterThan(0);
+    expect(r.onePercentRuleRatio).toBeCloseTo(fixtureV2Full.monthlyRent / fixtureV2Full.homePrice, 8);
+  });
 });

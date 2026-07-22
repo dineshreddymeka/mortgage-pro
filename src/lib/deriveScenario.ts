@@ -8,6 +8,7 @@ import {
   type AmortizationRow,
   type MonthlyBreakdown,
 } from "./mortgageMath";
+import { computeMaxOfferOutputs, type MaxOfferOutputs } from "./offerMath";
 import {
   cashFlowAnnualFromYieldToggles,
   computeRentalAnalysis,
@@ -42,6 +43,8 @@ export type DerivedScenario = {
   sellRows: SellYearRow[];
   realWealthSnapshots: RealWealthExitSnapshot[];
   impliedAnnualAppreciationPercent: number;
+  /** Derived max-offer caps (not persisted). */
+  maxOffer: MaxOfferOutputs;
 };
 
 /** Central derived-data pipeline — payment, schedules, rental, and exit outputs from one scenario. */
@@ -153,5 +156,6 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
       state.currentHomeValue,
       state.yearsOwned
     ),
+    maxOffer: computeMaxOfferOutputs(state),
   };
 }

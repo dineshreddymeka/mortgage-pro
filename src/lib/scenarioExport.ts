@@ -27,6 +27,18 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "Monthly cash flow = NOI - P&I. Rental pro-forma toggles (rentalProFormaInclude) and When-to-sell yield toggles (sellRentalYieldInclude) can omit OpEx lines, P&I, or PMI for alternate paths.",
   cashOnCash: "Annual cash flow / (downPayment + closingCosts + miscInitialCash).",
   capRate: "NOI (annual) / purchasePrice (homePrice).",
+  rentalDscr:
+    "DSCR = NOI (annual) / annual debt service (P&I + PMI per month × 12). Null when all-cash or no debt service.",
+  rentalGrm:
+    "GRM = purchasePrice / annual gross scheduled income (monthlyRent + otherMonthlyIncome, before vacancy). Null when price or GSI is zero.",
+  rentalOnePercentRule:
+    "1% rule ratio = monthlyRent / purchasePrice (decimal; 0.01 = 1%). Null when price or rent is zero.",
+  maxOfferDti28:
+    "Binary search max purchase price where PITI+HOA+PMI ≤ 28% of monthly gross income.",
+  maxOfferCustomBudget:
+    "Binary search max purchase price where PITI+HOA+PMI ≤ customHousingBudgetMonthly.",
+  maxOfferTargetDscr:
+    "Binary search max purchase price where modeled DSCR ≥ offerTargets.targetDscr (optional scenario field).",
   totalGainWhenToSell:
     "At exit: netProceeds + sum of monthly amounts through exit − initial cash. While the loan is active: yield-adjusted cash flow (NOI − P&I with toggles). After the loan is paid off: effective gross income only (vacancy applied; no operating expenses or P&I).",
 };
@@ -56,6 +68,7 @@ export function buildFullScenarioExport(
     sellRows,
     realWealthSnapshots: milestones,
     impliedAnnualAppreciationPercent: impliedAprVerify,
+    maxOffer,
   } = derived;
 
   const house = buildHouseRoot(state, houseMeta);
@@ -109,6 +122,15 @@ export function buildFullScenarioExport(
         rentalProformaWith15YearPI: rental15,
         whenToSell_yieldAdjustedAnnualCashFlow_30yrPath: yieldCf30,
         whenToSell_yieldAdjustedAnnualCashFlow_15yrPath: yieldCf15,
+        dscr: rentalTerm.dscr,
+        grossRentMultiplier: rentalTerm.grossRentMultiplier,
+        onePercentRuleRatio: rentalTerm.onePercentRuleRatio,
+      },
+      maxOffer: {
+        fromDti28Pct: maxOffer.fromDti28Pct,
+        fromCustomHousingBudget: maxOffer.fromCustomHousingBudget,
+        fromTargetDscr: maxOffer.fromTargetDscr,
+        targetDscr: maxOffer.targetDscr,
       },
       whenToSell: {
         exitHorizonYears_clampedToTerm: termYears,
