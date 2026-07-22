@@ -169,9 +169,10 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
     () => [
       {
         id: "property",
-        title: "Property",
-        description: "Address for this scenario",
-        defaultLayout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 6 },
+        title: "Property map",
+        description: "Address + map for this scenario",
+        collapsible: true,
+        defaultLayout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 2 },
         content: <PropertyLocationCard state={state} patch={patch} />,
       },
       {

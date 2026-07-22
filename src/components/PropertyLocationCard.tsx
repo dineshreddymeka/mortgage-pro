@@ -99,19 +99,31 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
     writeMapCollapsed(mapCollapsed);
   }, [mapCollapsed]);
 
-  // Maps needs a resize/recenter after the panel opens from display:none/collapse.
+  // Maps needs a resize/recenter after the panel or parent widget opens.
   useEffect(() => {
     if (mapCollapsed || mapsStatus !== "ready" || !mapRef.current) return;
     const map = mapRef.current;
     const position = toLatLng(lat, lng) ?? initialCoordsRef.current ?? DEFAULT_CENTER;
-    const handle = window.setTimeout(() => {
+    const refresh = () => {
       if (typeof google !== "undefined" && google.maps?.event) {
         google.maps.event.trigger(map, "resize");
       }
       map.setCenter(position);
       if (toLatLng(lat, lng)) map.setZoom(MAP_ZOOM);
-    }, 200);
-    return () => window.clearTimeout(handle);
+    };
+    const handle = window.setTimeout(refresh, 200);
+    const el = mapContainerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (el && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => {
+        if (el.offsetHeight > 0) refresh();
+      });
+      ro.observe(el);
+    }
+    return () => {
+      window.clearTimeout(handle);
+      ro?.disconnect();
+    };
   }, [mapCollapsed, mapsStatus, lat, lng]);
 
   useEffect(() => {

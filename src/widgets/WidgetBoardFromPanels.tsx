@@ -15,6 +15,8 @@ export type WidgetPanelProps = {
   h?: number;
   /** Default width in grid cols (lg, max 12). */
   w?: number;
+  /** Allow collapsing this panel to a title bar. */
+  collapsible?: boolean;
   children: ReactNode;
 };
 
@@ -43,14 +45,30 @@ export function WidgetBoardFromPanels({
     const panels = Children.toArray(children).filter(isWidgetPanel);
     let y = 0;
     return panels.map((panel) => {
-      const { id, title, description, children: content, h = 12, w = 12 } = panel.props;
+      const {
+        id,
+        title,
+        description,
+        children: content,
+        h = 12,
+        w = 12,
+        collapsible = false,
+      } = panel.props;
       const width = Math.min(12, Math.max(3, w));
       const height = Math.max(4, h);
       const item: WidgetBoardItem = {
         id,
         title,
         description,
-        defaultLayout: { x: 0, y, w: width, h: height, minW: 3, minH: 4 },
+        collapsible,
+        defaultLayout: {
+          x: 0,
+          y,
+          w: width,
+          h: height,
+          minW: 3,
+          minH: collapsible ? 2 : 4,
+        },
         content,
       };
       y += height;

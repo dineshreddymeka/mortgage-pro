@@ -13,10 +13,17 @@ import {
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import {
+  applyCollapsedHeights,
   buildDefaultLayouts,
   clearLayouts,
+  COLLAPSED_WIDGET_H,
+  loadCollapsedIds,
+  loadExpandedHeights,
   loadLayouts,
+  saveCollapsedIds,
+  saveExpandedHeights,
   saveLayouts,
+  type ExpandedHeights,
   type WidgetDef,
 } from "./widgetLayout";
 import { WidgetFrame } from "./WidgetFrame";
@@ -31,23 +38,103 @@ export type WidgetBoardProps = {
   rowHeight?: number;
 };
 
+type BreakpointKey = "lg" | "md" | "sm" | "xs";
+const BPS: BreakpointKey[] = ["lg", "md", "sm", "xs"];
+
+function snapshotHeights(layouts: ResponsiveLayouts, id: string): ExpandedHeights[string] {
+  const out: ExpandedHeights[string] = {};
+  for (const bp of BPS) {
+    const item = layouts[bp]?.find((l) => l.i === id);
+    if (item && item.h > COLLAPSED_WIDGET_H) out[bp] = item.h;
+  }
+  return out;
+}
+
+function restoreHeights(
+  layouts: ResponsiveLayouts,
+  id: string,
+  saved: ExpandedHeights[string] | undefined,
+  fallbackH: number,
+  fallbackMinH: number
+): ResponsiveLayouts {
+  const next: ResponsiveLayouts = { ...layouts };
+  for (const bp of BPS) {
+    const list = next[bp];
+    if (!list) continue;
+    next[bp] = list.map((item) => {
+      if (item.i !== id) return item;
+      const h = saved?.[bp] ?? Math.max(fallbackH, COLLAPSED_WIDGET_H + 2);
+      return { ...item, h, minH: fallbackMinH };
+    });
+  }
+  return next;
+}
+
 export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardProps) {
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
   const defs = useMemo(() => widgets.map(({ content: _c, ...def }) => def), [widgets]);
-  const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => loadLayouts(boardId, defs));
+  const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => {
+    const loaded = loadLayouts(boardId, defs);
+    return applyCollapsedHeights(loaded, loadCollapsedIds(boardId));
+  });
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => loadCollapsedIds(boardId));
+  const [expandedHeights, setExpandedHeights] = useState<ExpandedHeights>(() =>
+    loadExpandedHeights(boardId)
+  );
 
   const onLayoutChange = useCallback(
     (_current: Layout, all: ResponsiveLayouts) => {
-      setLayouts(all);
-      saveLayouts(boardId, all);
+      // While collapsed, keep header-only height even if drag/compact nudges items.
+      const next = applyCollapsedHeights(all, collapsedIds);
+      setLayouts(next);
+      saveLayouts(boardId, next);
     },
-    [boardId]
+    [boardId, collapsedIds]
   );
 
   const resetLayout = useCallback(() => {
     clearLayouts(boardId);
+    setCollapsedIds(new Set());
+    setExpandedHeights({});
     setLayouts(buildDefaultLayouts(defs));
   }, [boardId, defs]);
+
+  const toggleCollapse = useCallback(
+    (id: string) => {
+      const def = defs.find((d) => d.id === id);
+      if (!def?.collapsible) return;
+
+      const collapsing = !collapsedIds.has(id);
+      const nextCollapsed = new Set(collapsedIds);
+      const fallback = def.defaultLayout.h ?? 8;
+
+      if (collapsing) {
+        const snap = snapshotHeights(layouts, id);
+        const nextHeights = { ...expandedHeights, [id]: { ...expandedHeights[id], ...snap } };
+        nextCollapsed.add(id);
+        const updated = applyCollapsedHeights(layouts, nextCollapsed);
+        setExpandedHeights(nextHeights);
+        setCollapsedIds(nextCollapsed);
+        setLayouts(updated);
+        saveExpandedHeights(boardId, nextHeights);
+        saveCollapsedIds(boardId, nextCollapsed);
+        saveLayouts(boardId, updated);
+        return;
+      }
+
+      nextCollapsed.delete(id);
+      const fallbackMinH = def.defaultLayout.minH ?? 2;
+      const updated = applyCollapsedHeights(
+        restoreHeights(layouts, id, expandedHeights[id], fallback, fallbackMinH),
+        nextCollapsed
+      );
+      setCollapsedIds(nextCollapsed);
+      setLayouts(updated);
+      saveCollapsedIds(boardId, nextCollapsed);
+      saveLayouts(boardId, updated);
+    },
+    [boardId, collapsedIds, defs, expandedHeights, layouts]
+  );
 
   return (
     <Box ref={containerRef} sx={{ width: "100%" }}>
@@ -67,7 +154,7 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             color: "text.secondary",
           }}
         >
-          Widgets · drag title · resize bottom-right corner
+          Widgets · drag title · collapse · resize corner
         </Typography>
         <Button
           size="small"
@@ -82,7 +169,6 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
 
       <Box
         sx={{
-          // Keep resize handles clickable above card chrome.
           "& .react-grid-item": {
             overflow: "visible",
           },
@@ -91,7 +177,6 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             opacity: 0.18,
             borderRadius: "12px",
           },
-          // Override RGL default opacity:0 until hover — that made resize feel broken.
           "& .react-grid-item > .react-resizable-handle": {
             opacity: "1 !important",
             zIndex: 6,
@@ -160,7 +245,8 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             dragConfig={{
               enabled: true,
               handle: ".widget-drag-handle",
-              cancel: ".react-resizable-handle,input,textarea,button,a,select,[role='button']",
+              cancel:
+                ".react-resizable-handle,.widget-collapse-toggle,input,textarea,button,a,select,[role='button']",
               bounded: false,
               threshold: 3,
             }}
@@ -170,21 +256,29 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             }}
             onLayoutChange={onLayoutChange}
           >
-            {widgets.map((w) => (
-              <div
-                key={w.id}
-                style={{
-                  height: "100%",
-                  width: "100%",
-                  // Handles are siblings of WidgetFrame; keep them unclipped.
-                  overflow: "visible",
-                }}
-              >
-                <WidgetFrame title={w.title} description={w.description}>
-                  {w.content}
-                </WidgetFrame>
-              </div>
-            ))}
+            {widgets.map((w) => {
+              const collapsed = collapsedIds.has(w.id);
+              return (
+                <div
+                  key={w.id}
+                  style={{
+                    height: "100%",
+                    width: "100%",
+                    overflow: "visible",
+                  }}
+                >
+                  <WidgetFrame
+                    title={w.title}
+                    description={w.description}
+                    collapsible={Boolean(w.collapsible)}
+                    collapsed={collapsed}
+                    onToggleCollapse={() => toggleCollapse(w.id)}
+                  >
+                    {w.content}
+                  </WidgetFrame>
+                </div>
+              );
+            })}
           </ResponsiveGridLayout>
         ) : (
           <Box sx={{ minHeight: 120 }} />
