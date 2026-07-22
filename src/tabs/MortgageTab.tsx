@@ -140,14 +140,14 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "loan",
         title: "Loan & payment",
         description: `${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}%`,
-        defaultLayout: { x: 0, y: 0, w: 12, h: 16, minW: 6, minH: 10 },
+        defaultLayout: { x: 0, y: 0, w: 12, h: 13, minW: 6, minH: 9 },
         content: (
-          <Grid container spacing={1.25} alignItems="flex-start">
-            <Grid size={{ xs: 12, md: 6 }}>
+          <Grid container spacing={1} alignItems="flex-start">
+            <Grid size={{ xs: 12, lg: 7 }}>
               <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Stack spacing={1}>
+            <Grid size={{ xs: 12, lg: 5 }}>
+              <Stack spacing={0.85}>
                 <MortgagePaymentBreakdown breakdown={breakdown} />
                 <MortgageLoanSummaryCard
                   state={state}
@@ -168,14 +168,14 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "loan-product",
         title: "Loan product",
         description: `${derived.loanProduct.productType} · ${derived.loanProduct.miLabel}`,
-        defaultLayout: { x: 0, y: 16, w: 12, h: 11, minW: 6, minH: 8 },
+        defaultLayout: { x: 0, y: 13, w: 12, h: 11, minW: 6, minH: 8 },
         content: <LoanProductPanel state={state} patch={patch} />,
       },
       {
         id: "external-rate-estimates",
         title: "Rate suggestions",
         description: "External benchmarks — explicit apply only",
-        defaultLayout: { x: 0, y: 27, w: 12, h: 10, minW: 4, minH: 6 },
+        defaultLayout: { x: 0, y: 24, w: 12, h: 10, minW: 4, minH: 6 },
         content: (
           <ExternalEstimateSuggestionsPanel
             state={state}
@@ -190,7 +190,7 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 0, y: 37, w: 12, h: 12, minW: 4, minH: 8 },
+        defaultLayout: { x: 0, y: 34, w: 12, h: 12, minW: 4, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <MortgageAffordabilityDtiPanel
@@ -211,7 +211,7 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "term-tools",
         title: "Term tools",
         description: "15 vs 30 · paydown · refi",
-        defaultLayout: { x: 0, y: 49, w: 12, h: 14, minW: 6, minH: 8 },
+        defaultLayout: { x: 0, y: 46, w: 12, h: 14, minW: 6, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
