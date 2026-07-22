@@ -247,13 +247,13 @@ export default function App() {
                   XLS
                 </Box>
               </Button>
-              <Tooltip title="Restore all fields to their default values for this house">
+              <Tooltip title="Clear all tab values for this house to zero">
                 <Button
                   size="small"
                   variant="text"
                   startIcon={<RestartAltIcon sx={{ fontSize: 17 }} />}
                   onClick={reset}
-                  aria-label="Reset scenario to defaults"
+                  aria-label="Reset all tab values to zero"
                   sx={{ minHeight: 32, px: 1 }}
                 >
                   Reset

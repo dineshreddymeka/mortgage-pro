@@ -3,6 +3,7 @@ import { impliedAnnualAppreciationPercent } from "../lib/mortgageMath";
 import { isFirebaseConfigured } from "../lib/firebase";
 import {
   defaultMortgageState,
+  emptyAppState,
   SCHEMA_VERSION,
   serializeMortgageState,
   type AppPersisted,
@@ -220,7 +221,8 @@ export function useMortgageSyncedState() {
   }, []);
 
   const reset = useCallback(() => {
-    const next = defaultMortgageState();
+    // Clear every tab field to zero / empty (not factory sample defaults).
+    const next = emptyAppState();
     lastSerialized.current = serializeMortgageState(next);
     savePersistedMortgageState(next);
     setState(next);

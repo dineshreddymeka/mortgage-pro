@@ -93,8 +93,47 @@ export function defaultAppStateFromJson(d: ScenarioDefaultsFile): AppPersisted {
   };
 }
 
-/** Fresh scenario (Reset, corrupt storage). Values come from `scenario-defaults.json`. */
+/** Factory sample scenario (new house / corrupt storage). Values come from `scenario-defaults.json`. */
 export const defaultAppState = (): AppPersisted => defaultAppStateFromJson(SCENARIO_DEFAULTS_JSON);
+
+/**
+ * Cleared scenario for Reset — every editable field across all tabs set to zero / empty.
+ * Does not use factory sample defaults.
+ */
+export function emptyAppState(): AppPersisted {
+  return {
+    v: SCHEMA_VERSION,
+    homePrice: 0,
+    downPayment: 0,
+    downPaymentPercent: 0,
+    interestRateApr: 0,
+    termYears: 0,
+    propertyTaxAnnual: 0,
+    propertyTaxPercent: 0,
+    insuranceAnnual: 0,
+    hoaMonthly: 0,
+    pmiMonthly: 0,
+    extraPrincipalMonthly: 0,
+    annualGrossIncome: 0,
+    monthlyNonMortgageDebt: 0,
+    monthlyRent: 0,
+    otherMonthlyIncome: 0,
+    vacancyRatePercent: 0,
+    closingCosts: 0,
+    miscInitialCash: 0,
+    propertyMgmtPercent: 0,
+    maintenancePercent: 0,
+    capexPercent: 0,
+    sellAnnualAppreciationPercent: 0,
+    sellClosingCostPercent: 0,
+    currentHomeValue: 0,
+    yearsOwned: 0,
+    propertyAddress: "",
+    propertyPlaceId: "",
+    propertyLatitude: null,
+    propertyLongitude: null,
+  };
+}
 
 /**
  * Merge parsed storage with current schema defaults so new fields (e.g. `pmiMonthly`) appear
