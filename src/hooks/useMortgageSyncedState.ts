@@ -14,9 +14,9 @@ import {
 } from "../storage/localStore";
 import {
   createProperty,
-  defaultPropertyName,
   ensureFirebaseUser,
   getProperty,
+  houseLabel,
   listProperties,
   readActivePropertyId,
   savePropertyScenario,
@@ -48,6 +48,10 @@ export function useMortgageSyncedState() {
   userIdRef.current = userId;
   const cloudReadyRef = useRef(false);
   const skipNextCloudSave = useRef(false);
+
+  const activeHouseNumber =
+    properties.find((p) => p.id === activePropertyId)?.houseNumber ??
+    (properties.length > 0 ? properties[0].houseNumber : 1);
 
   useEffect(() => {
     return subscribeMortgageStateRemote((remote) => {
@@ -105,18 +109,18 @@ export function useMortgageSyncedState() {
         }
 
         if (!activeId) {
-          // First cloud session: upload the current local scenario.
+          // First cloud session: upload the current local scenario as House 1.
           skipNextCloudSave.current = true;
-          activeId = await createProperty(user.uid, stateRef.current);
+          activeId = await createProperty(user.uid, stateRef.current, 1);
           list = await listProperties(user.uid);
         } else {
-          const doc = await getProperty(activeId);
-          if (doc?.scenario) {
+          const loaded = await getProperty(activeId);
+          if (loaded?.scenario) {
             skipNextCloudSave.current = true;
-            const serialized = serializeMortgageState(doc.scenario);
+            const serialized = serializeMortgageState(loaded.scenario);
             lastSerialized.current = serialized;
-            savePersistedMortgageState(doc.scenario);
-            setState(doc.scenario);
+            savePersistedMortgageState(loaded.scenario);
+            setState(loaded.scenario);
             void touchLastOpened(activeId);
           }
         }
@@ -141,7 +145,7 @@ export function useMortgageSyncedState() {
     };
   }, []);
 
-  // Debounced cloud save when the active scenario changes.
+  // Debounced cloud save of full scenario (all tabs) when fields change.
   useEffect(() => {
     if (!cloudReadyRef.current || cloudStatus !== "ready") return;
     if (!userId || !activePropertyId) return;
@@ -154,8 +158,7 @@ export function useMortgageSyncedState() {
       const uid = userIdRef.current;
       const id = activeIdRef.current;
       if (!uid || !id) return;
-      const scenario = stateRef.current;
-      void savePropertyScenario(id, uid, scenario, defaultPropertyName(scenario))
+      void savePropertyScenario(id, uid, stateRef.current)
         .then(async () => {
           const list = await listProperties(uid);
           setProperties(list);
@@ -223,12 +226,13 @@ export function useMortgageSyncedState() {
     savePersistedMortgageState(state);
   }, [state]);
 
+  /** Save every tab field for the active house to localStorage + Firestore. */
   const saveToCloud = useCallback(async () => {
     saveToBrowser();
     const uid = userIdRef.current;
     const id = activeIdRef.current;
     if (!uid || !id || !cloudReadyRef.current) return false;
-    await savePropertyScenario(id, uid, stateRef.current, defaultPropertyName(stateRef.current));
+    await savePropertyScenario(id, uid, stateRef.current);
     const list = await listProperties(uid);
     setProperties(list);
     return true;
@@ -240,22 +244,18 @@ export function useMortgageSyncedState() {
       const uid = userIdRef.current;
       if (uid && activeIdRef.current && cloudReadyRef.current) {
         try {
-          await savePropertyScenario(
-            activeIdRef.current,
-            uid,
-            stateRef.current,
-            defaultPropertyName(stateRef.current)
-          );
+          // Flush all tab data for the house we're leaving.
+          await savePropertyScenario(activeIdRef.current, uid, stateRef.current);
         } catch (err) {
           console.warn("[firestore] flush before switch failed", err);
         }
       }
 
-      const doc = await getProperty(id);
-      if (!doc?.scenario) return;
+      const loaded = await getProperty(id);
+      if (!loaded?.scenario) return;
 
       skipNextCloudSave.current = true;
-      replace(doc.scenario);
+      replace(loaded.scenario);
       writeActivePropertyId(id);
       setActivePropertyId(id);
       activeIdRef.current = id;
@@ -274,12 +274,7 @@ export function useMortgageSyncedState() {
 
     if (activeIdRef.current) {
       try {
-        await savePropertyScenario(
-          activeIdRef.current,
-          uid,
-          stateRef.current,
-          defaultPropertyName(stateRef.current)
-        );
+        await savePropertyScenario(activeIdRef.current, uid, stateRef.current);
       } catch {
         /* continue */
       }
@@ -306,6 +301,8 @@ export function useMortgageSyncedState() {
     saveToCloud,
     properties,
     activePropertyId,
+    activeHouseNumber,
+    activeHouseLabel: houseLabel(activeHouseNumber),
     selectProperty,
     createNewProperty,
     cloudStatus,

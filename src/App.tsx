@@ -20,7 +20,7 @@ import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
-import { PropertySwitcher } from "./components/PropertySwitcher";
+import { HouseNavBar } from "./components/HouseNavBar";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { computeMonthlyPayment } from "./lib/mortgageMath";
@@ -50,6 +50,7 @@ export default function App() {
     saveToCloud,
     properties,
     activePropertyId,
+    activeHouseLabel,
     selectProperty,
     createNewProperty,
     cloudStatus,
@@ -89,7 +90,7 @@ export default function App() {
   function exportExcel() {
     downloadScenarioExcel(state);
     setToast({
-      message: "Exported property-pro-scenario.xlsx.",
+      message: `Exported ${activeHouseLabel} to Excel.`,
       severity: "success",
     });
   }
@@ -98,13 +99,15 @@ export default function App() {
     try {
       const cloud = await saveToCloud();
       setToast({
-        message: cloud ? "Saved locally and to Firestore." : "Scenario saved in this browser.",
+        message: cloud
+          ? `Saved all tab data for ${activeHouseLabel} to Firestore.`
+          : `Saved all tab data for ${activeHouseLabel} in this browser.`,
         severity: "success",
       });
     } catch {
       saveToBrowser();
       setToast({
-        message: "Saved in this browser (cloud save failed).",
+        message: `Saved ${activeHouseLabel} in this browser (cloud save failed).`,
         severity: "error",
       });
     }
@@ -175,6 +178,18 @@ export default function App() {
                 variant="caption"
                 color="text.secondary"
                 sx={{
+                  display: { xs: "none", sm: "inline" },
+                  whiteSpace: "nowrap",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                }}
+              >
+                {activeHouseLabel}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
                   display: { xs: "none", md: "inline" },
                   whiteSpace: "nowrap",
                   fontSize: "0.72rem",
@@ -185,28 +200,6 @@ export default function App() {
             </Stack>
 
             <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
-              <PropertySwitcher
-                cloudStatus={cloudStatus}
-                cloudError={cloudError}
-                properties={properties}
-                activePropertyId={activePropertyId}
-                onSelect={(id) => {
-                  void selectProperty(id).catch(() =>
-                    setToast({ message: "Could not open that property.", severity: "error" })
-                  );
-                }}
-                onCreate={() => {
-                  void createNewProperty()
-                    .then((id) => {
-                      if (id) {
-                        setToast({ message: "New property created in Firestore.", severity: "success" });
-                      }
-                    })
-                    .catch(() =>
-                      setToast({ message: "Could not create property.", severity: "error" })
-                    );
-                }}
-              />
               <Button
                 size="small"
                 variant="contained"
@@ -215,10 +208,10 @@ export default function App() {
                 onClick={() => {
                   void saveScenario();
                 }}
-                aria-label="Save scenario"
+                aria-label="Save all tab data"
                 sx={{ minHeight: 30, px: 1.25 }}
               >
-                Save
+                Save all
               </Button>
               <Button
                 size="small"
@@ -235,7 +228,7 @@ export default function App() {
                   XLS
                 </Box>
               </Button>
-              <Tooltip title="Restore all fields to their default values">
+              <Tooltip title="Restore all fields to their default values for this house">
                 <Button
                   size="small"
                   variant="text"
@@ -263,6 +256,28 @@ export default function App() {
             </Stack>
           </Stack>
         </Container>
+
+        <HouseNavBar
+          cloudStatus={cloudStatus}
+          cloudError={cloudError}
+          properties={properties}
+          activePropertyId={activePropertyId}
+          onSelect={(id) => {
+            void selectProperty(id).catch(() =>
+              setToast({ message: "Could not open that house.", severity: "error" })
+            );
+          }}
+          onCreate={() => {
+            void createNewProperty()
+              .then((id) => {
+                if (id) {
+                  setToast({ message: "New house added. All tabs start fresh.", severity: "success" });
+                  setTab(0);
+                }
+              })
+              .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
+          }}
+        />
       </Box>
 
       <Container maxWidth="xl" sx={{ pb: 1.5, px: { xs: 1.5, sm: 2 }, pt: 1 }}>
@@ -364,8 +379,9 @@ export default function App() {
           display="block"
           sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
         >
-          Estimates only. Auto-saves locally
-          {cloudStatus === "ready" ? " and syncs properties to Firestore." : "."}
+          Estimates only. {activeHouseLabel}: all tabs (Mortgage, Upfront, Rental, When to sell)
+          save together
+          {cloudStatus === "ready" ? " to Firestore." : " in this browser."}
           {cloudError ? ` ${cloudError}` : ""}
         </Typography>
       </Container>
