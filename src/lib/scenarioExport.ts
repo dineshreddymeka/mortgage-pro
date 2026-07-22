@@ -33,6 +33,14 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "GRM = purchasePrice / annual gross scheduled income (monthlyRent + otherMonthlyIncome, before vacancy). Null when price or GSI is zero.",
   rentalOnePercentRule:
     "1% rule ratio = monthlyRent / purchasePrice (decimal; 0.01 = 1%). Null when price or rent is zero.",
+  rentalIncomeMultifamily:
+    "Multifamily mode: sum unit rents → monthlyRent, sum unit other income → otherMonthlyIncome, portfolio vacancyLoss / GSI → vacancyRatePercent. Feeds the same rental/derive path.",
+  rentalIncomeStr:
+    "STR mode: computeStrIncome (nightly × nights + cleaning + other; platform fees + vacancy) → canonical rent fields with effective vacancy folded in.",
+  dealStrategyBrrrr:
+    "BRRRR: totalCashInvested = down + rehab + buy closing + holding; refiLoan = ARV × LTV; cashOut = max(0, refiLoan − initial loan − refi closing); cashLeft = max(0, invested − cashOut).",
+  dealStrategyFlip:
+    "Flip: totalProjectCost = purchase + rehab + buy closing + holding + financing; netSaleProceeds = sale − selling costs − loan payoff; netProfit = proceeds − project cost.",
   maxOfferDti28:
     "Binary search max purchase price where PITI+HOA+PMI ≤ 28% of monthly gross income.",
   maxOfferCustomBudget:
@@ -89,13 +97,15 @@ export function buildFullScenarioExport(
     maxOffer,
     monthlyProjection,
     exitInvestments,
+    rentalIncome,
+    dealStrategy,
   } = derived;
 
   const house = buildHouseRoot(state, houseMeta);
 
   return {
     exportKind: "property-pro-full-export",
-    exportVersion: 3,
+    exportVersion: 4,
     exportedAt: new Date().toISOString(),
     /** House root: `id` + one `scenario` (all inputs). */
     house,
@@ -137,6 +147,14 @@ export function buildFullScenarioExport(
         lastAmortizationRow: schedTerm.length > 0 ? schedTerm[schedTerm.length - 1] ?? null : null,
       },
       rental: {
+        rentalIncomeMode: rentalIncome.mode,
+        rentalIncomeResolvedCanonical: {
+          monthlyRent: rentalIncome.monthlyRent,
+          otherMonthlyIncome: rentalIncome.otherMonthlyIncome,
+          vacancyRatePercent: rentalIncome.vacancyRatePercent,
+        },
+        multifamilySnapshot: rentalIncome.multifamilySnapshot ?? null,
+        strSnapshot: rentalIncome.strSnapshot ?? null,
         rentalProformaWithMortgageTerm: rentalTerm,
         rentalProformaWith30YearPI: rental30,
         rentalProformaWith15YearPI: rental15,
@@ -145,6 +163,10 @@ export function buildFullScenarioExport(
         dscr: rentalTerm.dscr,
         grossRentMultiplier: rentalTerm.grossRentMultiplier,
         onePercentRuleRatio: rentalTerm.onePercentRuleRatio,
+      },
+      dealStrategy: {
+        brrrr: dealStrategy.brrrr,
+        flip: dealStrategy.flip,
       },
       maxOffer: {
         fromDti28Pct: maxOffer.fromDti28Pct,

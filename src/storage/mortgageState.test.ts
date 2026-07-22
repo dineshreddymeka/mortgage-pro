@@ -42,11 +42,21 @@ describe("mortgageState serialization and migration", () => {
     assertKnownFieldsEqual(base, restored);
   });
 
-  it("preserves refi, DTI budget, growth, paymentPlan, and rentalProFormaInclude through serialize/parse", () => {
+  it("preserves refi, DTI budget, growth, paymentPlan, rentalProFormaInclude, rentalIncome, and dealStrategy through serialize/parse", () => {
     const withBlocks = {
       ...fixtureV2Full,
       growth: { rentGrowthPercent: 2.5, expenseGrowthPercent: 1.5 },
       paymentPlan: { frequency: "biweekly" as const, lumpSums: [{ month: 24, amount: 5000 }] },
+      rentalIncome: {
+        mode: "multifamily" as const,
+        multifamily: {
+          units: [{ id: "u1", monthlyRent: 1500, vacancyRatePercent: 5 }],
+        },
+      },
+      dealStrategy: {
+        brrrr: { arv: 600_000, refiLtvPercent: 75 },
+        flip: { salePrice: 580_000 },
+      },
     };
     const restored = roundTrip(withBlocks);
     expect(restored.refi).toEqual(fixtureV2Full.refi);
@@ -56,6 +66,8 @@ describe("mortgageState serialization and migration", () => {
     expect(restored.buyingCostLineOverrides).toEqual(fixtureV2Full.buyingCostLineOverrides);
     expect(restored.growth).toEqual(withBlocks.growth);
     expect(restored.paymentPlan).toEqual(withBlocks.paymentPlan);
+    expect(restored.rentalIncome).toEqual(withBlocks.rentalIncome);
+    expect(restored.dealStrategy).toEqual(withBlocks.dealStrategy);
   });
 
   it("migrates known v1 mortgage JSON to current schema with rental defaults", () => {

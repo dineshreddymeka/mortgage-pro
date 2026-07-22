@@ -21,6 +21,8 @@ import { CategoryJump } from "../components/CategoryJump";
 import { GrowthAssumptionsPanel } from "../components/GrowthAssumptionsPanel";
 import { StressTestPanel } from "../components/StressTestPanel";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
+import { RentalIncomeModePanel } from "../components/RentalIncomeModePanel";
+import { DealStrategyPanel } from "../components/DealStrategyPanel";
 import {
   RentalMetricCard,
   formatDscrDisplay,
@@ -184,6 +186,8 @@ export type RentalTabProps = {
 /** Category: Rental — income, OpEx, pro forma. Financing/Upfront edited on their own tabs. */
 export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: RentalTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
+  const incomeMode = derived.rentalIncome.mode;
+  const incomeLocked = incomeMode !== "simple";
   const mortgage: MonthlyBreakdown = derived.monthlyPayment;
   const r = derived.rental;
   const egi = r.effectiveGrossIncomeMonthly;
@@ -494,47 +498,64 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
             }
           >
             <Stack spacing={1}>
+                <RentalIncomeModePanel state={state} patch={patch} />
                 <RentalFieldRow
                   anchorId="rental-edit-rent"
                   label="Rent"
-                  detail="Any amount ≥ 0 · edit freely, saves when you leave the field"
+                  detail={
+                    incomeLocked
+                      ? `Synced from ${incomeMode} mode — edit in panel above`
+                      : "Any amount ≥ 0 · edit freely, saves when you leave the field"
+                  }
                   valueLabel={money.format(state.monthlyRent)}
                   textLabel="$/mo"
                   textValue={formatNumberField(state.monthlyRent)}
-                  numericCommitOnBlur={{
-                    min: 0,
-                    max: 999_999,
-                    committed: state.monthlyRent,
-                    onCommit: (n) => patch({ monthlyRent: n }),
-                  }}
+                  numericCommitOnBlur={
+                    incomeLocked
+                      ? undefined
+                      : {
+                          min: 0,
+                          max: 999_999,
+                          committed: state.monthlyRent,
+                          onCommit: (n) => patch({ monthlyRent: n }),
+                        }
+                  }
                   startAdornment={<InputAdornment position="start">$</InputAdornment>}
                 />
                 <RentalFieldRow
                   anchorId="rental-edit-other-income"
                   label="Other income"
-                  detail="0–3k/mo"
+                  detail={incomeLocked ? "Synced from income mode" : "0–3k/mo"}
                   valueLabel={money.format(state.otherMonthlyIncome)}
                   textLabel="$/mo"
                   textValue={formatNumberField(state.otherMonthlyIncome)}
-                  onText={(raw) => {
-                    const n = Number(raw.replace(/[^0-9.]/g, ""));
-                    if (!Number.isFinite(n)) return;
-                    patch({ otherMonthlyIncome: Math.min(3_000, Math.max(0, Math.round(n))) });
-                  }}
+                  onText={
+                    incomeLocked
+                      ? undefined
+                      : (raw) => {
+                          const n = Number(raw.replace(/[^0-9.]/g, ""));
+                          if (!Number.isFinite(n)) return;
+                          patch({ otherMonthlyIncome: Math.min(3_000, Math.max(0, Math.round(n))) });
+                        }
+                  }
                   startAdornment={<InputAdornment position="start">$</InputAdornment>}
                 />
                 <RentalFieldRow
                   anchorId="rental-edit-vacancy"
                   label="Vacancy"
-                  detail="0–100% · high vacancy stresses cash flow"
+                  detail={incomeLocked ? "Synced from income mode" : "0–100% · high vacancy stresses cash flow"}
                   valueLabel={`${state.vacancyRatePercent.toFixed(1)}%`}
                   textLabel="%"
                   textValue={formatPercentField(state.vacancyRatePercent)}
-                  onText={(raw) => {
-                    const n = Number(raw.replace(/[^0-9.]/g, ""));
-                    if (!Number.isFinite(n)) return;
-                    patch({ vacancyRatePercent: Math.min(100, Math.max(0, n)) });
-                  }}
+                  onText={
+                    incomeLocked
+                      ? undefined
+                      : (raw) => {
+                          const n = Number(raw.replace(/[^0-9.]/g, ""));
+                          if (!Number.isFinite(n)) return;
+                          patch({ vacancyRatePercent: Math.min(100, Math.max(0, n)) });
+                        }
+                  }
                   endAdornment={<InputAdornment position="end">%</InputAdornment>}
                 />
               </Stack>
@@ -704,6 +725,18 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           </RentalPanelCard>
         </Grid>
       </Grid>
+
+      <RentalPanelCard
+        panelId="rental-edit-strategies"
+        title="Deal strategies"
+        description={
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
+            Optional BRRRR / flip what-ifs — inputs saved; snapshots derived at runtime
+          </Typography>
+        }
+      >
+        <DealStrategyPanel state={state} patch={patch} />
+      </RentalPanelCard>
 
       <RentalPanelCard
         panelId="rental-edit-growth"

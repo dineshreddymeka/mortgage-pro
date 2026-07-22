@@ -53,8 +53,30 @@ describe("deriveScenario", () => {
       d.rental.cashFlowMonthly
     );
     expect(exported.calculated.rental.dscr).toBe(d.rental.dscr);
+    expect(exported.calculated.rental.rentalIncomeMode).toBe("simple");
+    expect(exported.calculated.dealStrategy.brrrr).toBeNull();
     expect(exported.calculated.maxOffer.fromDti28Pct).toBe(d.maxOffer.fromDti28Pct);
     expect(exported.calculated.projection.monthCount).toBe(d.monthlyProjection.length);
     expect(exported.calculated.whenToSell.exitInvestmentMetrics.length).toBe(d.exitInvestments.length);
+  });
+
+  it("includes rental income mode and deal strategy snapshots in derived output", () => {
+    const state = {
+      ...fixtureV2Full,
+      rentalIncome: {
+        mode: "str" as const,
+        str: {
+          nightlyRate: 250,
+          nightsBookedPerMonth: 20,
+          cleaningFeePerStay: 100,
+          staysPerMonth: 8,
+        },
+      },
+      dealStrategy: { brrrr: { arv: 700_000, refiLtvPercent: 75 } },
+    };
+    const d = deriveScenario(state);
+    expect(d.rentalIncome.mode).toBe("str");
+    expect(d.rentalIncome.strSnapshot).toBeDefined();
+    expect(d.dealStrategy.brrrr).not.toBeNull();
   });
 });

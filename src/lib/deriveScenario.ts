@@ -5,6 +5,8 @@ import { amortizeWithRateSchedule } from "./loanProducts";
 import type { ExitYearInvestment } from "./projectionEngine";
 import { buildMonthlyProjection, investmentMetricsByExitYear, type MonthlyProjectionRow } from "./projectionEngine";
 import { resolveLoanProduct, resolveUpfrontAdjustments } from "./resolveLoanScenario";
+import { resolveDealStrategySnapshots, type DealStrategySnapshots } from "./resolveDealStrategy";
+import { resolveRentalIncome, withResolvedRentalIncome, type ResolvedRentalIncome } from "./resolveRentalIncome";
 import {
   buildAmortizationSchedule,
   buildAmortizationScheduleWithExtraPrincipal,
@@ -50,6 +52,8 @@ export type DerivedScenario = {
   maxOffer: MaxOfferOutputs;
   monthlyProjection: MonthlyProjectionRow[];
   exitInvestments: ExitYearInvestment[];
+  rentalIncome: ResolvedRentalIncome;
+  dealStrategy: DealStrategySnapshots;
 };
 
 function flat(schedule: number[]) {
@@ -80,21 +84,24 @@ function amort(lp: LoanProductResult, termYears: number): AmortizationRow[] {
 }
 
 export function deriveScenario(state: AppPersisted): DerivedScenario {
-  const hp = Math.max(0, state.homePrice);
-  const dp = Math.max(0, state.downPayment);
-  const lp = resolveLoanProduct(state);
-  const termYears = Math.min(30, Math.max(1, Math.round(state.loan?.termYears ?? state.termYears)));
-  const pmi = effectivePmi(state, lp);
-  const net = computeNetCashToClose(dp, state.closingCosts, state.miscInitialCash, resolveUpfrontAdjustments(state, lp.pointsUpfrontCost));
-  const monthlyPayment = payment(state, lp, termYears, pmi);
-  const monthlyPayment30 = payment(state, lp, 30, pmi);
-  const monthlyPayment15 = payment(state, lp, 15, pmi);
+  const rentalIncome = resolveRentalIncome(state);
+  const effective = withResolvedRentalIncome(state);
+  const hp = Math.max(0, effective.homePrice);
+  const dp = Math.max(0, effective.downPayment);
+  const lp = resolveLoanProduct(effective);
+  const termYears = Math.min(30, Math.max(1, Math.round(effective.loan?.termYears ?? effective.termYears)));
+  const pmi = effectivePmi(effective, lp);
+  const net = computeNetCashToClose(dp, effective.closingCosts, effective.miscInitialCash, resolveUpfrontAdjustments(effective, lp.pointsUpfrontCost));
+  const monthlyPayment = payment(effective, lp, termYears, pmi);
+  const monthlyPayment30 = payment(effective, lp, 30, pmi);
+  const monthlyPayment15 = payment(effective, lp, 15, pmi);
   const amortization = amort(lp, termYears);
-  const amortizationWithExtraPrincipal = state.extraPrincipalMonthly > 0 ? buildAmortizationScheduleWithExtraPrincipal(lp.totalLoanAmount, lp.noteApr, termYears, state.extraPrincipalMonthly) : null;
-  const rental = computeRentalAnalysis(state, monthlyPayment);
-  const rental30 = computeRentalAnalysis(state, monthlyPayment30);
-  const rental15 = computeRentalAnalysis(state, monthlyPayment15);
-  const monthlyProjection = buildMonthlyProjection(state, { yieldInclude: state.sellRentalYieldInclude });
+  const amortizationWithExtraPrincipal = effective.extraPrincipalMonthly > 0 ? buildAmortizationScheduleWithExtraPrincipal(lp.totalLoanAmount, lp.noteApr, termYears, effective.extraPrincipalMonthly) : null;
+  const rental = computeRentalAnalysis(effective, monthlyPayment);
+  const rental30 = computeRentalAnalysis(effective, monthlyPayment30);
+  const rental15 = computeRentalAnalysis(effective, monthlyPayment15);
+  const monthlyProjection = buildMonthlyProjection(effective, { yieldInclude: effective.sellRentalYieldInclude });
+  const dealStrategy = resolveDealStrategySnapshots(effective);
   return {
     purchasePrice: hp,
     downPayment: dp,
@@ -112,13 +119,15 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
     rental,
     rental15,
     rental30,
-    yieldCashFlowAnnual15: cashFlowAnnualFromYieldToggles(rental15, state.sellRentalYieldInclude),
-    yieldCashFlowAnnual30: cashFlowAnnualFromYieldToggles(rental30, state.sellRentalYieldInclude),
-    sellRows: buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, state.sellAnnualAppreciationPercent, state.sellClosingCostPercent, 30, termYears),
-    realWealthSnapshots: buildRealWealthExitSnapshots(state, lp.totalLoanAmount, lp.noteApr, buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, state.sellAnnualAppreciationPercent, state.sellClosingCostPercent, 30, termYears), REAL_WEALTH_MILESTONE_YEARS, state.sellRentalYieldInclude),
-    impliedAnnualAppreciationPercent: impliedAnnualAppreciationPercent(hp, state.currentHomeValue, state.yearsOwned),
-    maxOffer: computeMaxOfferOutputs(state),
+    yieldCashFlowAnnual15: cashFlowAnnualFromYieldToggles(rental15, effective.sellRentalYieldInclude),
+    yieldCashFlowAnnual30: cashFlowAnnualFromYieldToggles(rental30, effective.sellRentalYieldInclude),
+    sellRows: buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, effective.sellAnnualAppreciationPercent, effective.sellClosingCostPercent, 30, termYears),
+    realWealthSnapshots: buildRealWealthExitSnapshots(effective, lp.totalLoanAmount, lp.noteApr, buildSellYearlyRows(lp.totalLoanAmount, lp.noteApr, hp, effective.sellAnnualAppreciationPercent, effective.sellClosingCostPercent, 30, termYears), REAL_WEALTH_MILESTONE_YEARS, effective.sellRentalYieldInclude),
+    impliedAnnualAppreciationPercent: impliedAnnualAppreciationPercent(hp, effective.currentHomeValue, effective.yearsOwned),
+    maxOffer: computeMaxOfferOutputs(effective),
     monthlyProjection,
-    exitInvestments: investmentMetricsByExitYear(state, monthlyProjection, REAL_WEALTH_MILESTONE_YEARS, rental.initialCashInvested),
+    exitInvestments: investmentMetricsByExitYear(effective, monthlyProjection, REAL_WEALTH_MILESTONE_YEARS, rental.initialCashInvested),
+    rentalIncome,
+    dealStrategy,
   };
 }

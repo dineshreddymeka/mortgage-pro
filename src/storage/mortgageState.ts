@@ -93,6 +93,60 @@ export type UpfrontScenarioPersisted = {
   rehabCashIn?: number;
 };
 
+/** Rental income entry mode (canonical rent fields remain the single derive path). */
+export type RentalIncomeMode = "simple" | "multifamily" | "str";
+
+export type MultifamilyUnitPersisted = {
+  id: string;
+  monthlyRent: number;
+  otherMonthlyIncome?: number;
+  vacancyRatePercent?: number;
+};
+
+export type MultifamilyIncomePersisted = {
+  units: MultifamilyUnitPersisted[];
+  defaultVacancyRatePercent?: number;
+};
+
+export type StrIncomePersisted = {
+  nightlyRate: number;
+  nightsBookedPerMonth: number;
+  cleaningFeePerStay: number;
+  staysPerMonth: number;
+  platformFeePercent?: number;
+  otherMonthlyIncome?: number;
+  vacancyRatePercent?: number;
+};
+
+/** Optional rental income detail (multifamily units / STR). Syncs into canonical rent fields. */
+export type RentalIncomePersisted = {
+  mode: RentalIncomeMode;
+  multifamily?: MultifamilyIncomePersisted;
+  str?: StrIncomePersisted;
+};
+
+/** Optional BRRRR strategy inputs — derived snapshots are computed, not stored. */
+export type BrrrrStrategyPersisted = {
+  arv?: number;
+  refiLtvPercent?: number;
+  refiClosingCosts?: number;
+  holdingCostsDuringRehab?: number;
+};
+
+/** Optional fix-and-flip strategy inputs — derived snapshots are computed, not stored. */
+export type FlipStrategyPersisted = {
+  salePrice?: number;
+  sellingCostPercent?: number;
+  holdingCosts?: number;
+  financingCosts?: number;
+  loanPayoffAtSale?: number;
+};
+
+export type DealStrategyPersisted = {
+  brrrr?: BrrrrStrategyPersisted;
+  flip?: FlipStrategyPersisted;
+};
+
 export type AppPersisted = {
   v: typeof SCHEMA_VERSION;
   homePrice: number;
@@ -182,6 +236,10 @@ export type AppPersisted = {
   rentVsBuy?: RentVsBuyAssumptionsPersisted;
   /** Optional stress-test deltas (% / points) applied to scenario copies. */
   stressTestDeltas?: StressTestDeltasPersisted;
+  /** Optional rental income mode detail (multifamily / STR). Syncs into monthlyRent fields. */
+  rentalIncome?: RentalIncomePersisted;
+  /** Optional BRRRR / flip strategy inputs. Derived metrics are not persisted. */
+  dealStrategy?: DealStrategyPersisted;
 };
 
 /** @deprecated Use AppPersisted */
@@ -237,6 +295,8 @@ export const KNOWN_SCENARIO_KEYS = [
   "offerTargets",
   "rentVsBuy",
   "stressTestDeltas",
+  "rentalIncome",
+  "dealStrategy",
 ] as const;
 
 const KNOWN_SCENARIO_KEY_SET = new Set<string>(KNOWN_SCENARIO_KEYS);
@@ -344,6 +404,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     offerTargets: rawOfferTargets,
     rentVsBuy: rawRentVsBuy,
     stressTestDeltas: rawStressDeltas,
+    rentalIncome: rawRentalIncome,
+    dealStrategy: rawDealStrategy,
     customHousingBudgetMonthly: rawBudget,
     ...mergedRest
   } = merged;
@@ -358,6 +420,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const offerTargets = parseOfferTargets(rawOfferTargets);
   const rentVsBuy = parseRentVsBuyAssumptions(rawRentVsBuy);
   const stressTestDeltas = parseStressTestDeltas(rawStressDeltas);
+  const rentalIncome = parseRentalIncome(rawRentalIncome);
+  const dealStrategy = parseDealStrategy(rawDealStrategy);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   const normalized: AppPersisted = {
@@ -378,6 +442,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(offerTargets ? { offerTargets } : {}),
     ...(rentVsBuy ? { rentVsBuy } : {}),
     ...(stressTestDeltas ? { stressTestDeltas } : {}),
+    ...(rentalIncome ? { rentalIncome } : {}),
+    ...(dealStrategy ? { dealStrategy } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
   return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
@@ -744,6 +810,146 @@ function parseStressTestDeltas(raw: unknown): StressTestDeltasPersisted | undefi
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+const RENTAL_INCOME_MODES = new Set<RentalIncomeMode>(["simple", "multifamily", "str"]);
+
+function parseMultifamilyUnit(raw: unknown, index: number): MultifamilyUnitPersisted | null {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const idRaw = typeof o.id === "string" && o.id.length > 0 ? o.id : `unit-${index + 1}`;
+  const monthlyRent = Math.max(0, Math.round(num(o.monthlyRent, 0)));
+  const other = parseUpfrontUsd(o.otherMonthlyIncome);
+  const vacancy =
+    o.vacancyRatePercent !== undefined && o.vacancyRatePercent !== null && o.vacancyRatePercent !== ""
+      ? clampPct(num(o.vacancyRatePercent, 0))
+      : undefined;
+  if (monthlyRent <= 0 && !other && vacancy === undefined) return null;
+  return {
+    id: idRaw,
+    monthlyRent,
+    ...(other ? { otherMonthlyIncome: other } : {}),
+    ...(vacancy !== undefined ? { vacancyRatePercent: vacancy } : {}),
+  };
+}
+
+function parseMultifamilyIncome(raw: unknown): MultifamilyIncomePersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const units: MultifamilyUnitPersisted[] = [];
+  if (Array.isArray(o.units)) {
+    o.units.forEach((item, index) => {
+      const unit = parseMultifamilyUnit(item, index);
+      if (unit) units.push(unit);
+    });
+  }
+  if (units.length === 0) return undefined;
+  const defaultVacancy =
+    o.defaultVacancyRatePercent !== undefined && o.defaultVacancyRatePercent !== null
+      ? clampPct(num(o.defaultVacancyRatePercent, 0))
+      : undefined;
+  return {
+    units,
+    ...(defaultVacancy !== undefined ? { defaultVacancyRatePercent: defaultVacancy } : {}),
+  };
+}
+
+function parseStrIncome(raw: unknown): StrIncomePersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const hasAny =
+    o.nightlyRate !== undefined ||
+    o.nightsBookedPerMonth !== undefined ||
+    o.cleaningFeePerStay !== undefined ||
+    o.staysPerMonth !== undefined ||
+    o.platformFeePercent !== undefined ||
+    o.otherMonthlyIncome !== undefined ||
+    o.vacancyRatePercent !== undefined;
+  if (!hasAny) return undefined;
+  return {
+    nightlyRate: Math.max(0, num(o.nightlyRate, 0)),
+    nightsBookedPerMonth: Math.max(0, Math.round(num(o.nightsBookedPerMonth, 20))),
+    cleaningFeePerStay: Math.max(0, num(o.cleaningFeePerStay, 0)),
+    staysPerMonth: Math.max(0, Math.round(num(o.staysPerMonth, 0))),
+    ...(o.platformFeePercent !== undefined
+      ? { platformFeePercent: clampPct(num(o.platformFeePercent, 3)) }
+      : {}),
+    ...(o.otherMonthlyIncome !== undefined
+      ? { otherMonthlyIncome: Math.max(0, num(o.otherMonthlyIncome, 0)) }
+      : {}),
+    ...(o.vacancyRatePercent !== undefined
+      ? { vacancyRatePercent: clampPct(num(o.vacancyRatePercent, 5)) }
+      : {}),
+  };
+}
+
+function parseRentalIncome(raw: unknown): RentalIncomePersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const modeRaw = typeof o.mode === "string" ? o.mode.toLowerCase() : "simple";
+  const mode = RENTAL_INCOME_MODES.has(modeRaw as RentalIncomeMode) ? (modeRaw as RentalIncomeMode) : "simple";
+  const multifamily = parseMultifamilyIncome(o.multifamily);
+  const str = parseStrIncome(o.str);
+  if (mode === "simple" && !multifamily && !str) return undefined;
+  if (mode === "multifamily" && !multifamily) return undefined;
+  if (mode === "str" && !str) return undefined;
+  return {
+    mode,
+    ...(multifamily ? { multifamily } : {}),
+    ...(str ? { str } : {}),
+  };
+}
+
+function parseBrrrrStrategy(raw: unknown): BrrrrStrategyPersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const arv = parseUpfrontUsd(o.arv);
+  const refiClosing = parseUpfrontUsd(o.refiClosingCosts);
+  const holding = parseUpfrontUsd(o.holdingCostsDuringRehab);
+  const refiLtv =
+    o.refiLtvPercent !== undefined && o.refiLtvPercent !== null && o.refiLtvPercent !== ""
+      ? clampPct(num(o.refiLtvPercent, 75))
+      : undefined;
+  if (!arv && !refiClosing && !holding && refiLtv === undefined) return undefined;
+  return {
+    ...(arv ? { arv } : {}),
+    ...(refiLtv !== undefined ? { refiLtvPercent: refiLtv } : {}),
+    ...(refiClosing ? { refiClosingCosts: refiClosing } : {}),
+    ...(holding ? { holdingCostsDuringRehab: holding } : {}),
+  };
+}
+
+function parseFlipStrategy(raw: unknown): FlipStrategyPersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const salePrice = parseUpfrontUsd(o.salePrice);
+  const holding = parseUpfrontUsd(o.holdingCosts);
+  const financing = parseUpfrontUsd(o.financingCosts);
+  const loanPayoff = parseUpfrontUsd(o.loanPayoffAtSale);
+  const sellingCostPercent =
+    o.sellingCostPercent !== undefined && o.sellingCostPercent !== null && o.sellingCostPercent !== ""
+      ? clampPct(num(o.sellingCostPercent, 6))
+      : undefined;
+  if (!salePrice && !holding && !financing && !loanPayoff && sellingCostPercent === undefined) return undefined;
+  return {
+    ...(salePrice ? { salePrice } : {}),
+    ...(sellingCostPercent !== undefined ? { sellingCostPercent } : {}),
+    ...(holding ? { holdingCosts: holding } : {}),
+    ...(financing ? { financingCosts: financing } : {}),
+    ...(loanPayoff ? { loanPayoffAtSale: loanPayoff } : {}),
+  };
+}
+
+function parseDealStrategy(raw: unknown): DealStrategyPersisted | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const brrrr = parseBrrrrStrategy(o.brrrr);
+  const flip = parseFlipStrategy(o.flip);
+  if (!brrrr && !flip) return undefined;
+  return {
+    ...(brrrr ? { brrrr } : {}),
+    ...(flip ? { flip } : {}),
+  };
+}
+
 function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): RentalOnly {
   return {
     monthlyRent: num(data.monthlyRent, base.monthlyRent),
@@ -791,6 +997,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const offerTargets = parseOfferTargets(data.offerTargets);
   const rentVsBuy = parseRentVsBuyAssumptions(data.rentVsBuy);
   const stressTestDeltas = parseStressTestDeltas(data.stressTestDeltas);
+  const rentalIncome = parseRentalIncome(data.rentalIncome);
+  const dealStrategy = parseDealStrategy(data.dealStrategy);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
   const loc = normalizePropertyLocation(data, base);
   return {
@@ -816,6 +1024,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(offerTargets ? { offerTargets } : {}),
     ...(rentVsBuy ? { rentVsBuy } : {}),
     ...(stressTestDeltas ? { stressTestDeltas } : {}),
+    ...(rentalIncome ? { rentalIncome } : {}),
+    ...(dealStrategy ? { dealStrategy } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
   };
