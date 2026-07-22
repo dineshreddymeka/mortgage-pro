@@ -7,7 +7,6 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid2";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -18,7 +17,7 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { MortgageInputsFields } from "../components/MortgageInputsFields";
+import { CategoryJump } from "../components/CategoryJump";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
 import { computeMonthlyPayment, type MonthlyBreakdown } from "../lib/mortgageMath";
 import { computeRentalAnalysis } from "../lib/rentalMath";
@@ -170,9 +169,12 @@ function pfLineOn(toggles: Record<string, boolean>, id: string): boolean {
 export type RentalTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  onGoToFinancing?: () => void;
+  onGoToUpfront?: () => void;
 };
 
-export function RentalTab({ state, patch }: RentalTabProps) {
+/** Category: Rental — income, OpEx, pro forma. Financing/Upfront edited on their own tabs. */
+export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: RentalTabProps) {
   const mortgage: MonthlyBreakdown = useMemo(
     () =>
       computeMonthlyPayment(
@@ -264,12 +266,12 @@ export function RentalTab({ state, patch }: RentalTabProps) {
   return (
     <Stack spacing={0.75}>
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-        Same scenario as <strong>Mortgage</strong> — financing + upfront sync instantly. Drag widget
-        titles to rearrange · resize from the corner.
+        Category: <strong>Rental</strong> — edit rent &amp; expenses here. Loan and cash-to-close are
+        edited on Financing / Upfront (summaries below).
       </Typography>
 
       <WidgetBoardFromPanels boardId="rental">
-      <WidgetPanel id="financing" title="Financing & property" description="Loan inputs" h={16}>
+      <WidgetPanel id="financing" title="Financing summary" description="Edit on Financing tab" h={8}>
       <Accordion
         expanded={financingOpen}
         onChange={(_, expanded) => setFinancingOpen(expanded)}
@@ -316,20 +318,16 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
-          <Box id="rental-edit-financing">
-            <MortgageInputsFields
-              state={state}
-              patch={patch}
-              inputSize="small"
-              compactGrid
-              purchasePriceHelperText="Drives cap rate (NOI ÷ this price)"
-            />
-          </Box>
+          <CategoryJump
+            category="Financing"
+            detail="Purchase price, down payment, rate, term, tax, insurance, HOA, and PMI are edited on the Financing tab."
+            onJump={() => onGoToFinancing?.()}
+          />
         </AccordionDetails>
       </Accordion>
       </WidgetPanel>
 
-      <WidgetPanel id="upfront-cash" title="Upfront cash" description="Cash invested" h={16}>
+      <WidgetPanel id="upfront-cash" title="Upfront cash" description="Cash invested · edit on Upfront" h={8}>
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
@@ -371,182 +369,11 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
-          <Stack spacing={0.85}>
-            <RentalSubsection title="Purchase & equity">
-              <TextField
-                label="Purchase price"
-                size="small"
-                fullWidth
-                helperText="Cap rate divisor; syncs annual tax $ when you use tax %"
-                value={formatNumberField(state.homePrice)}
-                onChange={(e) => {
-                  const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                  if (!Number.isFinite(n)) return;
-                  const hp = Math.max(0, n);
-                  patch({
-                    homePrice: hp,
-                    downPayment: Math.round((hp * state.downPaymentPercent) / 100),
-                    propertyTaxAnnual: Math.round((hp * state.propertyTaxPercent) / 100),
-                  });
-                }}
-                slotProps={{
-                  input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  },
-                }}
-              />
-              <Grid container spacing={1}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Down payment"
-                    size="small"
-                    fullWidth
-                    value={formatNumberField(state.downPayment)}
-                    onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (!Number.isFinite(n)) return;
-                      const hp = state.homePrice;
-                      const dp = Math.max(0, n);
-                      const capped = hp > 0 ? Math.min(dp, hp) : dp;
-                      patch({
-                        downPayment: capped,
-                        downPaymentPercent: hp > 0 ? (capped / hp) * 100 : 0,
-                      });
-                    }}
-                    slotProps={{
-                      input: {
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Down %"
-                    size="small"
-                    fullWidth
-                    value={formatPercentField(state.downPaymentPercent)}
-                    onChange={(e) => {
-                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                      if (!Number.isFinite(n)) return;
-                      const pct = Math.min(100, Math.max(0, n));
-                      const hp = state.homePrice;
-                      patch({
-                        downPaymentPercent: pct,
-                        downPayment: hp > 0 ? Math.round((hp * pct) / 100) : state.downPayment,
-                      });
-                    }}
-                    slotProps={{
-                      input: {
-                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-              <Stack direction="row" justifyContent="space-between" alignItems="baseline" gap={1}>
-                <Typography variant="caption" color="text.secondary">
-                  Amount financed (loan)
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                  {money.format(Math.max(0, state.homePrice - state.downPayment))}
-                </Typography>
-              </Stack>
-            </RentalSubsection>
-
-            <RentalSubsection title="Closing & misc one-time">
-              <TextField
-                label="Closing costs (fees)"
-                size="small"
-                fullWidth
-                value={formatNumberField(state.closingCosts)}
-                onChange={(e) => {
-                  const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                  if (Number.isFinite(n)) patch({ closingCosts: Math.max(0, n) });
-                }}
-                slotProps={{
-                  input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  },
-                }}
-              />
-              <TextField
-                label="Misc. one-time at close"
-                size="small"
-                fullWidth
-                value={formatNumberField(state.miscInitialCash)}
-                onChange={(e) => {
-                  const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                  if (Number.isFinite(n)) patch({ miscInitialCash: Math.max(0, n) });
-                }}
-                slotProps={{
-                  input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  },
-                }}
-              />
-            </RentalSubsection>
-
-            <Box
-              sx={{
-                borderRadius: 1.5,
-                p: 1,
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: "transparent",
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  fontSize: "0.65rem",
-                  color: "text.secondary",
-                  display: "block",
-                  mb: 0.75,
-                }}
-              >
-                Cash-in checklist
-              </Typography>
-              <Stack spacing={0.5}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    Down payment
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                    {moneyDec.format(state.downPayment)}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    Closing fees
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                    {moneyDec.format(state.closingCosts)}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    Misc. one-time
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                    {moneyDec.format(state.miscInitialCash)}
-                  </Typography>
-                </Stack>
-                <Divider sx={{ my: 0.25 }} />
-                <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    Total cash invested
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
-                    {moneyDec.format(totalCashIn)}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
-          </Stack>
+          <CategoryJump
+            category="Upfront"
+            detail="Down payment, closing costs, and misc cash-in are edited on the Upfront tab."
+            onJump={() => onGoToUpfront?.()}
+          />
         </AccordionDetails>
       </Accordion>
       </WidgetPanel>
