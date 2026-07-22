@@ -68,7 +68,7 @@ export const fixtureV1MortgageOnly: Record<string, unknown> = {
 export const fixtureFutureV99: Record<string, unknown> = {
   ...fixtureV2Full,
   v: 99,
-  growth: { rentGrowthPct: 3, expenseGrowthPct: 2.5 },
+  growth: { rentGrowthPercent: 3, expenseGrowthPercent: 2.5 },
   offerTargets: { targetDscr: 1.25 },
 };
 

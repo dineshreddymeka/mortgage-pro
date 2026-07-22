@@ -42,13 +42,20 @@ describe("mortgageState serialization and migration", () => {
     assertKnownFieldsEqual(base, restored);
   });
 
-  it("preserves refi, DTI budget, and rentalProFormaInclude through serialize/parse", () => {
-    const restored = roundTrip(fixtureV2Full);
+  it("preserves refi, DTI budget, growth, paymentPlan, and rentalProFormaInclude through serialize/parse", () => {
+    const withBlocks = {
+      ...fixtureV2Full,
+      growth: { rentGrowthPercent: 2.5, expenseGrowthPercent: 1.5 },
+      paymentPlan: { frequency: "biweekly" as const, lumpSums: [{ month: 24, amount: 5000 }] },
+    };
+    const restored = roundTrip(withBlocks);
     expect(restored.refi).toEqual(fixtureV2Full.refi);
     expect(restored.customHousingBudgetMonthly).toBe(fixtureV2Full.customHousingBudgetMonthly);
     expect(restored.rentalProFormaInclude).toEqual(fixtureV2Full.rentalProFormaInclude);
     expect(restored.sellRentalYieldInclude).toEqual(fixtureV2Full.sellRentalYieldInclude);
     expect(restored.buyingCostLineOverrides).toEqual(fixtureV2Full.buyingCostLineOverrides);
+    expect(restored.growth).toEqual(withBlocks.growth);
+    expect(restored.paymentPlan).toEqual(withBlocks.paymentPlan);
   });
 
   it("migrates known v1 mortgage JSON to current schema with rental defaults", () => {
@@ -83,8 +90,20 @@ describe("mortgageState serialization and migration", () => {
     expect(cleared.monthlyRent).toBe(0);
     expect(cleared.propertyAddress).toBe("");
     expect(cleared.refi).toBeUndefined();
+    expect(cleared.growth).toBeUndefined();
+    expect(cleared.paymentPlan).toBeUndefined();
     expect(cleared.rentalProFormaInclude).toBeUndefined();
     expect(cleared.v).toBe(SCHEMA_VERSION);
+  });
+
+  it("parses legacy growth field aliases rentGrowthPct / expenseGrowthPct", () => {
+    const parsed = parseMortgageState(
+      JSON.stringify({
+        ...fixtureV2Full,
+        growth: { rentGrowthPct: 4, expenseGrowthPct: 2 },
+      })
+    );
+    expect(parsed.growth).toEqual({ rentGrowthPercent: 4, expenseGrowthPercent: 2 });
   });
 
   it("Firestore house doc scenario round-trips through resolveScenarioFromHouseDoc", () => {

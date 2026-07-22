@@ -13,6 +13,7 @@ import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";
 import { MortgageLoanCompareCards } from "../components/MortgageLoanCompareCards";
 import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCard";
+import { PaymentPlanPanel } from "../components/PaymentPlanPanel";
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
@@ -287,6 +288,44 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                     lifeInterest15={lifeInterest15}
                     lifePrincipalTerm={lifePrincipal}
                     lifeInterestTerm={lifeInterest}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
+
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Payment plan</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Biweekly equivalent · lump sums
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric
+                        label="Frequency"
+                        value={state.paymentPlan?.frequency === "biweekly" ? "Biweekly" : "Monthly"}
+                      />
+                      <AccordionSummaryMetric
+                        label="Lumps"
+                        value={String(state.paymentPlan?.lumpSums?.length ?? 0)}
+                      />
+                    </Stack>
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <PaymentPlanPanel
+                    state={state}
+                    patch={patch}
+                    scheduledPiMonthly={breakdown.principalAndInterest}
                   />
                 </AccordionDetails>
               </Accordion>

@@ -77,6 +77,17 @@ function formatGainVsCashInPct(gain: number, cashIn: number): string {
   return "0%";
 }
 
+function formatIrrDisplay(irr: number | null | undefined): string {
+  if (irr == null || !Number.isFinite(irr)) return "—";
+  const rounded = Math.round(irr * 10) / 10;
+  return `${rounded.toFixed(1)}%`;
+}
+
+function formatEquityMultipleDisplay(mult: number | null | undefined): string {
+  if (mult == null || !Number.isFinite(mult)) return "—";
+  return `${(Math.round(mult * 100) / 100).toFixed(2)}×`;
+}
+
 /** Text color for signed P&amp;L-style amounts (gain / loss / flat). */
 function plTextColor(theme: Theme, n: number): string {
   if (n > 0) return theme.palette.mode === "dark" ? theme.palette.success.light : theme.palette.success.dark;
@@ -301,6 +312,11 @@ export function WhenToSellTab({
   const rows = derived.sellRows;
 
   const wealthSnapshots = derived.realWealthSnapshots;
+  const exitInvestmentByYear = useMemo(() => {
+    const map = new Map<number, (typeof derived.exitInvestments)[number]>();
+    for (const row of derived.exitInvestments) map.set(row.year, row);
+    return map;
+  }, [derived.exitInvestments]);
 
   const totalGainHeadingYears = useMemo(() => {
     const ys = [...REAL_WEALTH_MILESTONE_YEARS];
@@ -732,6 +748,8 @@ export function WhenToSellTab({
                 snapshot={w}
                 showUserTermColumn={showUserTermColumn}
                 userTermYears={exitHorizonYears}
+                investment={exitInvestmentByYear.get(w.year)}
+                hasCashIn={initialCashInvested > 0}
               />
             </Grid>
           ))}
@@ -1048,6 +1066,11 @@ function MilestoneWealthCard(props: {
   snapshot: RealWealthExitSnapshot;
   showUserTermColumn: boolean;
   userTermYears: number;
+  investment?: {
+    irrAnnualPercent: number | null;
+    equityMultiple: number | null;
+  };
+  hasCashIn: boolean;
 }) {
   const w = props.snapshot;
   const showUser = props.showUserTermColumn;
@@ -1127,6 +1150,37 @@ function MilestoneWealthCard(props: {
             }}
           />
         </Stack>
+        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5} sx={{ mb: 0.5 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.65rem" }}>
+              IRR (30-yr path)
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+              title="Annualized IRR from projected monthly cash flows + sale proceeds (30-yr amortization path)"
+            >
+              {props.hasCashIn ? formatIrrDisplay(props.investment?.irrAnnualPercent) : "—"}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.65rem" }}>
+              Equity multiple
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+              title="(Cumulative projected cash + net sale) ÷ upfront cash"
+            >
+              {props.hasCashIn ? formatEquityMultipleDisplay(props.investment?.equityMultiple) : "—"}
+            </Typography>
+          </Box>
+        </Stack>
+        {!props.hasCashIn ? (
+          <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 0.35 }}>
+            Add upfront cash on Upfront to compute IRR and equity multiple.
+          </Typography>
+        ) : null}
         <Table size="small">
           <TableHead>
             <TableRow>

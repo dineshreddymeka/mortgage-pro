@@ -18,6 +18,7 @@ import TextField from "@mui/material/TextField";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { CategoryJump } from "../components/CategoryJump";
+import { GrowthAssumptionsPanel } from "../components/GrowthAssumptionsPanel";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
 import {
   RentalMetricCard,
@@ -699,6 +700,20 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           </RentalPanelCard>
         </Grid>
       </Grid>
+
+      <RentalPanelCard
+        panelId="rental-edit-growth"
+        title="Forward growth"
+        description={
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, display: "block" }}>
+            {state.growth?.rentGrowthPercent || state.growth?.expenseGrowthPercent
+              ? `Rent ${(state.growth?.rentGrowthPercent ?? 0).toFixed(1)}%/yr · OpEx ${(state.growth?.expenseGrowthPercent ?? 0).toFixed(1)}%/yr`
+              : "Flat baseline — set % to model rising rent or expenses"}
+          </Typography>
+        }
+      >
+        <GrowthAssumptionsPanel state={state} patch={patch} />
+      </RentalPanelCard>
 
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
         <AccordionSummary

@@ -275,6 +275,16 @@ export function buildScenarioExcelBlob(
     "Real_wealth_milestones",
     tableFromObjects(c.whenToSell.realWealthMilestoneSnapshots, "milestones")
   );
+  append(
+    wb,
+    "Exit_investment",
+    tableFromObjects(c.whenToSell.exitInvestmentMetrics, "exit_investment")
+  );
+  append(
+    wb,
+    "Monthly_projection",
+    tableFromObjects(c.projection.fullMonthlyRows.slice(0, 120), "projection_first_120")
+  );
 
   const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   return new Blob([buf], {

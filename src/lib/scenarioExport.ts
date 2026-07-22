@@ -41,6 +41,14 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "Binary search max purchase price where modeled DSCR ≥ offerTargets.targetDscr (optional scenario field).",
   totalGainWhenToSell:
     "At exit: netProceeds + sum of monthly amounts through exit − initial cash. While the loan is active: yield-adjusted cash flow (NOI − P&I with toggles). After the loan is paid off: effective gross income only (vacancy applied; no operating expenses or P&I).",
+  monthlyProjection:
+    "Month-by-month model: scheduled P&I + extraPrincipalMonthly + biweekly-equivalent (P&I/12 when frequency=biweekly) + lump sums; PMI from scenario until balance/originalLoan ≤ 78%; rent/OpEx growth from growth.*; value from sellAnnualAppreciationPercent.",
+  pmiAutoDrop:
+    "Projection PMI uses pmiMonthly while remaining balance / original loan > 78%; drops to $0 at or below 78% of original loan (not re-estimated).",
+  investmentIrr:
+    "Monthly IRR on cash flows: t=0 = −initial cash (down + closing + misc); months 1..exit = projected cash flow; last month adds net sale proceeds. Annualized as (1+r_month)^12 − 1.",
+  equityMultiple:
+    "Equity multiple = (cumulative projected cash flow through exit + net sale proceeds) / initial cash invested.",
 };
 
 export function buildFullScenarioExport(
@@ -69,6 +77,8 @@ export function buildFullScenarioExport(
     realWealthSnapshots: milestones,
     impliedAnnualAppreciationPercent: impliedAprVerify,
     maxOffer,
+    monthlyProjection,
+    exitInvestments,
   } = derived;
 
   const house = buildHouseRoot(state, houseMeta);
@@ -136,6 +146,14 @@ export function buildFullScenarioExport(
         exitHorizonYears_clampedToTerm: termYears,
         yearlyProjection_rows_year1Through30: sellRows,
         realWealthMilestoneSnapshots: milestones,
+        exitInvestmentMetrics: exitInvestments,
+      },
+      projection: {
+        monthCount: monthlyProjection.length,
+        firstMonth: monthlyProjection[0] ?? null,
+        month12: monthlyProjection[11] ?? null,
+        month60: monthlyProjection[59] ?? null,
+        fullMonthlyRows: monthlyProjection,
       },
     },
   };

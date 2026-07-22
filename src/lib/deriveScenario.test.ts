@@ -18,6 +18,8 @@ describe("deriveScenario", () => {
     expect(d.sellRows).toHaveLength(30);
     expect(d.realWealthSnapshots.length).toBeGreaterThan(0);
     expect(d.maxOffer.fromDti28Pct).toBeGreaterThan(0);
+    expect(d.monthlyProjection.length).toBe(360);
+    expect(d.exitInvestments.length).toBeGreaterThan(0);
   });
 
   it("handles zero/reset scenario without Infinity derived metrics", () => {
@@ -26,6 +28,19 @@ describe("deriveScenario", () => {
     expect(d.rental.grossRentMultiplier).toBeNull();
     expect(d.rental.onePercentRuleRatio).toBeNull();
     expect(d.maxOffer.fromDti28Pct).toBe(0);
+    expect(d.monthlyProjection).toEqual([]);
+    expect(d.exitInvestments).toEqual([]);
+  });
+
+  it("baseline month-1 projection cash flow matches rental pro-forma", () => {
+    const d = deriveScenario({
+      ...fixtureV2Full,
+      growth: undefined,
+      paymentPlan: undefined,
+      extraPrincipalMonthly: 0,
+      sellRentalYieldInclude: undefined,
+    });
+    expect(d.monthlyProjection[0]?.cashFlow).toBeCloseTo(d.rental.cashFlowMonthly, 1);
   });
 
   it("powers scenarioExport calculated block consistently", () => {
@@ -39,5 +54,7 @@ describe("deriveScenario", () => {
     );
     expect(exported.calculated.rental.dscr).toBe(d.rental.dscr);
     expect(exported.calculated.maxOffer.fromDti28Pct).toBe(d.maxOffer.fromDti28Pct);
+    expect(exported.calculated.projection.monthCount).toBe(d.monthlyProjection.length);
+    expect(exported.calculated.whenToSell.exitInvestmentMetrics.length).toBe(d.exitInvestments.length);
   });
 });

@@ -1,4 +1,10 @@
 import type { AppPersisted } from "../storage/mortgageState";
+import type { ExitYearInvestment } from "./projectionEngine";
+import {
+  buildMonthlyProjection,
+  investmentMetricsByExitYear,
+  type MonthlyProjectionRow,
+} from "./projectionEngine";
 import {
   buildAmortizationSchedule,
   buildAmortizationScheduleWithExtraPrincipal,
@@ -45,9 +51,13 @@ export type DerivedScenario = {
   impliedAnnualAppreciationPercent: number;
   /** Derived max-offer caps (not persisted). */
   maxOffer: MaxOfferOutputs;
+  /** Month-by-month forward model (growth, payment plan, PMI drop). */
+  monthlyProjection: MonthlyProjectionRow[];
+  /** IRR / equity multiple at milestone exit years (derived). */
+  exitInvestments: ExitYearInvestment[];
 };
 
-/** Central derived-data pipeline — payment, schedules, rental, and exit outputs from one scenario. */
+/** Central derived-data pipeline — payment, schedules, rental, exit, and projection outputs from one scenario. */
 export function deriveScenario(state: AppPersisted): DerivedScenario {
   const hp = Math.max(0, state.homePrice);
   const dp = Math.max(0, state.downPayment);
@@ -132,6 +142,16 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
     state.sellRentalYieldInclude
   );
 
+  const monthlyProjection = buildMonthlyProjection(state, {
+    yieldInclude: state.sellRentalYieldInclude,
+  });
+  const exitInvestments = investmentMetricsByExitYear(
+    state,
+    monthlyProjection,
+    REAL_WEALTH_MILESTONE_YEARS,
+    rental.initialCashInvested
+  );
+
   return {
     purchasePrice: hp,
     downPayment: dp,
@@ -157,5 +177,7 @@ export function deriveScenario(state: AppPersisted): DerivedScenario {
       state.yearsOwned
     ),
     maxOffer: computeMaxOfferOutputs(state),
+    monthlyProjection,
+    exitInvestments,
   };
 }

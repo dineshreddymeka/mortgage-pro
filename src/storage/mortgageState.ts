@@ -19,6 +19,23 @@ export type RefiScenarioPersisted = {
   loanYearEndPick: number;
 };
 
+/** Optional annual growth assumptions (Rental tab). Appreciation stays on `sellAnnualAppreciationPercent`. */
+export type GrowthAssumptionsPersisted = {
+  rentGrowthPercent: number;
+  expenseGrowthPercent: number;
+};
+
+export type PaymentPlanLumpSum = {
+  month: number;
+  amount: number;
+};
+
+/** Optional payment plan (Financing tab) — frequency and one-time principal lump sums. */
+export type PaymentPlanPersisted = {
+  frequency: "monthly" | "biweekly";
+  lumpSums: PaymentPlanLumpSum[];
+};
+
 export type AppPersisted = {
   v: typeof SCHEMA_VERSION;
   homePrice: number;
@@ -50,6 +67,10 @@ export type AppPersisted = {
    * with the scenario (local + Firestore).
    */
   refi?: RefiScenarioPersisted;
+  /** Optional rent / OpEx growth (%/yr). Omitted until edited; 0 = flat baseline. */
+  growth?: GrowthAssumptionsPersisted;
+  /** Optional pay cadence + lump-sum principal (Financing tab). Omitted until edited. */
+  paymentPlan?: PaymentPlanPersisted;
   monthlyRent: number;
   otherMonthlyIncome: number;
   vacancyRatePercent: number;
@@ -113,6 +134,8 @@ export const KNOWN_SCENARIO_KEYS = [
   "monthlyNonMortgageDebt",
   "customHousingBudgetMonthly",
   "refi",
+  "growth",
+  "paymentPlan",
   "monthlyRent",
   "otherMonthlyIncome",
   "vacancyRatePercent",
@@ -230,6 +253,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     rentalProFormaInclude: rawPf,
     sellRentalYieldInclude: rawYield,
     refi: rawRefi,
+    growth: rawGrowth,
+    paymentPlan: rawPaymentPlan,
     customHousingBudgetMonthly: rawBudget,
     ...mergedRest
   } = merged;
@@ -237,6 +262,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const rentalProFormaInclude = parseBooleanIncludeMap(rawPf);
   const sellRentalYieldInclude = parseBooleanIncludeMap(rawYield);
   const refi = parseRefiScenario(rawRefi);
+  const growth = parseGrowthAssumptions(rawGrowth);
+  const paymentPlan = parsePaymentPlan(rawPaymentPlan);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   const normalized: AppPersisted = {
@@ -250,6 +277,8 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
     ...(sellRentalYieldInclude ? { sellRentalYieldInclude } : {}),
     ...(refi ? { refi } : {}),
+    ...(growth ? { growth } : {}),
+    ...(paymentPlan ? { paymentPlan } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
   return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
@@ -444,6 +473,54 @@ function parseRefiScenario(raw: unknown): RefiScenarioPersisted | undefined {
   };
 }
 
+function growthPctField(raw: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const k of keys) {
+    if (raw[k] !== undefined && raw[k] !== null && raw[k] !== "") {
+      return clampPct(num(raw[k], 0));
+    }
+  }
+  return undefined;
+}
+
+function parseGrowthAssumptions(raw: unknown): GrowthAssumptionsPersisted | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const rent = growthPctField(o, ["rentGrowthPercent", "rentGrowthPct"]);
+  const expense = growthPctField(o, ["expenseGrowthPercent", "expenseGrowthPct"]);
+  if (rent === undefined && expense === undefined) return undefined;
+  const rentGrowthPercent = rent ?? 0;
+  const expenseGrowthPercent = expense ?? 0;
+  if (rentGrowthPercent <= 0 && expenseGrowthPercent <= 0) return undefined;
+  return { rentGrowthPercent, expenseGrowthPercent };
+}
+
+function parsePaymentPlan(raw: unknown): PaymentPlanPersisted | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const freqRaw = o.frequency;
+  const frequency: PaymentPlanPersisted["frequency"] =
+    freqRaw === "biweekly" ? "biweekly" : freqRaw === "monthly" ? "monthly" : "monthly";
+  const lumpSums: PaymentPlanLumpSum[] = [];
+  if (Array.isArray(o.lumpSums)) {
+    for (const item of o.lumpSums) {
+      if (item == null || typeof item !== "object" || Array.isArray(item)) continue;
+      const row = item as Record<string, unknown>;
+      const month = Math.max(1, Math.min(360, Math.round(num(row.month, 0))));
+      const amount = Math.max(0, Math.round(num(row.amount, 0)));
+      if (amount <= 0) continue;
+      lumpSums.push({ month, amount });
+    }
+  }
+  const hasBiweekly = frequency === "biweekly";
+  const hasLumps = lumpSums.length > 0;
+  const hasAny = hasBiweekly || hasLumps || o.frequency !== undefined || o.lumpSums !== undefined;
+  if (!hasAny) return undefined;
+  if (!hasBiweekly && !hasLumps && frequency === "monthly") return undefined;
+  return { frequency, lumpSums };
+}
+
 function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): RentalOnly {
   return {
     monthlyRent: num(data.monthlyRent, base.monthlyRent),
@@ -484,6 +561,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const rentalProFormaInclude = parseBooleanIncludeMap(data.rentalProFormaInclude);
   const y = parseBooleanIncludeMap(data.sellRentalYieldInclude);
   const refi = parseRefiScenario(data.refi);
+  const growth = parseGrowthAssumptions(data.growth);
+  const paymentPlan = parsePaymentPlan(data.paymentPlan);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
   const loc = normalizePropertyLocation(data, base);
   return {
@@ -502,6 +581,8 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
     ...(y !== undefined ? { sellRentalYieldInclude: y } : {}),
     ...(refi ? { refi } : {}),
+    ...(growth ? { growth } : {}),
+    ...(paymentPlan ? { paymentPlan } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
   };
