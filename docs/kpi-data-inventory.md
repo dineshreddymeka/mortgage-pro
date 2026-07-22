@@ -29,6 +29,7 @@ Canonical implementation:
 - Firestore persistence: `src/storage/firestoreProperties.ts`
 - Derived pipeline: `src/lib/deriveScenario.ts`
 - Exports: `src/lib/scenarioExport.ts`, `src/lib/scenarioExcelExport.ts`
+- Read-only consistency verifier/importer: `src/lib/dataConsistency.ts`
 
 ## Persisted scenario inventory
 
@@ -186,6 +187,11 @@ Canonical implementation:
 
 ## Maintenance checklist
 
+The header’s **Verify data** action is non-destructive: it checks the current in-memory
+scenario and never saves its report or patches scenario values. It reports source-of-truth
+shape, schema version, inventory coverage, rejected values, duplicate aliases/category maps,
+and an export → import → normalize deep path comparison.
+
 When adding or changing a financial input or KPI:
 
 1. Add persisted inputs to `AppPersisted`, its parser/normalizer, reset/default behavior,
@@ -195,3 +201,6 @@ When adding or changing a financial input or KPI:
 4. Define empty/zero behavior and mobile presentation.
 5. Add formula tests and scenario round-trip/no-field-loss tests.
 6. Update this document in the same pull request.
+
+Run `npm run verify:data` to enforce the fixture, schema, defaults/reset, parser,
+export/import, and documented-field inventory contract in CI.

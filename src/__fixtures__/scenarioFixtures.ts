@@ -1,7 +1,7 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { defaultAppState, SCHEMA_VERSION, SCHEMA_VERSION_LEGACY } from "../storage/mortgageState";
 
-/** Full v2 scenario with optional blocks populated (refi, DTI budget, pro-forma toggles). */
+/** Full v2 scenario with commonly edited optional blocks populated. */
 export const fixtureV2Full: AppPersisted = {
   ...defaultAppState(),
   v: SCHEMA_VERSION,
@@ -50,6 +50,98 @@ export const fixtureV2Full: AppPersisted = {
   buyingCostLineOverrides: { appraisal: 750, recording: 400 },
 };
 
+/** Canonical current scenario with every non-alias optional block populated. */
+export const fixtureAllKnownFields: AppPersisted = {
+  ...fixtureV2Full,
+  currentHomeValue: 557_037,
+  growth: { rentGrowthPercent: 3, expenseGrowthPercent: 2 },
+  tax: {
+    enabled: true,
+    landPercent: 22,
+    improvementsBasis: 18_000,
+    qbiEligible: false,
+    taxableIncomeBeforeQbi: 45_000,
+    marginalIncomeTaxRatePercent: 24,
+    capitalGainsRatePercent: 15,
+    recaptureRatePercent: 25,
+    isLongTerm: false,
+    exchange1031: { replacementPropertyCost: 650_000, bootReceived: 12_000 },
+  },
+  paymentPlan: {
+    frequency: "biweekly",
+    lumpSums: [{ month: 24, amount: 5000 }],
+  },
+  loan: {
+    productType: "fha",
+    noteApr: 6.1,
+    termYears: 30,
+    rateType: "arm",
+    arm: {
+      initialFixedYears: 5,
+      margin: 2.25,
+      indexRate: 4,
+      periodicCap: 2,
+      lifetimeCap: 5,
+    },
+    pointsPercent: 1,
+    buydown: "2-1",
+    financeUpfrontFees: true,
+    vaFirstUse: false,
+    useScenarioPmi: true,
+    miMonthlyOverride: 145,
+  },
+  upfront: {
+    earnestMoney: 10_000,
+    sellerCredit: 3500,
+    lenderCredit: 1200,
+    rehabCashIn: 15_000,
+  },
+  offerTargets: {
+    targetDscr: 1.25,
+    targetCashFlowMonthly: 500,
+    targetCashOnCashPercent: 8,
+    targetPaymentMonthly: 3200,
+  },
+  rentVsBuy: {
+    comparableRentMonthly: 2700,
+    investmentReturnPercent: 7,
+    horizonYears: 7,
+  },
+  stressTestDeltas: {
+    rateDeltaPct: 1,
+    rentDeltaPct: -5,
+    vacancyDeltaPct: 2,
+    appreciationDeltaPct: -1,
+    expenseDeltaPct: 10,
+    homePriceDeltaPct: -5,
+  },
+  rentalIncome: {
+    mode: "multifamily",
+    multifamily: {
+      units: [
+        { id: "unit-a", monthlyRent: 1700, otherMonthlyIncome: 75, vacancyRatePercent: 5 },
+        { id: "unit-b", monthlyRent: 1400, otherMonthlyIncome: 75, vacancyRatePercent: 7 },
+      ],
+      defaultVacancyRatePercent: 6,
+    },
+  },
+  dealStrategy: {
+    brrrr: {
+      arv: 650_000,
+      refiLtvPercent: 75,
+      refiClosingCosts: 6000,
+      holdingCostsDuringRehab: 9000,
+    },
+    flip: {
+      salePrice: 625_000,
+      sellingCostPercent: 6,
+      holdingCosts: 12_000,
+      financingCosts: 8000,
+      loanPayoffAtSale: 400_000,
+    },
+  },
+};
+
 /** Legacy v1 mortgage-only blob (no rental fields in storage). */
 export const fixtureV1MortgageOnly: Record<string, unknown> = {
   v: SCHEMA_VERSION_LEGACY,
@@ -72,6 +164,47 @@ export const fixtureFutureV99: Record<string, unknown> = {
   v: 99,
   growth: { rentGrowthPercent: 3, expenseGrowthPercent: 2.5 },
   offerTargets: { targetDscr: 1.25 },
+  futureUnderwriting: {
+    model: "vNext",
+    adjustments: [{ name: "climate", value: 0.98 }],
+  },
+};
+
+/** Current-version input using top-level aliases retained for legacy imports. */
+export const fixtureLegacyV2Aliases: Record<string, unknown> = {
+  ...fixtureV2Full,
+  upfront: undefined,
+  earnestMoney: 8000,
+  sellerCredit: 2500,
+  lenderCredit: 750,
+  rehabCashIn: 12_000,
+};
+
+/** Bad containers and values used to prove nested parser diagnostics are path-specific. */
+export const fixtureMalformedNested: Record<string, unknown> = {
+  ...fixtureV2Full,
+  paymentPlan: {
+    frequency: "weekly",
+    lumpSums: [{ month: "later", amount: -20 }, null, ["not-an-object"]],
+  },
+  loan: {
+    productType: "unknown",
+    arm: [{ initialFixedYears: 5 }],
+  },
+  rentalProFormaInclude: ["pi", true],
+  rentalIncome: {
+    mode: "multifamily",
+    multifamily: {
+      units: [
+        { id: "", monthlyRent: "many", vacancyRatePercent: 180 },
+        { id: "valid", monthlyRent: 1200 },
+      ],
+    },
+  },
+  dealStrategy: {
+    brrrr: ["not-an-object"],
+    flip: { salePrice: { dollars: 600_000 } },
+  },
 };
 
 /** Firestore house root with single scenario blob. */

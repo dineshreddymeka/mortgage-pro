@@ -1,4 +1,5 @@
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
@@ -23,12 +24,17 @@ import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
 import { HouseNavBar } from "./components/HouseNavBar";
+import { DataVerificationDialog } from "./components/DataVerificationDialog";
 import { RevisionConflictDialog } from "./components/RevisionConflictDialog";
 import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { buildHouseComparisonRow } from "./lib/houseComparison";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { deriveScenario } from "./lib/deriveScenario";
+import {
+  buildDataVerificationReport,
+  type DataVerificationReport,
+} from "./lib/dataConsistency";
 import { openScenarioReportWindow } from "./report/reportStorage";
 
 const moneyDec = new Intl.NumberFormat(undefined, {
@@ -93,6 +99,7 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; severity: "success" | "error" } | null>(
     null
   );
+  const [verificationReport, setVerificationReport] = useState<DataVerificationReport | null>(null);
 
   const isDark = theme.palette.mode === "dark";
 
@@ -138,6 +145,10 @@ export default function App() {
       message: opened ? `Opened print report for ${activeHouseLabel}.` : "Allow pop-ups to open the print report.",
       severity: opened ? "success" : "error",
     });
+  }
+
+  function verifyData() {
+    setVerificationReport(buildDataVerificationReport(state, { scenario: state }));
   }
 
   async function saveScenario() {
@@ -323,6 +334,25 @@ export default function App() {
                   XLS
                 </Box>
               </Button>
+              <Tooltip title="Check this scenario without changing it">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<FactCheckOutlinedIcon sx={{ fontSize: 16 }} />}
+                  onClick={verifyData}
+                  aria-label="Verify scenario data"
+                  sx={{
+                    minHeight: 32,
+                    px: { xs: 0.5, sm: 1.25 },
+                    minWidth: { xs: 36, sm: "auto" },
+                    "& .MuiButton-startIcon": { mr: { xs: 0, sm: 0.75 } },
+                  }}
+                >
+                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                    Verify data
+                  </Box>
+                </Button>
+              </Tooltip>
               <Tooltip title="Clear all tab values for this house to zero">
                 <Button
                   size="small"
@@ -593,6 +623,12 @@ export default function App() {
         onDismiss={dismissRevisionConflict}
         onReload={() => void reloadFromRemote()}
         onOverwrite={() => void overwriteRemote()}
+      />
+
+      <DataVerificationDialog
+        open={verificationReport != null}
+        report={verificationReport}
+        onClose={() => setVerificationReport(null)}
       />
 
       <Snackbar

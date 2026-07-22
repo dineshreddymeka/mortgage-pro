@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  fixtureAllKnownFields,
   fixtureFirestoreHouseDoc,
   fixtureFutureV99,
   fixtureLegacyCategoryHouse,
+  fixtureLegacyV2Aliases,
   fixtureV1MortgageOnly,
   fixtureV2Full,
 } from "../__fixtures__/scenarioFixtures";
@@ -12,12 +14,18 @@ import {
   emptyAppState,
   KNOWN_SCENARIO_KEYS,
   mergeParsedWithSchemaDefaults,
+  OPTIONAL_SCENARIO_KEYS,
   parseMortgageState,
   preserveUnknownScenarioFields,
+  REQUIRED_SCENARIO_KEYS,
   SCHEMA_VERSION,
   serializeMortgageState,
   type AppPersisted,
 } from "../storage/mortgageState";
+
+type KnownScenarioKey = (typeof KNOWN_SCENARIO_KEYS)[number];
+const knownKeysCoverType: Exclude<keyof AppPersisted, KnownScenarioKey> extends never ? true : false =
+  true;
 
 function roundTrip(state: AppPersisted): AppPersisted {
   return mergeParsedWithSchemaDefaults(parseMortgageState(serializeMortgageState(state)));
@@ -36,6 +44,35 @@ function assertKnownFieldsEqual(a: AppPersisted, b: AppPersisted) {
 }
 
 describe("mortgageState serialization and migration", () => {
+  it("keeps the type, key inventory, defaults, reset, and populated fixtures synchronized", () => {
+    expect(knownKeysCoverType).toBe(true);
+    expect(new Set(KNOWN_SCENARIO_KEYS).size).toBe(KNOWN_SCENARIO_KEYS.length);
+    expect([...REQUIRED_SCENARIO_KEYS, ...OPTIONAL_SCENARIO_KEYS]).toEqual(
+      KNOWN_SCENARIO_KEYS
+    );
+
+    const defaults = defaultAppState() as unknown as Record<string, unknown>;
+    const reset = emptyAppState() as unknown as Record<string, unknown>;
+    for (const key of REQUIRED_SCENARIO_KEYS) {
+      expect(defaults, `default missing ${key}`).toHaveProperty(key);
+      expect(reset, `reset missing ${key}`).toHaveProperty(key);
+    }
+    for (const key of Object.keys(defaults)) {
+      expect(KNOWN_SCENARIO_KEYS).toContain(key);
+    }
+    for (const key of Object.keys(reset)) {
+      expect(KNOWN_SCENARIO_KEYS).toContain(key);
+    }
+
+    const populated = fixtureAllKnownFields as unknown as Record<string, unknown>;
+    for (const key of OPTIONAL_SCENARIO_KEYS) {
+      const represented =
+        Object.prototype.hasOwnProperty.call(populated, key) ||
+        Object.prototype.hasOwnProperty.call(fixtureLegacyV2Aliases, key);
+      expect(represented, `populated fixtures missing optional field ${key}`).toBe(true);
+    }
+  });
+
   it("default scenario round-trips without field loss", () => {
     const base = defaultAppState();
     const restored = roundTrip(base);
@@ -98,6 +135,20 @@ describe("mortgageState serialization and migration", () => {
     expect(parsed.downPayment).toBe(80_000);
     expect(parsed.pmiMonthly).toBe(180);
     expect(parsed.monthlyRent).toBe(defaultAppState().monthlyRent);
+  });
+
+  it("migrates v2 top-level credit aliases into the canonical upfront block", () => {
+    const parsed = parseMortgageState(JSON.stringify(fixtureLegacyV2Aliases));
+    expect(parsed.upfront).toEqual({
+      earnestMoney: 8000,
+      sellerCredit: 2500,
+      lenderCredit: 750,
+      rehabCashIn: 12_000,
+    });
+    expect(parsed.earnestMoney).toBeUndefined();
+    expect(parsed.sellerCredit).toBeUndefined();
+    expect(parsed.lenderCredit).toBeUndefined();
+    expect(parsed.rehabCashIn).toBeUndefined();
   });
 
   it("does not silently reset when loading a future numeric schema version", () => {

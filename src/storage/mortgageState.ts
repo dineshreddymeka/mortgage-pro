@@ -278,8 +278,8 @@ export type AppPersisted = {
 /** @deprecated Use AppPersisted */
 export type MortgagePersisted = AppPersisted;
 
-/** Known persisted scenario keys — extras from newer clients are preserved on merge/parse. */
-export const KNOWN_SCENARIO_KEYS = [
+/** Required persisted keys. Defaults and reset state must provide every one. */
+export const REQUIRED_SCENARIO_KEYS = [
   "v",
   "homePrice",
   "downPayment",
@@ -294,6 +294,28 @@ export const KNOWN_SCENARIO_KEYS = [
   "extraPrincipalMonthly",
   "annualGrossIncome",
   "monthlyNonMortgageDebt",
+  "propertyState",
+  "propertyPostalCode",
+  "monthlyRent",
+  "otherMonthlyIncome",
+  "vacancyRatePercent",
+  "closingCosts",
+  "miscInitialCash",
+  "propertyMgmtPercent",
+  "maintenancePercent",
+  "capexPercent",
+  "sellAnnualAppreciationPercent",
+  "sellClosingCostPercent",
+  "currentHomeValue",
+  "yearsOwned",
+  "propertyAddress",
+  "propertyPlaceId",
+  "propertyLatitude",
+  "propertyLongitude",
+] as const satisfies readonly (keyof AppPersisted)[];
+
+/** Optional feature blocks and backward-compatible aliases. */
+export const OPTIONAL_SCENARIO_KEYS = [
   "customHousingBudgetMonthly",
   "refi",
   "growth",
@@ -305,33 +327,21 @@ export const KNOWN_SCENARIO_KEYS = [
   "sellerCredit",
   "lenderCredit",
   "rehabCashIn",
-  "propertyState",
-  "propertyPostalCode",
-  "monthlyRent",
-  "otherMonthlyIncome",
-  "vacancyRatePercent",
-  "closingCosts",
-  "miscInitialCash",
-  "propertyMgmtPercent",
-  "maintenancePercent",
-  "capexPercent",
   "rentalProFormaInclude",
   "sellRentalYieldInclude",
-  "sellAnnualAppreciationPercent",
-  "sellClosingCostPercent",
-  "currentHomeValue",
-  "yearsOwned",
-  "propertyAddress",
-  "propertyPlaceId",
-  "propertyLatitude",
-  "propertyLongitude",
   "buyingCostLineOverrides",
   "offerTargets",
   "rentVsBuy",
   "stressTestDeltas",
   "rentalIncome",
   "dealStrategy",
-] as const;
+] as const satisfies readonly (keyof AppPersisted)[];
+
+/** Known persisted scenario keys — extras from newer clients are preserved on merge/parse. */
+export const KNOWN_SCENARIO_KEYS = [
+  ...REQUIRED_SCENARIO_KEYS,
+  ...OPTIONAL_SCENARIO_KEYS,
+] as const satisfies readonly (keyof AppPersisted)[];
 
 const KNOWN_SCENARIO_KEY_SET = new Set<string>(KNOWN_SCENARIO_KEYS);
 

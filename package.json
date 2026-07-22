@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
+    "verify:data": "vitest run src/lib/dataConsistency.test.ts src/storage/mortgageState.test.ts src/storage/kpiDataInventory.test.ts",
     "test:watch": "vitest",
     "functions:install": "npm --prefix functions ci",
     "functions:build": "npm --prefix functions run build",
