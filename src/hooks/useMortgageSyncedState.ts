@@ -18,12 +18,14 @@ import {
   getProperty,
   houseLabel,
   listProperties,
+  listPropertyDocs,
   readActivePropertyId,
   savePropertyScenario,
   touchLastOpened,
   writeActivePropertyId,
   type PropertyMeta,
 } from "../storage/firestoreProperties";
+import { buildHouseComparisonRow, type HouseComparisonRow } from "../lib/houseComparison";
 
 const CLOUD_SAVE_DEBOUNCE_MS = 900;
 
@@ -38,6 +40,7 @@ export function useMortgageSyncedState() {
   );
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [comparisonBase, setComparisonBase] = useState<HouseComparisonRow[]>([]);
 
   const lastSerialized = useRef(serializeMortgageState(state));
   const stateRef = useRef(state);
@@ -52,6 +55,29 @@ export function useMortgageSyncedState() {
   const activeHouseNumber =
     properties.find((p) => p.id === activePropertyId)?.houseNumber ??
     (properties.length > 0 ? properties[0].houseNumber : 1);
+
+  const refreshComparisons = useCallback(async (uid: string) => {
+    try {
+      const docs = await listPropertyDocs(uid);
+      setComparisonBase(
+        docs.map((d) => buildHouseComparisonRow(d.id, d.houseNumber, d.scenario))
+      );
+    } catch (err) {
+      console.warn("[firestore] comparison refresh failed", err);
+    }
+  }, []);
+
+  // Live-compare: use current edits for the active house; saved snapshots for others.
+  const comparisons: HouseComparisonRow[] = (() => {
+    if (!activePropertyId) return comparisonBase;
+    const live = buildHouseComparisonRow(activePropertyId, activeHouseNumber, state);
+    if (comparisonBase.length === 0) return [live];
+    const hasActive = comparisonBase.some((r) => r.id === activePropertyId);
+    if (!hasActive) {
+      return [...comparisonBase, live].sort((a, b) => a.houseNumber - b.houseNumber);
+    }
+    return comparisonBase.map((r) => (r.id === activePropertyId ? live : r));
+  })();
 
   useEffect(() => {
     return subscribeMortgageStateRemote((remote) => {
@@ -131,6 +157,7 @@ export function useMortgageSyncedState() {
         setProperties(list);
         cloudReadyRef.current = true;
         setCloudStatus("ready");
+        await refreshComparisons(user.uid);
       } catch (err) {
         if (cancelled) return;
         cloudReadyRef.current = false;
@@ -143,7 +170,7 @@ export function useMortgageSyncedState() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshComparisons]);
 
   // Debounced cloud save of full scenario (all tabs) when fields change.
   useEffect(() => {
@@ -162,6 +189,7 @@ export function useMortgageSyncedState() {
         .then(async () => {
           const list = await listProperties(uid);
           setProperties(list);
+          await refreshComparisons(uid);
         })
         .catch((err) => {
           console.warn("[firestore] save failed", err);
@@ -170,7 +198,7 @@ export function useMortgageSyncedState() {
     }, CLOUD_SAVE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(handle);
-  }, [state, activePropertyId, userId, cloudStatus]);
+  }, [state, activePropertyId, userId, cloudStatus, refreshComparisons]);
 
   const patch = useCallback((partial: Partial<AppPersisted>) => {
     setState((prev) => {
@@ -235,8 +263,9 @@ export function useMortgageSyncedState() {
     await savePropertyScenario(id, uid, stateRef.current);
     const list = await listProperties(uid);
     setProperties(list);
+    await refreshComparisons(uid);
     return true;
-  }, [saveToBrowser]);
+  }, [saveToBrowser, refreshComparisons]);
 
   const selectProperty = useCallback(
     async (id: string) => {
@@ -263,9 +292,10 @@ export function useMortgageSyncedState() {
       if (uid) {
         const list = await listProperties(uid);
         setProperties(list);
+        await refreshComparisons(uid);
       }
     },
-    [replace]
+    [replace, refreshComparisons]
   );
 
   const createNewProperty = useCallback(async () => {
@@ -289,8 +319,9 @@ export function useMortgageSyncedState() {
     activeIdRef.current = id;
     const list = await listProperties(uid);
     setProperties(list);
+    await refreshComparisons(uid);
     return id;
-  }, [replace]);
+  }, [replace, refreshComparisons]);
 
   return {
     state,
@@ -300,6 +331,7 @@ export function useMortgageSyncedState() {
     saveToBrowser,
     saveToCloud,
     properties,
+    comparisons,
     activePropertyId,
     activeHouseNumber,
     activeHouseLabel: houseLabel(activeHouseNumber),
