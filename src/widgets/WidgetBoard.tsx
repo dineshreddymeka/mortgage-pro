@@ -32,7 +32,7 @@ export type WidgetBoardProps = {
 };
 
 export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardProps) {
-  const { width, containerRef, mounted } = useContainerWidth();
+  const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
   const defs = useMemo(() => widgets.map(({ content: _c, ...def }) => def), [widgets]);
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => loadLayouts(boardId, defs));
 
@@ -67,7 +67,7 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             color: "text.secondary",
           }}
         >
-          Widgets · drag title bar · resize corner
+          Widgets · drag title · resize bottom-right corner
         </Typography>
         <Button
           size="small"
@@ -82,14 +82,69 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
 
       <Box
         sx={{
+          // Keep resize handles clickable above card chrome.
+          "& .react-grid-item": {
+            overflow: "visible",
+          },
           "& .react-grid-item.react-grid-placeholder": {
             bgcolor: (t) => t.palette.secondary.main,
             opacity: 0.18,
             borderRadius: "12px",
           },
-          "& .react-grid-item > .react-resizable-handle::after": {
-            borderColor: "rgba(14, 116, 144, 0.55) !important",
+          // Override RGL default opacity:0 until hover — that made resize feel broken.
+          "& .react-grid-item > .react-resizable-handle": {
+            opacity: "1 !important",
+            zIndex: 6,
+            width: 28,
+            height: 28,
+            pointerEvents: "auto",
           },
+          "& .react-grid-item > .react-resizable-handle-se": {
+            bottom: 2,
+            right: 2,
+            cursor: "se-resize",
+            borderRadius: "6px",
+            bgcolor: (t) =>
+              t.palette.mode === "light" ? "rgba(14, 116, 144, 0.12)" : "rgba(94, 234, 212, 0.16)",
+            "&:hover": {
+              bgcolor: (t) =>
+                t.palette.mode === "light" ? "rgba(14, 116, 144, 0.22)" : "rgba(94, 234, 212, 0.28)",
+            },
+          },
+          "& .react-grid-item > .react-resizable-handle-se::after": {
+            content: '""',
+            position: "absolute",
+            right: 6,
+            bottom: 6,
+            width: 10,
+            height: 10,
+            borderRight: "2px solid rgba(14, 116, 144, 0.85)",
+            borderBottom: "2px solid rgba(14, 116, 144, 0.85)",
+          },
+          "& .react-grid-item > .react-resizable-handle-e": {
+            width: 12,
+            height: "40%",
+            top: "30%",
+            right: 0,
+            marginTop: 0,
+            cursor: "ew-resize",
+            opacity: "0.35 !important",
+            "&:hover": { opacity: "0.9 !important" },
+          },
+          "& .react-grid-item > .react-resizable-handle-s": {
+            height: 12,
+            width: "40%",
+            left: "30%",
+            bottom: 0,
+            marginLeft: 0,
+            cursor: "ns-resize",
+            opacity: "0.35 !important",
+            "&:hover": { opacity: "0.9 !important" },
+          },
+          "& .react-grid-item > .react-resizable-handle-e::after, & .react-grid-item > .react-resizable-handle-s::after":
+            {
+              display: "none",
+            },
         }}
       >
         {mounted && width > 0 ? (
@@ -105,17 +160,26 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             dragConfig={{
               enabled: true,
               handle: ".widget-drag-handle",
+              cancel: ".react-resizable-handle,input,textarea,button,a,select,[role='button']",
               bounded: false,
               threshold: 3,
             }}
             resizeConfig={{
               enabled: true,
-              handles: ["se"],
+              handles: ["se", "e", "s"],
             }}
             onLayoutChange={onLayoutChange}
           >
             {widgets.map((w) => (
-              <div key={w.id}>
+              <div
+                key={w.id}
+                style={{
+                  height: "100%",
+                  width: "100%",
+                  // Handles are siblings of WidgetFrame; keep them unclipped.
+                  overflow: "visible",
+                }}
+              >
                 <WidgetFrame title={w.title} description={w.description}>
                   {w.content}
                 </WidgetFrame>
