@@ -1,24 +1,23 @@
 import { alpha, createTheme, type Theme } from "@mui/material/styles";
 
-/** Property Pro — Apple-like system chrome: neutral grays, system blue accent. */
-const sfStack =
-  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+/** Property Pro — analytical desk: slate ink, teal accent, tabular mono metrics. */
+const sansStack = '"IBM Plex Sans", "Segoe UI", sans-serif';
 
-const label = "#1d1d1f";
-const labelSecondary = "#6e6e73";
-const fill = "#f5f5f7";
-const paper = "#ffffff";
-const separator = "rgba(60, 60, 67, 0.12)";
-const systemBlue = "#007AFF";
-const systemBlueDark = "#0A84FF";
-const systemGreen = "#34C759";
-const systemOrange = "#FF9F0A";
-const systemRed = "#FF3B30";
+const label = "#0b1f33";
+const labelSecondary = "#3d556c";
+const fill = "#eef3f7";
+const paper = "#f7fafc";
+const separator = "rgba(11, 31, 51, 0.1)";
+const systemBlue = "#0e7490";
+const systemBlueDark = "#22d3ee";
+const systemGreen = "#0f766e";
+const systemOrange = "#b45309";
+const systemRed = "#b91c1c";
 
-const labelDark = "#f5f5f7";
-const fillDark = "#000000";
-const paperDark = "#1c1c1e";
-const surfaceDark = "#2c2c2e";
+const labelDark = "#e8eef4";
+const fillDark = "#071018";
+const paperDark = "#101a24";
+const surfaceDark = "#162433";
 
 export const appTheme = createTheme({
   spacing: 8,
@@ -131,44 +130,44 @@ export const appTheme = createTheme({
       },
     },
   },
-  shape: { borderRadius: 14 },
+  shape: { borderRadius: 12 },
   typography: {
-    fontFamily: sfStack,
+    fontFamily: sansStack,
     fontWeightLight: 400,
     fontWeightRegular: 400,
-    fontWeightMedium: 510,
-    fontWeightBold: 600,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
     h1: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 700,
       letterSpacing: "-0.03em",
       lineHeight: 1.1,
     },
     h2: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.15,
     },
     h3: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 650,
       fontSize: "1.5rem",
       letterSpacing: "-0.02em",
       lineHeight: 1.2,
     },
     h4: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 650,
       letterSpacing: "-0.02em",
     },
     h5: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 600,
       letterSpacing: "-0.015em",
     },
     h6: {
-      fontFamily: sfStack,
+      fontFamily: sansStack,
       fontWeight: 600,
       letterSpacing: "-0.015em",
     },
@@ -178,16 +177,16 @@ export const appTheme = createTheme({
     body2: { letterSpacing: "-0.01em", lineHeight: 1.4 },
     caption: { letterSpacing: "-0.005em", lineHeight: 1.35 },
     overline: {
-      fontFamily: sfStack,
-      letterSpacing: "0.06em",
+      fontFamily: sansStack,
+      letterSpacing: "0.08em",
       fontWeight: 600,
       fontSize: "0.65rem",
     },
     button: {
       textTransform: "none",
-      fontWeight: 560,
+      fontWeight: 600,
       letterSpacing: "-0.01em",
-      fontFamily: sfStack,
+      fontFamily: sansStack,
     },
   },
   components: {
