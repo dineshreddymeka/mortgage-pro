@@ -23,6 +23,7 @@ import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
 import { HouseNavBar } from "./components/HouseNavBar";
+import { RevisionConflictDialog } from "./components/RevisionConflictDialog";
 import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { buildHouseComparisonRow } from "./lib/houseComparison";
@@ -79,6 +80,14 @@ export default function App() {
     cloudStatus,
     cloudError,
     userId,
+    authProfile,
+    activeAccessRole,
+    revisionConflict,
+    conflictBusy,
+    reloadPortfolio,
+    dismissRevisionConflict,
+    reloadFromRemote,
+    overwriteRemote,
   } = useMortgageSyncedState();
   const [tab, setTab] = useState(0);
   const [toast, setToast] = useState<{ message: string; severity: "success" | "error" } | null>(
@@ -473,7 +482,10 @@ export default function App() {
                 propertyName={activeHouseLabel}
                 propertyDocId={activePropertyId}
                 ownerUid={userId}
+                viewerEmail={authProfile?.email ?? null}
+                activeAccessRole={activeAccessRole}
                 cloudReady={cloudStatus === "ready"}
+                onReloadPortfolio={() => void reloadPortfolio()}
                 onNotify={(message, severity = "success") => setToast({ message, severity })}
                 onRename={async (name) => {
                   try {
@@ -573,6 +585,15 @@ export default function App() {
           </Typography>
         </Box>
       </Box>
+
+      <RevisionConflictDialog
+        open={revisionConflict != null}
+        conflict={revisionConflict}
+        busy={conflictBusy}
+        onDismiss={dismissRevisionConflict}
+        onReload={() => void reloadFromRemote()}
+        onOverwrite={() => void overwriteRemote()}
+      />
 
       <Snackbar
         open={toast != null}

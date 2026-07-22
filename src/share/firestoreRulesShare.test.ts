@@ -21,4 +21,9 @@ describe("firestore.rules shareSnapshots security", () => {
     expect(rules).toContain("validCollaborationMetaOptional");
     expect(rules).toContain("collaboration.revision is int");
   });
+
+  it("documents member-aware property access", () => {
+    expect(rules).toContain("canReadProperty()");
+    expect(rules).toContain("propertyInvites");
+  });
 });

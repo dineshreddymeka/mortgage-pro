@@ -6,9 +6,28 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && validCollaborationMetaOptional();
 
-      allow read, update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && validCollaborationMetaOptional();
+      allow read: if canReadProperty();
+
+      allow update: if canReadProperty()
+        && request.resource.data.userId == resource.data.userId
+        && validCollaborationMetaOptional()
+        && (isPropertyOwner() || memberScenarioOnlyUpdate());
+
+      allow delete: if isPropertyOwner();
+    }
+
+    match /propertyInvites/{inviteId} {
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasAll(['propertyDocId', 'ownerUid', 'houseId', 'createdAt'])
+        && validInviteTarget();
+
+      allow read: if request.auth != null && canReadInvite();
+
+      allow update: if request.auth != null && (ownerRevokesInvite() || inviteeAcceptsInvite());
+
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
 
     match /shareSnapshots/{shareToken} {
@@ -30,9 +49,63 @@ service cloud.firestore {
         && request.resource.data.propertyDocId == resource.data.propertyDocId
         && onlyShareSnapshotMetadataChanged();
 
-      allow delete: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
+  }
+
+  function isPropertyOwner() {
+    return request.auth != null && resource.data.userId == request.auth.uid;
+  }
+
+  function isPropertyMember() {
+    return request.auth != null
+      && resource.data.memberUids is list
+      && request.auth.uid in resource.data.memberUids;
+  }
+
+  function canReadProperty() {
+    return isPropertyOwner() || isPropertyMember();
+  }
+
+  function memberScenarioOnlyUpdate() {
+    return isPropertyMember()
+      && request.resource.data.memberUids == resource.data.memberUids
+      && request.resource.data.members == resource.data.members
+      && request.resource.data.archived == resource.data.archived
+      && request.resource.data.archivedAt == resource.data.archivedAt
+      && request.resource.data.id == resource.data.id
+      && request.resource.data.houseId == resource.data.houseId
+      && request.resource.data.houseNumber == resource.data.houseNumber
+      && request.resource.data.name == resource.data.name;
+  }
+
+  function validInviteTarget() {
+    return ('targetUid' in request.resource.data && request.resource.data.targetUid is string)
+      || ('emailHash' in request.resource.data && request.resource.data.emailHash is string);
+  }
+
+  function canReadInvite() {
+    return resource.data.ownerUid == request.auth.uid
+      || resource.data.targetUid == request.auth.uid
+      || (resource.data.status == 'pending' && resource.data.emailHash is string);
+  }
+
+  function ownerRevokesInvite() {
+    return resource.data.ownerUid == request.auth.uid
+      && request.resource.data.ownerUid == resource.data.ownerUid
+      && request.resource.data.propertyDocId == resource.data.propertyDocId
+      && request.resource.data.houseId == resource.data.houseId
+      && request.resource.data.status == 'revoked'
+      && resource.data.status == 'pending';
+  }
+
+  function inviteeAcceptsInvite() {
+    return resource.data.status == 'pending'
+      && request.resource.data.status == 'accepted'
+      && request.resource.data.acceptedByUid == request.auth.uid
+      && request.resource.data.ownerUid == resource.data.ownerUid
+      && request.resource.data.propertyDocId == resource.data.propertyDocId
+      && (resource.data.targetUid == request.auth.uid || resource.data.emailHash is string);
   }
 
   function onlyShareSnapshotMetadataChanged() {

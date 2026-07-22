@@ -10,6 +10,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
@@ -416,6 +417,9 @@ export function HouseNavBar({
                         >
                         {p.name || houseLabel(p.houseId)}
                       </Typography>
+                      {p.accessRole === "member" ? (
+                        <Chip size="small" label="Member" variant="outlined" sx={{ height: 22 }} />
+                      ) : (
                       <Tooltip title={`Archive ${p.name || houseLabel(p.houseId)}`}>
                         <IconButton
                           size="small"
@@ -433,6 +437,7 @@ export function HouseNavBar({
                             <ArchiveOutlinedIcon sx={{ fontSize: 16 }} />
                           </IconButton>
                         </Tooltip>
+                      )}
                       </Stack>
                       <Stack direction="row" justifyContent="space-between" spacing={1}>
                         <Typography
