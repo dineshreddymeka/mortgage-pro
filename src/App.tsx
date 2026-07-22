@@ -1,6 +1,7 @@
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import Alert from "@mui/material/Alert";
@@ -27,6 +28,7 @@ import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { buildHouseComparisonRow } from "./lib/houseComparison";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { deriveScenario } from "./lib/deriveScenario";
+import { openScenarioReportWindow } from "./report/reportStorage";
 
 const moneyDec = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -112,9 +114,19 @@ export default function App() {
       houseNumber: activeComparison.houseNumber,
       name: activeHouseLabel,
     });
+    setToast({ message: `Exported ${activeHouseLabel} to Excel.`, severity: "success" });
+  }
+
+  function openReport() {
+    const opened = openScenarioReportWindow(state, {
+      houseId: activeHouseId,
+      houseLabel: activeHouseLabel,
+      houseNumber: activeComparison.houseNumber,
+      name: activeHouseLabel,
+    });
     setToast({
-      message: `Exported ${activeHouseLabel} to Excel.`,
-      severity: "success",
+      message: opened ? `Opened print report for ${activeHouseLabel}.` : "Allow pop-ups to open the print report.",
+      severity: opened ? "success" : "error",
     });
   }
 
@@ -272,6 +284,18 @@ export default function App() {
                 </Box>
                 <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
                   Save
+                </Box>
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PrintOutlinedIcon sx={{ fontSize: 16 }} />}
+                onClick={openReport}
+                aria-label="Open print report"
+                sx={{ minHeight: 32, px: { xs: 0.85, sm: 1.25 }, minWidth: 0 }}
+              >
+                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Report
                 </Box>
               </Button>
               <Button

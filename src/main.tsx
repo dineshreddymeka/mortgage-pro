@@ -5,13 +5,17 @@ import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import "./index.css";
 import { appTheme } from "./theme";
 import App from "./App";
+import ReportRoot from "./report/ReportRoot";
+
+const isReportRoute =
+  window.location.hash === "#/report" || window.location.hash.startsWith("#/report?");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <InitColorSchemeScript attribute="class" defaultMode="light" />
     <ThemeProvider theme={appTheme} defaultMode="light">
       <CssBaseline enableColorScheme />
-      <App />
+      {isReportRoute ? <ReportRoot /> : <App />}
     </ThemeProvider>
   </StrictMode>
 );

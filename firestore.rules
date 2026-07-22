@@ -7,5 +7,33 @@ service cloud.firestore {
       allow read, update, delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
+
+    match /shareSnapshots/{shareToken} {
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.immutable == true
+        && request.resource.data.revokedAt == null
+        && request.resource.data.keys().hasAll(['ownerUid', 'payload', 'createdAt', 'immutable']);
+
+      allow read: if true;
+
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.payload == resource.data.payload
+        && request.resource.data.immutable == resource.data.immutable
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.houseId == resource.data.houseId
+        && request.resource.data.propertyDocId == resource.data.propertyDocId
+        && onlyShareSnapshotMetadataChanged();
+
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+  }
+
+  function onlyShareSnapshotMetadataChanged() {
+    let allowed = ['revokedAt', 'expiresAt'];
+    return request.resource.data.diff(resource.data).changedKeys().hasOnly(allowed);
   }
 }
