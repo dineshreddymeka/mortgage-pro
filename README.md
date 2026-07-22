@@ -27,6 +27,22 @@ The Mortgage tab can autocomplete a property address and show a compact map prev
 
 Without a key, you can still type an address manually; autocomplete and the map stay off.
 
+## Data model
+
+**House is the root node.** Each Firestore doc in `properties` is one house (`houseId` `001`, `002`, …). Category tabs are child maps on that doc:
+
+```
+properties/{docId}          ← house root
+  houseId, name, archived, …
+  property/                 ← Property tab + location
+  financing/                ← Financing (loan, DTI, refi)
+  upfront/                  ← Upfront cash / buyer costs
+  rental/                   ← Rental pro forma
+  exit/                     ← When to sell
+```
+
+The UI still edits a flat in-memory scenario; pack/unpack at the Firestore boundary. Legacy docs with a flat `scenario` blob are read and rewritten into category children on save.
+
 ## Firestore (multi-property sync)
 
 Optional cloud sync for multiple saved properties. Uses the **Firebase web client SDK** only — never the Admin / service-account private key in this app.

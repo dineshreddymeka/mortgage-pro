@@ -18,7 +18,7 @@ function append(wb: XLSX.WorkBook, name: string, rows: Cell[][]) {
   XLSX.utils.book_append_sheet(wb, aoaSheet(rows), safeSheetName(name));
 }
 
-function flattenScenario(state: AppPersisted): Cell[][] {
+function flattenRecord(state: Record<string, unknown>): Cell[][] {
   const header: Cell[][] = [["Key", "Value"]];
   const rows: Cell[][] = [];
   for (const [k, v] of Object.entries(state)) {
@@ -150,7 +150,8 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
     ],
   ]);
 
-  append(wb, "Scenario_inputs", flattenScenario(ex.scenario));
+  append(wb, "House_inputs", flattenRecord(ex.house as unknown as Record<string, unknown>));
+  append(wb, "Scenario_inputs", flattenRecord(ex.scenario as unknown as Record<string, unknown>));
 
   append(
     wb,

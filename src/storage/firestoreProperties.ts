@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -14,7 +15,13 @@ import {
 import { onAuthStateChanged, signInAnonymously, type User } from "firebase/auth";
 import { getFirebase } from "../lib/firebase";
 import type { AppPersisted } from "./mortgageState";
+import { packHouseCategories, resolveScenarioFromHouseDoc } from "./houseTree";
 
+/**
+ * Firestore collection of house root documents.
+ * Each doc is one house; category tab data lives as child maps on that doc
+ * (`property`, `financing`, `upfront`, `rental`, `exit`).
+ */
 export const PROPERTIES_COLLECTION = "properties";
 export const ACTIVE_PROPERTY_KEY = "mortgage-pro:active-property-id";
 
@@ -30,9 +37,14 @@ export type PropertyMeta = {
   lastOpenedAt: number;
 };
 
+/**
+ * House root document (runtime view).
+ * Category fields are stored as sibling maps on the Firestore doc; `scenario` is the
+ * flattened in-app shape used by tabs/components after unpack.
+ */
 export type PropertyDoc = PropertyMeta & {
   userId: string;
-  /** Full AppPersisted for all tabs (Mortgage, Upfront, Rental, When to sell). */
+  /** Flattened category data for the UI (from house child nodes, or legacy `scenario`). */
   scenario: AppPersisted;
 };
 
@@ -209,7 +221,7 @@ async function fetchAllPropertyRows(userId: string): Promise<RawRow[]> {
   });
 }
 
-/** Persist missing houseId / archived fields without touching scenario. */
+/** Persist missing houseId / archived fields without touching category / scenario data. */
 async function migrateMissingFields(rows: RawRow[]): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
@@ -318,7 +330,7 @@ export async function nextHouseNumber(userId: string): Promise<number> {
   return Math.max(...list.map((p) => p.houseNumber)) + 1;
 }
 
-/** Full property docs for comparison (meta + scenario). Defaults to active houses only. */
+/** Full house docs for comparison (meta + unpacked category data). Defaults to active houses only. */
 export async function listPropertyDocs(
   userId: string,
   options?: ListPropertiesOptions
@@ -330,12 +342,14 @@ export async function listPropertyDocs(
   const meta = await listProperties(userId, filter);
   const q = query(collection(fb.db, PROPERTIES_COLLECTION), where("userId", "==", userId));
   const snap = await getDocs(q);
-  const byId = new Map(snap.docs.map((d) => [d.id, d.data()]));
+  const byId = new Map(snap.docs.map((d) => [d.id, d.data() as Record<string, unknown>]));
 
   return meta
     .map((m) => {
       const data = byId.get(m.id);
-      if (!data?.scenario) return null;
+      if (!data) return null;
+      const scenario = resolveScenarioFromHouseDoc(data);
+      if (!scenario) return null;
       return {
         id: m.id,
         userId,
@@ -344,7 +358,7 @@ export async function listPropertyDocs(
         name: m.name,
         archived: m.archived,
         archivedAt: m.archivedAt,
-        scenario: data.scenario as AppPersisted,
+        scenario,
         updatedAt: asMillis(data.updatedAt),
         lastOpenedAt: asMillis(data.lastOpenedAt),
       } satisfies PropertyDoc;
@@ -365,7 +379,10 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
   const name = resolvePropertyName(data.name, houseId);
   const nameMissing = typeof data.name !== "string" || !data.name.trim();
 
-  // Migrate missing fields on read (never wipe a custom name or scenario).
+  const scenario = resolveScenarioFromHouseDoc(data);
+  if (!scenario) return null;
+
+  // Migrate missing fields on read (never wipe a custom name or category data).
   if (
     data.houseId !== houseId ||
     nameMissing ||
@@ -389,7 +406,7 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
     name,
     archived,
     archivedAt,
-    scenario: data.scenario as AppPersisted,
+    scenario,
     updatedAt: asMillis(data.updatedAt),
     lastOpenedAt: asMillis(data.lastOpenedAt),
   };
@@ -406,6 +423,7 @@ export async function createProperty(
   const n = houseNumber ?? (await nextHouseNumber(userId));
   const houseId = formatHouseId(n);
   const now = Date.now();
+  const categories = packHouseCategories(scenario);
   const ref = await addDoc(collection(fb.db, PROPERTIES_COLLECTION), {
     userId,
     houseId,
@@ -413,7 +431,7 @@ export async function createProperty(
     name: houseLabel(houseId),
     archived: false,
     archivedAt: null,
-    scenario,
+    ...categories,
     updatedAt: now,
     lastOpenedAt: now,
     createdAt: serverTimestamp(),
@@ -422,8 +440,9 @@ export async function createProperty(
 }
 
 /**
- * Persist full scenario (all tabs) under this house.
- * Does not clear or alter scenario when archiving — archive is a separate soft-hide flag.
+ * Persist all category data under this house root.
+ * Writes `property` / `financing` / `upfront` / `rental` / `exit` child maps and clears
+ * the legacy flat `scenario` blob. Archiving never clears category data.
  */
 export async function savePropertyScenario(
   id: string,
@@ -434,9 +453,12 @@ export async function savePropertyScenario(
   const fb = getFirebase();
   if (!fb) return;
 
+  const categories = packHouseCategories(scenario);
   const payload: Record<string, unknown> = {
     userId,
-    scenario,
+    ...categories,
+    // Migrate away from flat blob — house category nodes are the source of truth.
+    scenario: deleteField(),
     updatedAt: Date.now(),
     lastOpenedAt: Date.now(),
   };
@@ -473,7 +495,7 @@ export async function renameProperty(id: string, name: string, houseId: string):
   return next;
 }
 
-/** Soft-hide house. Scenario is left intact. */
+/** Soft-hide house. Category data under the house root is left intact. */
 export async function archiveProperty(id: string): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;

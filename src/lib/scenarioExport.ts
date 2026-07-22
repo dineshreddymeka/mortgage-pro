@@ -1,4 +1,5 @@
 import type { AppPersisted } from "../storage/mortgageState";
+import { buildHouseRoot } from "../storage/houseTree";
 import {
   buildAmortizationSchedule,
   buildAmortizationScheduleWithExtraPrincipal,
@@ -115,10 +116,15 @@ export function buildFullScenarioExport(state: AppPersisted) {
 
   const impliedAprVerify = impliedAnnualAppreciationPercent(hp, state.currentHomeValue, state.yearsOwned);
 
+  const house = buildHouseRoot(state);
+
   return {
     exportKind: "property-pro-full-export",
-    exportVersion: 2,
+    exportVersion: 3,
     exportedAt: new Date().toISOString(),
+    /** House is the root node; category tabs are child maps. */
+    house,
+    /** @deprecated Prefer `house` — flat fields kept for older Excel helpers. */
     scenario: state,
     formulas: SCENARIO_EXPORT_FORMULAS,
     calculated: {
