@@ -16,4 +16,9 @@ describe("firestore.rules shareSnapshots security", () => {
     expect(rules).toContain("request.resource.data.payload == resource.data.payload");
     expect(rules).toContain("onlyShareSnapshotMetadataChanged");
   });
+
+  it("validates optional collaboration metadata on properties", () => {
+    expect(rules).toContain("validCollaborationMetaOptional");
+    expect(rules).toContain("collaboration.revision is int");
+  });
 });

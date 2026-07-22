@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { ExternalEstimateSuggestionsPanel } from "../components/ExternalEstimateSuggestionsPanel";
 import { PropertyLocationCard } from "../components/PropertyLocationCard";
 import { LocationCostPanel } from "../components/LocationCostPanel";
 import { PropertyNameCard } from "../components/PropertyNameCard";
+import { ShareSnapshotPanel } from "../components/ShareSnapshotPanel";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 import type { AppPersisted } from "../storage/mortgageState";
 
@@ -10,7 +12,10 @@ export type PropertyTabProps = {
   patch: (partial: Partial<AppPersisted>) => void;
   houseId: string;
   propertyName: string;
+  propertyDocId: string | null;
+  ownerUid: string | null;
   cloudReady: boolean;
+  onNotify?: (message: string, severity?: "success" | "error") => void;
   onRename: (name: string) => Promise<string | null>;
 };
 
@@ -20,7 +25,10 @@ export function PropertyTab({
   patch,
   houseId,
   propertyName,
+  propertyDocId,
+  ownerUid,
   cloudReady,
+  onNotify,
   onRename,
 }: PropertyTabProps) {
   const widgets = useMemo(
@@ -56,8 +64,41 @@ export function PropertyTab({
         defaultLayout: { x: 0, y: 17, w: 12, h: 8, minW: 4, minH: 5 },
         content: <LocationCostPanel state={state} patch={patch} />,
       },
+      {
+        id: "external-estimates",
+        title: "External estimates",
+        description: "Tax, insurance, rent, value comps — explicit apply only",
+        collapsible: true,
+        defaultLayout: { x: 0, y: 25, w: 12, h: 12, minW: 4, minH: 6 },
+        content: (
+          <ExternalEstimateSuggestionsPanel
+            state={state}
+            patch={patch}
+            categories={["tax", "insurance", "rent", "comps"]}
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
+        id: "share-snapshots",
+        title: "Share snapshots",
+        description: "Immutable read-only links for this house",
+        collapsible: true,
+        defaultLayout: { x: 0, y: 37, w: 12, h: 12, minW: 4, minH: 6 },
+        content: (
+          <ShareSnapshotPanel
+            state={state}
+            ownerUid={ownerUid}
+            houseLabel={propertyName}
+            houseId={houseId}
+            propertyDocId={propertyDocId}
+            cloudReady={cloudReady}
+            onNotify={onNotify}
+          />
+        ),
+      },
     ],
-    [cloudReady, houseId, onRename, patch, propertyName, state]
+    [cloudReady, houseId, onNotify, onRename, ownerUid, patch, propertyDocId, propertyName, state]
   );
 
   return <WidgetBoard boardId="property" widgets={widgets} rowHeight={28} />;

@@ -78,6 +78,7 @@ export default function App() {
     renameActiveHouse,
     cloudStatus,
     cloudError,
+    userId,
   } = useMortgageSyncedState();
   const [tab, setTab] = useState(0);
   const [toast, setToast] = useState<{ message: string; severity: "success" | "error" } | null>(
@@ -470,7 +471,10 @@ export default function App() {
                 patch={patch}
                 houseId={activeHouseId}
                 propertyName={activeHouseLabel}
+                propertyDocId={activePropertyId}
+                ownerUid={userId}
                 cloudReady={cloudStatus === "ready"}
+                onNotify={(message, severity = "success") => setToast({ message, severity })}
                 onRename={async (name) => {
                   try {
                     const next = await renameActiveHouse(name);
@@ -492,7 +496,13 @@ export default function App() {
             id="tabpanel-financing"
             aria-labelledby="tab-financing"
           >
-            {tab === TAB_INDEX.financing ? <FinancingTab state={state} patch={patch} /> : null}
+            {tab === TAB_INDEX.financing ? (
+              <FinancingTab
+                state={state}
+                patch={patch}
+                onNotify={(message, severity = "success") => setToast({ message, severity })}
+              />
+            ) : null}
           </Box>
           <Box
             role="tabpanel"

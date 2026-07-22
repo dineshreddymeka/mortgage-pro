@@ -16,6 +16,7 @@ import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCa
 import { PaymentPlanPanel } from "../components/PaymentPlanPanel";
 import { LoanProductPanel } from "../components/LoanProductPanel";
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
+import { ExternalEstimateSuggestionsPanel } from "../components/ExternalEstimateSuggestionsPanel";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
 import { WidgetBoard } from "../widgets/WidgetBoard";
@@ -52,13 +53,14 @@ const summarySx = {
 export type FinancingTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  onNotify?: (message: string, severity?: "success" | "error") => void;
 };
 
 /** @deprecated Use FinancingTab — category rename. */
 export type MortgageTabProps = FinancingTabProps;
 
 /** Category: Financing — loan inputs, payment, DTI, term/paydown/refi. */
-export function FinancingTab({ state, patch }: FinancingTabProps) {
+export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
   const extraPrincipalMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
 
   const derived = useMemo(() => deriveScenario(state), [state]);
@@ -170,10 +172,25 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         content: <LoanProductPanel state={state} patch={patch} />,
       },
       {
+        id: "external-rate-estimates",
+        title: "Rate suggestions",
+        description: "External benchmarks — explicit apply only",
+        defaultLayout: { x: 0, y: 27, w: 12, h: 10, minW: 4, minH: 6 },
+        content: (
+          <ExternalEstimateSuggestionsPanel
+            state={state}
+            patch={patch}
+            categories={["rate"]}
+            title="External rate suggestions"
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 0, y: 27, w: 12, h: 12, minW: 4, minH: 8 },
+        defaultLayout: { x: 0, y: 37, w: 12, h: 12, minW: 4, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <MortgageAffordabilityDtiPanel
@@ -194,7 +211,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         id: "term-tools",
         title: "Term tools",
         description: "15 vs 30 · paydown · refi",
-        defaultLayout: { x: 0, y: 39, w: 12, h: 14, minW: 6, minH: 8 },
+        defaultLayout: { x: 0, y: 49, w: 12, h: 14, minW: 6, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -395,6 +412,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
       baselineSchedule,
       schedule,
       derived,
+      onNotify,
       state,
       yearlyDetailed,
       yearlyDetailed15,

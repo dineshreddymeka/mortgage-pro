@@ -483,5 +483,6 @@ export function useMortgageSyncedState() {
     renameActiveHouse,
     cloudStatus,
     cloudError,
+    userId,
   };
 }

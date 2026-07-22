@@ -16,6 +16,8 @@ import { onAuthStateChanged, signInAnonymously, type User } from "firebase/auth"
 import { getFirebase } from "../lib/firebase";
 import type { AppPersisted } from "./mortgageState";
 import { LEGACY_CATEGORY_KEYS, resolveScenarioFromHouseDoc } from "./houseTree";
+import type { ScenarioCollaborationMeta } from "../collaboration/types";
+import { bumpCollaborationMeta, parseCollaborationMeta } from "../collaboration/revisionConflict";
 
 /**
  * Firestore collection of house root documents.
@@ -52,6 +54,8 @@ export type PropertyDoc = PropertyMeta & {
   userId: string;
   /** All tab inputs — point of truth (never drop fields when saving). */
   scenario: AppPersisted;
+  /** Optional monotonic revision metadata for future multi-session edits. */
+  collaboration?: ScenarioCollaborationMeta;
 };
 
 export type ListPropertiesOptions = {
@@ -465,14 +469,35 @@ export async function savePropertyScenario(
   id: string,
   userId: string,
   scenario: AppPersisted,
-  options?: { name?: string; houseNumber?: number; houseId?: string }
+  options?: {
+    name?: string;
+    houseNumber?: number;
+    houseId?: string;
+    editorSessionId?: string;
+    expectedRevision?: number;
+    lastAppliedShareToken?: string;
+  }
 ): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
 
+  const existing = await getDoc(doc(fb.db, PROPERTIES_COLLECTION, id));
+  const remote = existing.exists()
+    ? parseCollaborationMeta((existing.data() as Record<string, unknown>).collaboration)
+    : null;
+  if (options?.expectedRevision != null && remote && remote.revision !== options.expectedRevision) {
+    throw new Error(
+      `Revision conflict: remote ${remote.revision} ≠ expected ${options.expectedRevision}. Reload before saving.`
+    );
+  }
+  const collaboration = bumpCollaborationMeta(remote, userId, options?.editorSessionId ?? "unknown", {
+    lastAppliedShareToken: options?.lastAppliedShareToken,
+  });
+
   const payload: Record<string, unknown> = {
     userId,
     scenario,
+    collaboration,
     updatedAt: Date.now(),
     lastOpenedAt: Date.now(),
   };
