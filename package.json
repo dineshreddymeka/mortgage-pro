@@ -11,7 +11,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "functions:install": "npm --prefix functions ci",
+    "functions:build": "npm --prefix functions run build",
+    "functions:test": "npm --prefix functions test",
+    "functions:typecheck": "npm --prefix functions run typecheck"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

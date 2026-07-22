@@ -82,6 +82,14 @@ CI sets `VITE_BASE_PATH` to `/mortgage-pro/`. Locally the base is `/`.
 | `npm run build` | Typecheck + production build |
 | `npm run preview` | Preview `dist/` |
 | `npm run lint` | ESLint |
+| `npm run test` | Vitest unit tests |
+| `npm run functions:test` | Firebase Functions unit tests |
+
+## External estimate proxy (Phase 8)
+
+Optional server-side proxy for mortgage rates, property tax, insurance, rent, and comps. See [`docs/external-estimates-api.md`](docs/external-estimates-api.md) for deploy notes, env vars, and provider limitations.
+
+Set `VITE_ESTIMATE_API_BASE_URL` in `.env.local` (or GitHub Actions secret) to your Firebase Functions base URL. Without it, estimate panels use offline heuristic stubs with explicit apply-only confirmation.
 
 ## License
 

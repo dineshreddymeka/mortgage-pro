@@ -18,6 +18,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import { applyExternalEstimates } from "../estimates/applyExternalEstimate";
 import { fetchExternalEstimates, flattenEstimateSuggestions } from "../estimates/estimateClient";
+import { isEstimateProxyConfigured } from "../estimates/providers/index";
 import type { EstimateCategory, ExternalEstimateSuggestion } from "../estimates/types";
 import type { AppPersisted } from "../storage/mortgageState";
 
@@ -70,7 +71,10 @@ export function ExternalEstimateSuggestionsPanel({
     setLoading(true);
     setError(null);
     try {
-      const bundles = await fetchExternalEstimates(state, { preferOfflineOnly: true, bypassCache: false });
+      const bundles = await fetchExternalEstimates(state, {
+        preferOfflineOnly: !isEstimateProxyConfigured(),
+        bypassCache: false,
+      });
       const flat = flattenEstimateSuggestions(bundles).filter((s) => categorySet.has(s.category));
       setSuggestions(flat);
       setOffline(bundles.every((b) => b.offline));

@@ -1,6 +1,6 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { contextCacheKey, EstimateCache } from "./estimateCache";
-import { resolveEstimateProviders } from "./providers/offlineStubProvider";
+import { isEstimateProxyConfigured, resolveEstimateProviders } from "./providers/index";
 import type { EstimateRequestContext, ExternalEstimateBundle, ExternalEstimateSuggestion } from "./types";
 import { buildEstimateContextFromScenario } from "./types";
 
@@ -17,19 +17,29 @@ export async function fetchExternalEstimates(state: AppPersisted, options: Fetch
   const context = options.context ?? buildEstimateContextFromScenario(state);
   const cache = options.cache ?? (defaultCache ??= new EstimateCache());
   const cacheKey = contextCacheKey(context);
+  const preferOfflineOnly = options.preferOfflineOnly ?? !isEstimateProxyConfigured();
   const bundles: ExternalEstimateBundle[] = [];
-  for (const provider of resolveEstimateProviders(options.preferOfflineOnly ?? true)) {
+
+  for (const provider of resolveEstimateProviders(preferOfflineOnly)) {
     if (!options.bypassCache) {
       const cached = cache.get(provider.id, cacheKey);
       if (cached) {
         bundles.push(cached);
+        if (!provider.isOfflineCapable) return bundles;
         continue;
       }
     }
-    const bundle = await provider.fetchEstimates(context);
-    cache.set(provider.id, cacheKey, bundle);
-    bundles.push(bundle);
+    try {
+      const bundle = await provider.fetchEstimates(context);
+      cache.set(provider.id, cacheKey, bundle);
+      bundles.push(bundle);
+      if (!provider.isOfflineCapable) return bundles;
+    } catch {
+      if (!provider.isOfflineCapable) continue;
+      throw new Error("Could not load estimate suggestions.");
+    }
   }
+
   return bundles;
 }
 

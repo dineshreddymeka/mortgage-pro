@@ -27,8 +27,3 @@ export const offlineStubEstimateProvider: ExternalEstimateProvider = {
   },
 };
 
-export const estimateProviders: ExternalEstimateProvider[] = [offlineStubEstimateProvider];
-
-export function resolveEstimateProviders(preferOfflineOnly = true): ExternalEstimateProvider[] {
-  return preferOfflineOnly ? estimateProviders.filter((p) => p.isOfflineCapable) : estimateProviders.slice();
-}
