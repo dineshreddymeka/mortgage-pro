@@ -27,6 +27,7 @@ import { alpha, type Theme } from "@mui/material/styles";
 import { useMemo, useState, type ReactNode } from "react";
 import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { computeMonthlyPayment } from "../lib/mortgageMath";
+import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
 import {
   cashFlowAnnualFromYieldToggles,
   computeRentalAnalysis,
@@ -409,9 +410,12 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
   return (
     <Stack spacing={0.65}>
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-        Same loan size · <strong>30-yr vs 15-yr</strong> · syncs Mortgage &amp; Rental. Expand boxes to edit.
+        Same loan size · <strong>30-yr vs 15-yr</strong> · syncs Mortgage &amp; Rental. Drag widget titles to
+        rearrange · resize from the corner.
       </Typography>
 
+      <WidgetBoardFromPanels boardId="when-to-sell">
+      <WidgetPanel id="workspace-inputs" title="Workspace inputs" description="Collapsed = summary" h={18}>
       <Paper variant="outlined" elevation={0} sx={{ borderRadius: 1.5, overflow: "hidden", boxShadow: "none", bgcolor: "transparent" }}>
         <Stack
           direction="row"
@@ -903,7 +907,9 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
           </Grid>
         </Grid>
       </Paper>
+      </WidgetPanel>
 
+      <WidgetPanel id="total-gain" title="Total gain by exit year" description="Sale + rent − upfront" h={20}>
       <Stack spacing={0.65}>
         <Box sx={{ px: 0.25 }}>
           <Typography variant="subtitle2" component="div" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
@@ -930,7 +936,10 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
             </Grid>
           ))}
         </Grid>
+      </Stack>
+      </WidgetPanel>
 
+      <WidgetPanel id="interest-detail" title="Interest & principal detail" description="Amortization detail" h={16}>
         <Accordion
           defaultExpanded={false}
           disableGutters
@@ -1008,8 +1017,9 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
             </TableContainer>
           </AccordionDetails>
         </Accordion>
-      </Stack>
+      </WidgetPanel>
 
+      <WidgetPanel id="yearly-projection" title="Year-by-year projection" description="Equity path by year" h={18}>
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={sectionAccordionSx}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={sectionAccordionSummarySx}>
           <Stack
@@ -1210,6 +1220,8 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
           </Typography>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
+      </WidgetBoardFromPanels>
     </Stack>
   );
 }
