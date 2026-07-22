@@ -151,6 +151,33 @@ export async function nextHouseNumber(userId: string): Promise<number> {
   return Math.max(...list.map((p) => p.houseNumber)) + 1;
 }
 
+/** Full property docs for comparison (meta + scenario). */
+export async function listPropertyDocs(userId: string): Promise<PropertyDoc[]> {
+  const fb = getFirebase();
+  if (!fb) return [];
+
+  const meta = await listProperties(userId);
+  const q = query(collection(fb.db, PROPERTIES_COLLECTION), where("userId", "==", userId));
+  const snap = await getDocs(q);
+  const byId = new Map(snap.docs.map((d) => [d.id, d.data()]));
+
+  return meta
+    .map((m) => {
+      const data = byId.get(m.id);
+      if (!data?.scenario) return null;
+      return {
+        id: m.id,
+        userId,
+        houseNumber: m.houseNumber,
+        name: m.name,
+        scenario: data.scenario as AppPersisted,
+        updatedAt: asMillis(data.updatedAt),
+        lastOpenedAt: asMillis(data.lastOpenedAt),
+      } satisfies PropertyDoc;
+    })
+    .filter((x): x is PropertyDoc => x != null);
+}
+
 export async function getProperty(id: string): Promise<PropertyDoc | null> {
   const fb = getFirebase();
   if (!fb) return null;

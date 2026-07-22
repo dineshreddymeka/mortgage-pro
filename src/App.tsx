@@ -19,6 +19,7 @@ import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
+import { HouseComparisonBar } from "./components/HouseComparisonBar";
 import { HouseNavBar } from "./components/HouseNavBar";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
@@ -48,6 +49,7 @@ export default function App() {
     saveToBrowser,
     saveToCloud,
     properties,
+    comparisons,
     activePropertyId,
     activeHouseLabel,
     selectProperty,
@@ -409,6 +411,14 @@ export default function App() {
           </Typography>
         </Box>
       </Box>
+
+      {cloudStatus === "ready" && comparisons.length > 0 ? (
+        <HouseComparisonBar
+          rows={comparisons}
+          activePropertyId={activePropertyId}
+          onSelect={houseHandlers.onSelect}
+        />
+      ) : null}
 
       <Snackbar
         open={toast != null}
