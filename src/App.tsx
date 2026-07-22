@@ -15,11 +15,11 @@ import {
 } from "@mui/material";
 import { alpha, useColorScheme, useTheme } from "@mui/material/styles";
 import { useMemo, useState } from "react";
+import { CompareTab } from "./tabs/CompareTab";
 import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
-import { HouseComparisonBar } from "./components/HouseComparisonBar";
 import { HouseNavBar } from "./components/HouseNavBar";
 import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
@@ -39,6 +39,7 @@ const TABS = [
   { label: "Upfront", id: "upfront" },
   { label: "Rental", id: "rental" },
   { label: "When to sell", id: "sell" },
+  { label: "Compare", id: "compare" },
 ] as const;
 
 export default function App() {
@@ -51,11 +52,14 @@ export default function App() {
     saveToBrowser,
     saveToCloud,
     properties,
+    archivedProperties,
     comparisons,
     activePropertyId,
     activeHouseLabel,
     selectProperty,
     createNewProperty,
+    archiveHouse,
+    restoreHouse,
     cloudStatus,
     cloudError,
   } = useMortgageSyncedState();
@@ -137,6 +141,30 @@ export default function App() {
           }
         })
         .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
+    },
+    onArchive: (id: string) => {
+      void archiveHouse(id)
+        .then((ok) => {
+          if (ok) {
+            setToast({
+              message: "House archived. Full tab data kept — restore anytime.",
+              severity: "success",
+            });
+          }
+        })
+        .catch(() => setToast({ message: "Could not archive house.", severity: "error" }));
+    },
+    onRestore: (id: string) => {
+      void restoreHouse(id)
+        .then((ok) => {
+          if (ok) {
+            setToast({
+              message: "House restored with the same ID and full scenario.",
+              severity: "success",
+            });
+          }
+        })
+        .catch(() => setToast({ message: "Could not restore house.", severity: "error" }));
     },
   };
 
@@ -289,10 +317,13 @@ export default function App() {
           cloudStatus={cloudStatus}
           cloudError={cloudError}
           properties={properties}
+          archivedProperties={archivedProperties}
           comparisons={comparisons}
           activePropertyId={activePropertyId}
           onSelect={houseHandlers.onSelect}
           onCreate={houseHandlers.onCreate}
+          onArchive={houseHandlers.onArchive}
+          onRestore={houseHandlers.onRestore}
         />
 
         <Box
@@ -393,6 +424,21 @@ export default function App() {
           <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
             {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
           </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== 4}
+            id="tabpanel-compare"
+            aria-labelledby="tab-compare"
+          >
+            {tab === 4 ? (
+              <CompareTab
+                rows={comparisons}
+                activePropertyId={activePropertyId}
+                cloudReady={cloudStatus === "ready"}
+                onSelect={houseHandlers.onSelect}
+              />
+            ) : null}
+          </Box>
 
           <Typography
             variant="caption"
@@ -406,14 +452,6 @@ export default function App() {
           </Typography>
         </Box>
       </Box>
-
-      {cloudStatus === "ready" && comparisons.length > 0 ? (
-        <HouseComparisonBar
-          rows={comparisons}
-          activePropertyId={activePropertyId}
-          onSelect={houseHandlers.onSelect}
-        />
-      ) : null}
 
       <Snackbar
         open={toast != null}

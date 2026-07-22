@@ -17,6 +17,7 @@ export function WidgetFrame({ title, description, children }: WidgetFrameProps) 
     <Box
       sx={{
         height: "100%",
+        width: "100%",
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
@@ -26,7 +27,12 @@ export function WidgetFrame({ title, description, children }: WidgetFrameProps) 
         bgcolor: (t) =>
           t.palette.mode === "light" ? alpha("#f7fafc", 0.96) : alpha("#101a24", 0.96),
         boxShadow: "var(--pp-shadow)",
-        overflow: "hidden",
+        // Do not clip the grid item's resize handles (siblings of this frame).
+        overflow: "visible",
+        position: "relative",
+        // Leave room so the SE resize grip isn't covered by content chrome.
+        pb: "2px",
+        pr: "2px",
       }}
     >
       <Stack
@@ -90,10 +96,26 @@ export function WidgetFrame({ title, description, children }: WidgetFrameProps) 
           overflow: "auto",
           px: 1.1,
           py: 0.9,
+          borderRadius: "0 0 12px 12px",
         }}
       >
         {children}
       </Box>
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          right: 4,
+          bottom: 4,
+          width: 14,
+          height: 14,
+          pointerEvents: "none",
+          opacity: 0.45,
+          background:
+            "linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), linear-gradient(135deg, transparent 65%, currentColor 66%, currentColor 74%, transparent 75%)",
+          color: "secondary.main",
+        }}
+      />
     </Box>
   );
 }
