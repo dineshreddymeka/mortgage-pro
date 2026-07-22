@@ -393,6 +393,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
       patch,
       prepaySummary,
       baselineSchedule,
+      schedule,
       derived,
       state,
       yearlyDetailed,

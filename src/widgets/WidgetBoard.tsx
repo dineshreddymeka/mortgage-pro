@@ -38,7 +38,16 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
   /** Phones: stack naturally (no fixed RGL heights / drag). */
   const isPhone = useMediaQuery(theme.breakpoints.down("sm"));
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-  const defs = useMemo(() => widgets.map(({ content: _c, ...def }) => def), [widgets]);
+  const defs = useMemo(
+    () =>
+      widgets.map(({ id, title, description, defaultLayout }) => ({
+        id,
+        title,
+        description,
+        defaultLayout,
+      })),
+    [widgets]
+  );
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => loadLayouts(boardId, defs));
 
   const onLayoutChange = useCallback(

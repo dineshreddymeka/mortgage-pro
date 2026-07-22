@@ -316,7 +316,7 @@ export function WhenToSellTab({
     const map = new Map<number, (typeof derived.exitInvestments)[number]>();
     for (const row of derived.exitInvestments) map.set(row.year, row);
     return map;
-  }, [derived.exitInvestments]);
+  }, [derived]);
 
   const totalGainHeadingYears = useMemo(() => {
     const ys = [...REAL_WEALTH_MILESTONE_YEARS];

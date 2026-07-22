@@ -123,6 +123,7 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
 
     let cancelled = false;
     let placeAutocomplete: google.maps.places.PlaceAutocompleteElement | null = null;
+    const widgetHost = widgetHostRef.current;
 
     const onSelect = async (event: Event) => {
       const selectEvent = event as google.maps.places.PlacePredictionSelectEvent;
@@ -234,8 +235,7 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
         placeAutocomplete = null;
       }
       placeAutocompleteRef.current = null;
-      const host = widgetHostRef.current;
-      if (host) host.replaceChildren();
+      if (widgetHost) widgetHost.replaceChildren();
     };
   }, [apiKey, hasKey]);
 

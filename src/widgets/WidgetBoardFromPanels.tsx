@@ -19,7 +19,8 @@ export type WidgetPanelProps = {
 };
 
 /** Marker component — only meaningful as a child of WidgetBoardFromPanels. */
-export function WidgetPanel(_props: WidgetPanelProps) {
+export function WidgetPanel(props: WidgetPanelProps) {
+  void props;
   return null;
 }
 

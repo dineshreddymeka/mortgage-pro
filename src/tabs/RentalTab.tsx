@@ -190,7 +190,10 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
   const totalCashIn = state.downPayment + state.closingCosts + state.miscInitialCash;
 
   /** Pro-forma only: unchecked rows are excluded from NOI / cash flow (persisted on the house). */
-  const pfToggles = state.rentalProFormaInclude ?? {};
+  const pfToggles = useMemo(
+    () => state.rentalProFormaInclude ?? {},
+    [state.rentalProFormaInclude]
+  );
   const [financingOpen, setFinancingOpen] = useState(false);
 
   const setPfIncluded = useCallback(

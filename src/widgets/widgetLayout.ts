@@ -15,7 +15,8 @@ export function layoutStorageKey(boardId: string): string {
 }
 
 function asItem(w: WidgetDef): LayoutItem {
-  const { i: _ignored, ...rest } = w.defaultLayout;
+  const rest = { ...w.defaultLayout };
+  delete rest.i;
   return { ...rest, i: w.id };
 }
 
