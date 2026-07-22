@@ -81,6 +81,7 @@ export function HouseComparisonPanel({
       <Box
         sx={{
           overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
           scrollbarWidth: "thin",
           border: "1px solid",
           borderColor: "divider",
@@ -92,7 +93,7 @@ export function HouseComparisonPanel({
           component="table"
           sx={{
             width: "100%",
-            minWidth: 560,
+            minWidth: { xs: 420, sm: 560 },
             borderCollapse: "collapse",
             fontVariantNumeric: "tabular-nums",
           }}
@@ -141,7 +142,7 @@ export function HouseComparisonPanel({
                         : "transparent",
                       borderLeft: "1px solid",
                       borderColor: "divider",
-                      minWidth: 104,
+                      minWidth: { xs: 88, sm: 104 },
                       "&:hover": {
                         bgcolor: (t) => alpha(t.palette.secondary.main, 0.12),
                       },

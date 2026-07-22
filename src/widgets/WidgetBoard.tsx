@@ -3,6 +3,8 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import {
   ResponsiveGridLayout,
@@ -32,6 +34,9 @@ export type WidgetBoardProps = {
 };
 
 export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardProps) {
+  const theme = useTheme();
+  /** Phones: stack naturally (no fixed RGL heights / drag). */
+  const isPhone = useMediaQuery(theme.breakpoints.down("sm"));
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
   const defs = useMemo(() => widgets.map(({ content: _c, ...def }) => def), [widgets]);
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => loadLayouts(boardId, defs));
@@ -48,6 +53,20 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
     clearLayouts(boardId);
     setLayouts(buildDefaultLayouts(defs));
   }, [boardId, defs]);
+
+  if (isPhone) {
+    return (
+      <Box sx={{ width: "100%" }}>
+        <Stack spacing={1.1}>
+          {widgets.map((w) => (
+            <WidgetFrame key={w.id} title={w.title} description={w.description} mobileStack>
+              {w.content}
+            </WidgetFrame>
+          ))}
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <Box ref={containerRef} sx={{ width: "100%" }}>
@@ -67,7 +86,7 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             color: "text.secondary",
           }}
         >
-          Widgets · drag title · resize bottom-right corner
+          Widgets · drag title · resize corner
         </Typography>
         <Button
           size="small"
@@ -82,7 +101,6 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
 
       <Box
         sx={{
-          // Keep resize handles clickable above card chrome.
           "& .react-grid-item": {
             overflow: "visible",
           },
@@ -91,7 +109,6 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
             opacity: 0.18,
             borderRadius: "12px",
           },
-          // Override RGL default opacity:0 until hover — that made resize feel broken.
           "& .react-grid-item > .react-resizable-handle": {
             opacity: "1 !important",
             zIndex: 6,
@@ -176,7 +193,6 @@ export function WidgetBoard({ boardId, widgets, rowHeight = 36 }: WidgetBoardPro
                 style={{
                   height: "100%",
                   width: "100%",
-                  // Handles are siblings of WidgetFrame; keep them unclipped.
                   overflow: "visible",
                 }}
               >

@@ -858,8 +858,16 @@ export function WhenToSellTab({
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, lineHeight: 1.35 }}>
               Not extra subtractions — interest is already inside the rent line via the mortgage payment.
             </Typography>
-            <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-              <Table size="small">
+            <TableContainer
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <Table size="small" sx={{ minWidth: 420 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Sell after</TableCell>
@@ -943,13 +951,15 @@ export function WhenToSellTab({
         <AccordionDetails sx={{ pt: 0, pb: 1 }}>
           <TableContainer
             sx={{
-              maxHeight: { xs: "min(38vh, 260px)", sm: "min(40vh, 300px)" },
+              maxHeight: { xs: "min(42vh, 280px)", sm: "min(40vh, 300px)" },
               border: "1px solid",
               borderColor: "divider",
               borderRadius: 1.5,
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
             }}
           >
-            <Table size="small" stickyHeader>
+            <Table size="small" stickyHeader sx={{ minWidth: 520 }}>
                 <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", py: 0.65 }}>Year</TableCell>

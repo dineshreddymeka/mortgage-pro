@@ -44,8 +44,10 @@ function Kpi({
     <Box
       className="pp-metric-pop"
       sx={{
-        minWidth: { xs: 92, sm: 110 },
-        px: 1,
+        minWidth: { xs: 76, sm: 110 },
+        flex: { xs: "1 1 calc(33.33% - 8px)", sm: "0 0 auto" },
+        maxWidth: { xs: "calc(50% - 4px)", sm: "none" },
+        px: { xs: 0.75, sm: 1 },
         py: 0.55,
         borderRadius: "10px",
         border: "1px solid",
@@ -89,14 +91,14 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
   return (
     <Stack
       direction="row"
-      spacing={0.75}
+      spacing={0.65}
       useFlexGap
       flexWrap="wrap"
       alignItems="stretch"
       className="pp-rise"
       sx={{ mb: 1 }}
     >
-      <Box sx={{ mr: 0.25, alignSelf: "center", minWidth: 0 }}>
+      <Box sx={{ mr: { xs: 0, sm: 0.25 }, alignSelf: "center", minWidth: 0, flex: { xs: "1 1 100%", sm: "0 0 auto" } }}>
         <Typography
           sx={{
             fontSize: "0.62rem",
@@ -111,10 +113,11 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
         <Typography
           sx={{
             fontWeight: 700,
-            fontSize: "0.95rem",
+            fontSize: { xs: "0.9rem", sm: "0.95rem" },
             letterSpacing: "-0.03em",
             lineHeight: 1.2,
           }}
+          noWrap
         >
           {houseLabel}
         </Typography>
@@ -128,12 +131,14 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
         value={`${money0.format(cf)}/mo`}
         tone={cf > 0 ? "good" : cf < 0 ? "bad" : "default"}
       />
-      <Kpi
-        label="Cash-on-cash"
-        value={pct1.format(coc)}
-        tone={coc > 0 ? "good" : coc < 0 ? "bad" : "default"}
-      />
-      <Kpi label="Loan" value={`${rateApr}% · ${termYears}y`} />
+      <Box sx={{ display: { xs: "none", sm: "contents" } }}>
+        <Kpi
+          label="Cash-on-cash"
+          value={pct1.format(coc)}
+          tone={coc > 0 ? "good" : coc < 0 ? "bad" : "default"}
+        />
+        <Kpi label="Loan" value={`${rateApr}% · ${termYears}y`} />
+      </Box>
     </Stack>
   );
 }

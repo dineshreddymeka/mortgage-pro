@@ -26,18 +26,31 @@ export function buildDefaultLayouts(widgets: WidgetDef[]): ResponsiveLayouts {
     w: Math.min(10, item.w),
     x: Math.min(item.x, Math.max(0, 10 - Math.min(10, item.w))),
   }));
-  const sm: Layout = lg.map((item, index) => ({
-    ...item,
-    w: 6,
-    x: 0,
-    y: index * Math.max(item.h, 4),
-  }));
-  const xs: Layout = lg.map((item, index) => ({
-    ...item,
-    w: 4,
-    x: 0,
-    y: index * Math.max(item.h, 4),
-  }));
+  const sm: Layout = lg.map((item, index) => {
+    const w = Math.min(6, item.w);
+    const minW = Math.min(w, item.minW ?? w);
+    return {
+      ...item,
+      w: 6,
+      minW,
+      maxW: 6,
+      x: 0,
+      y: index * Math.max(item.h, 4),
+    };
+  });
+  const xs: Layout = lg.map((item, index) => {
+    const h = Math.min(item.h, 12);
+    return {
+      ...item,
+      w: 4,
+      minW: 4,
+      maxW: 4,
+      h,
+      minH: Math.min(item.minH ?? 4, h),
+      x: 0,
+      y: index * Math.max(h, 4),
+    };
+  });
   return { lg, md, sm, xs };
 }
 

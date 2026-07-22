@@ -733,7 +733,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.35 }}>
             1 · Income → EGI
           </Typography>
-          <TableContainer sx={{ mb: 1.25 }}>
+          <TableContainer sx={{ mb: 1.25, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -800,8 +800,8 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
               </Typography>
             ) : null}
           </Stack>
-          <TableContainer>
-            <Table size="small">
+          <TableContainer sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <Table size="small" sx={{ minWidth: { xs: 300, sm: 0 } }}>
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox" sx={{ width: 44, py: 0.5 }} aria-label="Include in totals" />

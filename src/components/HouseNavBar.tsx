@@ -52,7 +52,11 @@ function CloudIcon({ status }: { status: CloudSyncStatus }) {
 
 function readCollapsed(): boolean {
   try {
-    return localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    const stored = localStorage.getItem(NAV_COLLAPSED_KEY);
+    if (stored === "1") return true;
+    if (stored === "0") return false;
+    // First visit: collapse on phones so content isn't pushed down.
+    return typeof window !== "undefined" && window.matchMedia("(max-width: 899.95px)").matches;
   } catch {
     return false;
   }
@@ -361,11 +365,12 @@ export function HouseNavBar({
                     aria-current={selected ? "page" : undefined}
                     sx={{
                       borderRadius: "12px",
-                      minHeight: { xs: 56, md: 64 },
+                      minHeight: { xs: 52, md: 64 },
                       px: 1,
                       py: 0.75,
                       flexShrink: 0,
-                      minWidth: { xs: 168, md: "auto" },
+                      minWidth: { xs: 148, md: "auto" },
+                      maxWidth: { xs: 200, md: "none" },
                       alignItems: "flex-start",
                       border: "1px solid",
                       borderColor: selected ? "secondary.main" : "divider",

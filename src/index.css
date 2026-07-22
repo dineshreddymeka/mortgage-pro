@@ -20,6 +20,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 *,
@@ -41,6 +42,14 @@ body {
     linear-gradient(90deg, rgba(11, 31, 51, 0.035) 1px, transparent 1px);
   background-size: auto, 28px 28px, 28px 28px;
   background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+@media (max-width: 599.95px) {
+  body {
+    /* Fixed backgrounds jank on iOS Safari while scrolling. */
+    background-attachment: scroll;
+  }
 }
 
 ::selection {

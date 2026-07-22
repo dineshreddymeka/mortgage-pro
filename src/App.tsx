@@ -215,7 +215,7 @@ export default function App() {
           WebkitBackdropFilter: "saturate(160%) blur(18px)",
         }}
       >
-        <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 0.75, maxWidth: 1400, mx: "auto", width: "100%" }}>
+        <Box sx={{ px: { xs: 1.25, sm: 2 }, py: { xs: 0.65, sm: 0.75 }, maxWidth: 1400, mx: "auto", width: "100%" }}>
           <Stack
             direction="row"
             spacing={1}
@@ -223,16 +223,16 @@ export default function App() {
             justifyContent="space-between"
             flexWrap="wrap"
             useFlexGap
-            sx={{ rowGap: 0.75 }}
+            sx={{ rowGap: 0.6 }}
           >
-            <Stack direction="row" spacing={1.25} alignItems="baseline" sx={{ minWidth: 0 }}>
-              <Box>
+            <Stack direction="row" spacing={{ xs: 0.85, sm: 1.25 }} alignItems="baseline" sx={{ minWidth: 0, flex: "1 1 auto" }}>
+              <Box sx={{ minWidth: 0 }}>
                 <Typography
                   component="h1"
                   sx={{
                     fontFamily: "var(--pp-font-display)",
                     fontWeight: 700,
-                    fontSize: { xs: "1.05rem", sm: "1.2rem" },
+                    fontSize: { xs: "1rem", sm: "1.2rem" },
                     letterSpacing: "-0.04em",
                     lineHeight: 1.1,
                     whiteSpace: "nowrap",
@@ -247,6 +247,7 @@ export default function App() {
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     color: "text.secondary",
+                    display: { xs: "none", sm: "block" },
                   }}
                 >
                   Deal desk
@@ -256,10 +257,11 @@ export default function App() {
                 className="pp-mono"
                 sx={{
                   fontWeight: 650,
-                  fontSize: { xs: "0.95rem", sm: "1.1rem" },
+                  fontSize: { xs: "0.88rem", sm: "1.1rem" },
                   letterSpacing: "-0.03em",
                   color: "secondary.main",
                   whiteSpace: "nowrap",
+                  minWidth: 0,
                 }}
               >
                 {moneyDec.format(payment.total)}
@@ -274,7 +276,7 @@ export default function App() {
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={0.35} alignItems="center" flexWrap="nowrap" useFlexGap sx={{ flexShrink: 0 }}>
               <Button
                 size="small"
                 variant="contained"
@@ -284,9 +286,14 @@ export default function App() {
                   void saveScenario();
                 }}
                 aria-label="Save all tab data"
-                sx={{ minHeight: 32, px: 1.35, fontWeight: 700 }}
+                sx={{ minHeight: 32, px: { xs: 1, sm: 1.35 }, fontWeight: 700, minWidth: 0 }}
               >
-                Save all
+                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Save all
+                </Box>
+                <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                  Save
+                </Box>
               </Button>
               <Button
                 size="small"
@@ -294,7 +301,7 @@ export default function App() {
                 startIcon={<FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />}
                 onClick={exportExcel}
                 aria-label="Export scenario to Excel"
-                sx={{ minHeight: 32, px: 1.25 }}
+                sx={{ minHeight: 32, px: { xs: 0.85, sm: 1.25 }, minWidth: 0 }}
               >
                 <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
                   Export
@@ -310,9 +317,16 @@ export default function App() {
                   startIcon={<RestartAltIcon sx={{ fontSize: 17 }} />}
                   onClick={reset}
                   aria-label="Reset all tab values to zero"
-                  sx={{ minHeight: 32, px: 1 }}
+                  sx={{
+                    minHeight: 32,
+                    px: { xs: 0.5, sm: 1 },
+                    minWidth: { xs: 36, sm: "auto" },
+                    "& .MuiButton-startIcon": { mr: { xs: 0, sm: 0.75 } },
+                  }}
                 >
-                  Reset
+                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                    Reset
+                  </Box>
                 </Button>
               </Tooltip>
               <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
@@ -362,9 +376,10 @@ export default function App() {
           sx={{
             flex: 1,
             minWidth: 0,
-            px: { xs: 1.5, sm: 2 },
-            pt: 1.1,
-            pb: 1.5,
+            px: { xs: 1.25, sm: 2 },
+            pt: { xs: 0.85, sm: 1.1 },
+            pb: { xs: 2, sm: 1.5 },
+            overflowX: "hidden",
           }}
         >
           <WorkspaceKpiStrip
@@ -379,7 +394,8 @@ export default function App() {
             aria-label="Main sections"
             className="pp-rise-delay"
             sx={{
-              display: "inline-flex",
+              display: "flex",
+              width: "100%",
               maxWidth: "100%",
               p: 0.35,
               gap: 0.25,
@@ -389,9 +405,14 @@ export default function App() {
               border: "1px solid",
               borderColor: "divider",
               overflowX: "auto",
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "thin",
               mb: 1,
+              // Soft fade hints that more tabs are off-screen on phones.
+              maskImage: {
+                xs: "linear-gradient(90deg, #000 0%, #000 calc(100% - 28px), transparent 100%)",
+                sm: "none",
+              },
             }}
           >
             {TABS.map(({ label, id }, i) => {
@@ -408,17 +429,18 @@ export default function App() {
                   onClick={() => setTab(i)}
                   sx={{
                     py: 0.5,
-                    px: { xs: 1.05, sm: 1.4 },
+                    px: { xs: 1.1, sm: 1.4 },
                     minWidth: "auto",
-                    minHeight: 30,
+                    minHeight: { xs: 34, sm: 30 },
                     borderRadius: "8px",
                     bgcolor: selected ? "secondary.main" : "transparent !important",
                     color: selected ? "secondary.contrastText" : "text.secondary",
                     fontWeight: selected ? 700 : 600,
-                    fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+                    fontSize: { xs: "0.78rem", sm: "0.8125rem" },
                     letterSpacing: "-0.015em",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
+                    touchAction: "manipulation",
                     "&:hover": {
                       color: selected ? "secondary.contrastText" : "text.primary",
                       bgcolor: selected
