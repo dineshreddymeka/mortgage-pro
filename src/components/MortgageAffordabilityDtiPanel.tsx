@@ -57,6 +57,7 @@ type Props = {
 
 export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaymentMonthly }: Props) {
   const [budgetDraft, setBudgetDraft] = useState<string | null>(null);
+  const storedBudget = Math.max(0, Math.round(Number(state.customHousingBudgetMonthly) || 0));
 
   const baseParams = useMemo(
     () => ({
@@ -92,9 +93,11 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
   }, [state.annualGrossIncome, baseParams]);
 
   const customBudget =
-    budgetDraft !== null && budgetDraft !== ""
-      ? Math.max(0, Number(budgetDraft.replace(/[^0-9.]/g, "")) || 0)
-      : 0;
+    budgetDraft !== null
+      ? budgetDraft === ""
+        ? 0
+        : Math.max(0, Number(budgetDraft.replace(/[^0-9.]/g, "")) || 0)
+      : storedBudget;
   const maxFromCustom = useMemo(() => {
     if (customBudget <= 0) return 0;
     return maxHomePriceForHousingBudget(customBudget, baseParams);
@@ -239,11 +242,22 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
               label="Max housing payment / mo"
               size="small"
               sx={{ minWidth: { sm: 220 } }}
-              value={budgetDraft !== null ? budgetDraft : ""}
-              onChange={(e) => setBudgetDraft(e.target.value.replace(/[^0-9]/g, ""))}
+              value={budgetDraft !== null ? budgetDraft : storedBudget > 0 ? formatIntField(storedBudget) : ""}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                setBudgetDraft(raw);
+                if (raw === "") {
+                  patch({ customHousingBudgetMonthly: undefined });
+                  return;
+                }
+                const n = Number(raw);
+                if (Number.isFinite(n)) {
+                  patch({ customHousingBudgetMonthly: Math.min(500_000, Math.max(0, n)) || undefined });
+                }
+              }}
               onBlur={() => setBudgetDraft(null)}
               placeholder="e.g. 3200"
-              helperText="PITI + HOA + PMI total you’re comfortable with"
+              helperText="PITI + HOA + PMI total you’re comfortable with (saved with this house)"
               slotProps={{
                 input: {
                   startAdornment: <InputAdornment position="start">$</InputAdornment>,

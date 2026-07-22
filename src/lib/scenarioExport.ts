@@ -35,7 +35,7 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
   rentalNoi:
     "NOI (monthly) = EGI - management - maintenance - capex reserve - monthly property tax - monthly insurance - HOA.",
   rentalCashFlow:
-    "Monthly cash flow = NOI - P&I. Yield toggles (sellRentalYieldInclude) can omit OpEx lines or P&I for alternate gain paths.",
+    "Monthly cash flow = NOI - P&I. Rental pro-forma toggles (rentalProFormaInclude) and When-to-sell yield toggles (sellRentalYieldInclude) can omit OpEx lines, P&I, or PMI for alternate paths.",
   cashOnCash: "Annual cash flow / (downPayment + closingCosts + miscInitialCash).",
   capRate: "NOI (annual) / purchasePrice (homePrice).",
   totalGainWhenToSell:

@@ -206,9 +206,24 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
   const totalOpexMo = r.operatingExpenseLines.reduce((a, x) => a + x.amount, 0);
   const totalCashIn = state.downPayment + state.closingCosts + state.miscInitialCash;
 
-  /** Pro-forma only: unchecked rows are excluded from NOI / cash flow in the table below. */
-  const [pfToggles, setPfToggles] = useState<Record<string, boolean>>({});
+  /** Pro-forma only: unchecked rows are excluded from NOI / cash flow (persisted on the house). */
+  const pfToggles = state.rentalProFormaInclude ?? {};
   const [financingOpen, setFinancingOpen] = useState(false);
+
+  const setPfIncluded = useCallback(
+    (id: string, on: boolean) => {
+      const excl: Record<string, boolean> = {};
+      if (state.rentalProFormaInclude) {
+        for (const [k, v] of Object.entries(state.rentalProFormaInclude)) {
+          if (v === false) excl[k] = false;
+        }
+      }
+      if (on) delete excl[id];
+      else excl[id] = false;
+      patch({ rentalProFormaInclude: Object.keys(excl).length > 0 ? excl : undefined });
+    },
+    [patch, state.rentalProFormaInclude]
+  );
 
   const goToRentalField = useCallback((anchorId: string, opts?: GoToOpts) => {
     const scroll = () => {
@@ -769,7 +784,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
                 component="button"
                 type="button"
                 variant="caption"
-                onClick={() => setPfToggles({})}
+                onClick={() => patch({ rentalProFormaInclude: undefined })}
                 sx={{
                   cursor: "pointer",
                   border: 0,
@@ -814,7 +829,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
                         <Checkbox
                           size="small"
                           checked={on}
-                          onChange={() => setPfToggles((prev) => ({ ...prev, [line.id]: !pfLineOn(prev, line.id) }))}
+                          onChange={() => setPfIncluded(line.id, !pfLineOn(pfToggles, line.id))}
                           inputProps={{ "aria-label": `Include ${line.label} in pro-forma NOI and cash flow` }}
                         />
                       </TableCell>
@@ -860,7 +875,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
                     <Checkbox
                       size="small"
                       checked={pfAdj.piIn}
-                      onChange={() => setPfToggles((prev) => ({ ...prev, [PF_PI_ID]: !pfLineOn(prev, PF_PI_ID) }))}
+                      onChange={() => setPfIncluded(PF_PI_ID, !pfLineOn(pfToggles, PF_PI_ID))}
                       inputProps={{ "aria-label": "Include principal and interest in pro-forma cash flow" }}
                     />
                   </TableCell>
@@ -893,7 +908,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
                       <Checkbox
                         size="small"
                         checked={pfAdj.pmiIn}
-                        onChange={() => setPfToggles((prev) => ({ ...prev, [PF_PMI_ID]: !pfLineOn(prev, PF_PMI_ID) }))}
+                        onChange={() => setPfIncluded(PF_PMI_ID, !pfLineOn(pfToggles, PF_PMI_ID))}
                         inputProps={{ "aria-label": "Include PMI in pro-forma cash flow" }}
                       />
                     </TableCell>

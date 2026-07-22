@@ -318,6 +318,8 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                     scenarioAprPercent={state.interestRateApr}
                     defaultRefiClosingCosts={state.closingCosts}
                     schedule={schedule}
+                    value={state.refi}
+                    onChange={(refi) => patch({ refi })}
                   />
                 </AccordionDetails>
               </Accordion>

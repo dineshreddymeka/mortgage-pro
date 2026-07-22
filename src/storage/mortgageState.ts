@@ -8,6 +8,17 @@ export const SYNC_CHANNEL = "mortgage-pro-sync";
 export const SCHEMA_VERSION = 2 as const;
 export const SCHEMA_VERSION_LEGACY = 1 as const;
 
+/** Refinance breakeven what-if inputs (Financing tab). */
+export type RefiScenarioPersisted = {
+  balance: number;
+  currentPi: number;
+  newRateApr: number;
+  newTermYears: number;
+  closingCosts: number;
+  /** Completed loan years used to snap balance from amortization (0 = at closing). */
+  loanYearEndPick: number;
+};
+
 export type AppPersisted = {
   v: typeof SCHEMA_VERSION;
   homePrice: number;
@@ -29,6 +40,16 @@ export type AppPersisted = {
   annualGrossIncome: number;
   /** Car, cards, student loans, etc. — not housing (for back-end DTI). */
   monthlyNonMortgageDebt: number;
+  /**
+   * Optional custom max housing payment ($/mo) for the DTI “max price for a monthly budget” tool.
+   * Omitted / 0 = field empty.
+   */
+  customHousingBudgetMonthly?: number;
+  /**
+   * Refinance breakeven card inputs. Omitted until the user edits the tool; then fully stored
+   * with the scenario (local + Firestore).
+   */
+  refi?: RefiScenarioPersisted;
   monthlyRent: number;
   otherMonthlyIncome: number;
   vacancyRatePercent: number;
@@ -38,6 +59,11 @@ export type AppPersisted = {
   propertyMgmtPercent: number;
   maintenancePercent: number;
   capexPercent: number;
+  /**
+   * Rental pro-forma: optional exclusions from NOI / cash flow totals.
+   * If `lineId`, `"pi"`, or `"pmi"` is `false`, that piece is omitted (default: all included).
+   */
+  rentalProFormaInclude?: Record<string, boolean>;
   /**
    * When to sell: optional exclusions from rental cash flow in total-gain math.
    * If `lineId` or `"pi"` is `false`, that piece is omitted from operating costs or P&amp;I (default: all included).
@@ -145,8 +171,19 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...parsed,
     v: SCHEMA_VERSION,
   };
-  const { buyingCostLineOverrides: rawLineOverrides, ...mergedRest } = merged;
+  const {
+    buyingCostLineOverrides: rawLineOverrides,
+    rentalProFormaInclude: rawPf,
+    sellRentalYieldInclude: rawYield,
+    refi: rawRefi,
+    customHousingBudgetMonthly: rawBudget,
+    ...mergedRest
+  } = merged;
   const buyingCostLineOverrides = parseBuyingCostLineOverrides(rawLineOverrides);
+  const rentalProFormaInclude = parseBooleanIncludeMap(rawPf);
+  const sellRentalYieldInclude = parseBooleanIncludeMap(rawYield);
+  const refi = parseRefiScenario(rawRefi);
+  const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   return {
     ...mergedRest,
@@ -156,6 +193,10 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     annualGrossIncome: Math.max(0, Math.round(Number(merged.annualGrossIncome) || 0)),
     monthlyNonMortgageDebt: Math.max(0, Math.round(Number(merged.monthlyNonMortgageDebt) || 0)),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
+    ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
+    ...(sellRentalYieldInclude ? { sellRentalYieldInclude } : {}),
+    ...(refi ? { refi } : {}),
+    ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
 }
 
@@ -304,15 +345,48 @@ function parseBuyingCostLineOverrides(raw: unknown): Partial<Record<string, numb
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-function parseSellRentalYieldInclude(data: Record<string, unknown>): Record<string, boolean> | undefined {
-  const raw = data.sellRentalYieldInclude;
+function parseBooleanIncludeMap(raw: unknown): Record<string, boolean> | undefined {
   if (raw === null || raw === undefined) return undefined;
   if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const out: Record<string, boolean> = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof k !== "string" || k.length === 0) continue;
     if (typeof v === "boolean") out[k] = v;
   }
   return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseOptionalNonNegInt(raw: unknown): number | undefined {
+  if (raw === null || raw === undefined || raw === "") return undefined;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const rounded = Math.max(0, Math.round(n));
+  return rounded > 0 ? rounded : undefined;
+}
+
+function parseRefiScenario(raw: unknown): RefiScenarioPersisted | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const hasAny =
+    o.balance !== undefined ||
+    o.currentPi !== undefined ||
+    o.newRateApr !== undefined ||
+    o.newTermYears !== undefined ||
+    o.closingCosts !== undefined ||
+    o.loanYearEndPick !== undefined;
+  if (!hasAny) return undefined;
+  const termRaw = num(o.newTermYears, 30);
+  const allowedTerms = [10, 15, 20, 25, 30];
+  const newTermYears = allowedTerms.includes(termRaw) ? termRaw : 30;
+  return {
+    balance: Math.max(0, num(o.balance, 0)),
+    currentPi: Math.max(0, num(o.currentPi, 0)),
+    newRateApr: Math.max(0, num(o.newRateApr, 0)),
+    newTermYears,
+    closingCosts: Math.max(0, num(o.closingCosts, 0)),
+    loanYearEndPick: Math.max(0, Math.round(num(o.loanYearEndPick, 0))),
+  };
 }
 
 function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): RentalOnly {
@@ -373,7 +447,6 @@ export function parseMortgageState(raw: string | null): AppPersisted {
     const t = normalizePropertyTax(m1, data, base);
     const m = { ...m1, ...t };
     const r = parseRentalFields(data, base);
-    const y = parseSellRentalYieldInclude(data);
     const yearsOwned = Math.max(1, Math.round(num(data.yearsOwned, base.yearsOwned)));
     const sellAprStored = num(data.sellAnnualAppreciationPercent, base.sellAnnualAppreciationPercent);
     const hasExplicitPresent =
@@ -390,6 +463,10 @@ export function parseMortgageState(raw: string | null): AppPersisted {
       yearsOwned
     );
     const buyingCostLineOverrides = parseBuyingCostLineOverrides(data.buyingCostLineOverrides);
+    const rentalProFormaInclude = parseBooleanIncludeMap(data.rentalProFormaInclude);
+    const y = parseBooleanIncludeMap(data.sellRentalYieldInclude);
+    const refi = parseRefiScenario(data.refi);
+    const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
     const loc = normalizePropertyLocation(data, base);
     return {
       v: SCHEMA_VERSION,
@@ -404,7 +481,10 @@ export function parseMortgageState(raw: string | null): AppPersisted {
       currentHomeValue,
       sellAnnualAppreciationPercent,
       sellClosingCostPercent: num(data.sellClosingCostPercent, base.sellClosingCostPercent),
+      ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
       ...(y !== undefined ? { sellRentalYieldInclude: y } : {}),
+      ...(refi ? { refi } : {}),
+      ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
       ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
     };
   } catch {
