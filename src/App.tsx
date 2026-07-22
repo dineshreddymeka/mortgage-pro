@@ -433,6 +433,7 @@ export default function App() {
             {tab === 4 ? (
               <CompareTab
                 rows={comparisons}
+                properties={properties}
                 activePropertyId={activePropertyId}
                 cloudReady={cloudStatus === "ready"}
                 onSelect={houseHandlers.onSelect}
