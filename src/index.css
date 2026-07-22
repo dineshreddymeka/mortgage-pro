@@ -1,20 +1,20 @@
 :root {
-  --pp-ink: #1d1d1f;
-  --pp-ink-soft: #424245;
-  --pp-accent: #007aff;
-  --pp-accent-deep: #0066d6;
-  --pp-success: #34c759;
-  --pp-mist: #e8e8ed;
-  --pp-fog: #f5f5f7;
-  --pp-paper: #ffffff;
-  --pp-line: rgba(0, 0, 0, 0.08);
-  --pp-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --pp-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
-  --pp-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --pp-radius: 14px;
-  --pp-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --pp-ink: #0b1f33;
+  --pp-ink-soft: #3d556c;
+  --pp-accent: #0e7490;
+  --pp-accent-deep: #155e75;
+  --pp-success: #0f766e;
+  --pp-warn: #b45309;
+  --pp-mist: #d7e3ec;
+  --pp-fog: #eef3f7;
+  --pp-paper: #f7fafc;
+  --pp-line: rgba(11, 31, 51, 0.1);
+  --pp-font-display: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --pp-font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --pp-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --pp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --pp-radius: 12px;
+  --pp-shadow: 0 1px 0 rgba(11, 31, 51, 0.04), 0 8px 24px rgba(11, 31, 51, 0.06);
 }
 
 html {
@@ -35,23 +35,23 @@ body {
   font-family: var(--pp-font-body);
   color: var(--pp-ink);
   background-color: var(--pp-fog);
-  background-image: radial-gradient(
-    ellipse 120% 70% at 50% -20%,
-    rgba(0, 122, 255, 0.045),
-    transparent 55%
-  );
+  background-image:
+    linear-gradient(180deg, rgba(14, 116, 144, 0.07), transparent 28%),
+    linear-gradient(rgba(11, 31, 51, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 31, 51, 0.035) 1px, transparent 1px);
+  background-size: auto, 28px 28px, 28px 28px;
   background-attachment: fixed;
 }
 
 ::selection {
-  background-color: rgba(0, 122, 255, 0.22);
+  background-color: rgba(14, 116, 144, 0.22);
   color: var(--pp-ink);
 }
 
 @keyframes pp-rise {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -68,21 +68,23 @@ body {
   }
 }
 
-@keyframes pp-underline {
+@keyframes pp-pulse-line {
   from {
-    transform: scaleX(0);
+    transform: scaleX(0.35);
+    opacity: 0.35;
   }
   to {
     transform: scaleX(1);
+    opacity: 1;
   }
 }
 
 .pp-rise {
-  animation: pp-rise 0.45s var(--pp-ease) both;
+  animation: pp-rise 0.42s var(--pp-ease) both;
 }
 
 .pp-rise-delay {
-  animation: pp-rise 0.5s var(--pp-ease) 0.06s both;
+  animation: pp-rise 0.48s var(--pp-ease) 0.05s both;
 }
 
 .pp-fade-in {
@@ -90,7 +92,12 @@ body {
 }
 
 .pp-metric-pop {
-  animation: pp-rise 0.5s var(--pp-ease) 0.08s both;
+  animation: pp-rise 0.45s var(--pp-ease) 0.08s both;
+}
+
+.pp-mono {
+  font-family: var(--pp-font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

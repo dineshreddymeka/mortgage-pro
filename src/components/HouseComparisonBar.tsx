@@ -21,11 +21,11 @@ const pct1 = new Intl.NumberFormat(undefined, {
 
 const METRICS: { key: ComparisonMetricKey; label: string; format: (n: number) => string }[] = [
   { key: "homePrice", label: "Price", format: (n) => money0.format(n) },
-  { key: "paymentMonthly", label: "Pmt / mo", format: (n) => money0.format(n) },
+  { key: "paymentMonthly", label: "Payment", format: (n) => `${money0.format(n)}/mo` },
   { key: "cashInvested", label: "Cash in", format: (n) => money0.format(n) },
-  { key: "rentMonthly", label: "Rent / mo", format: (n) => money0.format(n) },
-  { key: "cashFlowMonthly", label: "CF / mo", format: (n) => money0.format(n) },
-  { key: "cashOnCash", label: "Cash-on-cash", format: (n) => pct1.format(n) },
+  { key: "rentMonthly", label: "Rent", format: (n) => `${money0.format(n)}/mo` },
+  { key: "cashFlowMonthly", label: "Cash flow", format: (n) => `${money0.format(n)}/mo` },
+  { key: "cashOnCash", label: "CoC", format: (n) => pct1.format(n) },
 ];
 
 export type HouseComparisonBarProps = {
@@ -33,6 +33,10 @@ export type HouseComparisonBarProps = {
   activePropertyId: string | null;
   onSelect: (id: string) => void;
 };
+
+function scoreHouse(row: HouseComparisonRow, bestByMetric: Record<ComparisonMetricKey, string | null>) {
+  return METRICS.reduce((n, m) => n + (bestByMetric[m.key] === row.id ? 1 : 0), 0);
+}
 
 export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseComparisonBarProps) {
   if (rows.length === 0) return null;
@@ -42,37 +46,43 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
     METRICS.map((m) => [m.key, bestHouseIdForMetric(sorted, m.key)])
   ) as Record<ComparisonMetricKey, string | null>;
 
+  const leaderId =
+    sorted.length > 1
+      ? [...sorted].sort((a, b) => scoreHouse(b, bestByMetric) - scoreHouse(a, bestByMetric))[0]?.id
+      : null;
+
   return (
     <Box
       component="aside"
       aria-label="House comparison"
+      className="pp-fade-in"
       sx={{
         borderTop: "1px solid",
         borderColor: "divider",
         bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#ffffff", 0.96) : alpha("#1c1c1e", 0.96),
+          t.palette.mode === "light" ? alpha("#f7fafc", 0.97) : alpha("#101a24", 0.97),
         position: "sticky",
         bottom: 0,
         zIndex: 15,
-        backdropFilter: "saturate(180%) blur(16px)",
-        WebkitBackdropFilter: "saturate(180%) blur(16px)",
+        backdropFilter: "saturate(160%) blur(14px)",
+        WebkitBackdropFilter: "saturate(160%) blur(14px)",
       }}
     >
-      <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 1, sm: 1.5 }, py: 0.75 }}>
-        <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 0.5, px: 0.25 }}>
+      <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 1, sm: 1.5 }, py: 0.85 }}>
+        <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 0.65, px: 0.25 }}>
           <Typography
             sx={{
               fontWeight: 700,
               fontSize: "0.68rem",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.09em",
               textTransform: "uppercase",
               color: "text.secondary",
             }}
           >
-            Compare
+            Smart compare
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-            Tap a house column to open it · green = better
+            Best cells in teal · leader scored across metrics · tap a column to open
           </Typography>
         </Stack>
 
@@ -82,14 +92,15 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
             scrollbarWidth: "thin",
             border: "1px solid",
             borderColor: "divider",
-            borderRadius: "10px",
+            borderRadius: "12px",
+            boxShadow: "var(--pp-shadow)",
           }}
         >
           <Box
             component="table"
             sx={{
               width: "100%",
-              minWidth: 520,
+              minWidth: 560,
               borderCollapse: "collapse",
               fontVariantNumeric: "tabular-nums",
             }}
@@ -100,23 +111,25 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
                   component="th"
                   sx={{
                     textAlign: "left",
-                    px: 1,
-                    py: 0.55,
-                    fontSize: "0.68rem",
-                    fontWeight: 600,
+                    px: 1.1,
+                    py: 0.7,
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
                     color: "text.secondary",
                     position: "sticky",
                     left: 0,
-                    bgcolor: (t) =>
-                      t.palette.mode === "light" ? "#fafafa" : "#2c2c2e",
+                    bgcolor: (t) => (t.palette.mode === "light" ? "#eef3f7" : "#162433"),
                     zIndex: 1,
-                    minWidth: 88,
+                    minWidth: 92,
                   }}
                 >
-                  Metric
+                  Signal
                 </Box>
                 {sorted.map((row) => {
                   const active = row.id === activePropertyId;
+                  const leader = row.id === leaderId;
                   return (
                     <Box
                       component="th"
@@ -124,33 +137,37 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
                       onClick={() => onSelect(row.id)}
                       sx={{
                         textAlign: "right",
-                        px: 1,
-                        py: 0.55,
+                        px: 1.1,
+                        py: 0.7,
                         cursor: "pointer",
-                        fontSize: "0.75rem",
+                        fontSize: "0.8rem",
                         fontWeight: 700,
-                        letterSpacing: "-0.02em",
-                        color: active ? "secondary.main" : "text.primary",
+                        letterSpacing: "-0.03em",
+                        color: active || leader ? "secondary.main" : "text.primary",
                         bgcolor: active
-                          ? (t) => alpha(t.palette.secondary.main, 0.08)
+                          ? (t) => alpha(t.palette.secondary.main, 0.1)
                           : "transparent",
                         borderLeft: "1px solid",
                         borderColor: "divider",
-                        minWidth: 96,
+                        minWidth: 104,
                         "&:hover": {
-                          bgcolor: (t) => alpha(t.palette.secondary.main, 0.1),
+                          bgcolor: (t) => alpha(t.palette.secondary.main, 0.12),
                         },
                       }}
                     >
                       {row.label}
-                      {active ? (
-                        <Typography
-                          component="span"
-                          sx={{ display: "block", fontSize: "0.6rem", fontWeight: 600 }}
-                        >
-                          Active
-                        </Typography>
-                      ) : null}
+                      <Typography
+                        component="span"
+                        className="pp-mono"
+                        sx={{
+                          display: "block",
+                          fontSize: "0.6rem",
+                          fontWeight: 650,
+                          color: leader ? "success.main" : "text.secondary",
+                        }}
+                      >
+                        {leader ? "Leader" : active ? "Active" : `${scoreHouse(row, bestByMetric)} best`}
+                      </Typography>
                     </Box>
                   );
                 })}
@@ -172,15 +189,14 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
                     component="td"
                     sx={{
                       textAlign: "left",
-                      px: 1,
-                      py: 0.45,
+                      px: 1.1,
+                      py: 0.55,
                       fontSize: "0.7rem",
-                      fontWeight: 600,
+                      fontWeight: 650,
                       color: "text.secondary",
                       position: "sticky",
                       left: 0,
-                      bgcolor: (t) =>
-                        t.palette.mode === "light" ? "#ffffff" : "#1c1c1e",
+                      bgcolor: (t) => (t.palette.mode === "light" ? "#f7fafc" : "#101a24"),
                       zIndex: 1,
                     }}
                   >
@@ -197,16 +213,19 @@ export function HouseComparisonBar({ rows, activePropertyId, onSelect }: HouseCo
                         onClick={() => onSelect(row.id)}
                         sx={{
                           textAlign: "right",
-                          px: 1,
-                          py: 0.45,
+                          px: 1.1,
+                          py: 0.55,
                           cursor: "pointer",
+                          fontFamily: "var(--pp-font-mono)",
                           fontSize: "0.78rem",
                           fontWeight: best || active ? 700 : 500,
-                          letterSpacing: "-0.02em",
+                          letterSpacing: "-0.03em",
                           color: best ? "success.main" : "text.primary",
-                          bgcolor: active
-                            ? (t) => alpha(t.palette.secondary.main, 0.05)
-                            : "transparent",
+                          bgcolor: best
+                            ? (t) => alpha(t.palette.success.main, 0.08)
+                            : active
+                              ? (t) => alpha(t.palette.secondary.main, 0.04)
+                              : "transparent",
                           borderLeft: "1px solid",
                           borderColor: "divider",
                         }}

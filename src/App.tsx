@@ -21,7 +21,9 @@ import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
 import { HouseComparisonBar } from "./components/HouseComparisonBar";
 import { HouseNavBar } from "./components/HouseNavBar";
+import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
+import { buildHouseComparisonRow } from "./lib/houseComparison";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { computeMonthlyPayment } from "./lib/mortgageMath";
 
@@ -88,6 +90,12 @@ export default function App() {
     ]
   );
 
+  const activeComparison = useMemo(() => {
+    const fromCloud = comparisons.find((c) => c.id === activePropertyId);
+    if (fromCloud) return fromCloud;
+    return buildHouseComparisonRow(activePropertyId ?? "local", 1, state);
+  }, [comparisons, activePropertyId, state]);
+
   function exportExcel() {
     downloadScenarioExcel(state);
     setToast({
@@ -143,12 +151,12 @@ export default function App() {
           borderBottom: "1px solid",
           borderColor: "divider",
           bgcolor: (t) =>
-            t.palette.mode === "light" ? alpha("#f5f5f7", 0.72) : alpha("#1c1c1e", 0.72),
-          backdropFilter: "saturate(180%) blur(20px)",
-          WebkitBackdropFilter: "saturate(180%) blur(20px)",
+            t.palette.mode === "light" ? alpha("#eef3f7", 0.86) : alpha("#071018", 0.86),
+          backdropFilter: "saturate(160%) blur(18px)",
+          WebkitBackdropFilter: "saturate(160%) blur(18px)",
         }}
       >
-        <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 0.65, maxWidth: 1400, mx: "auto", width: "100%" }}>
+        <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 0.75, maxWidth: 1400, mx: "auto", width: "100%" }}>
           <Stack
             direction="row"
             spacing={1}
@@ -159,26 +167,38 @@ export default function App() {
             sx={{ rowGap: 0.75 }}
           >
             <Stack direction="row" spacing={1.25} alignItems="baseline" sx={{ minWidth: 0 }}>
+              <Box>
+                <Typography
+                  component="h1"
+                  sx={{
+                    fontFamily: "var(--pp-font-display)",
+                    fontWeight: 700,
+                    fontSize: { xs: "1.05rem", sm: "1.2rem" },
+                    letterSpacing: "-0.04em",
+                    lineHeight: 1.1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Property Pro
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.62rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "text.secondary",
+                  }}
+                >
+                  Deal desk
+                </Typography>
+              </Box>
               <Typography
-                component="h1"
+                className="pp-mono"
                 sx={{
-                  fontFamily: "var(--pp-font-display)",
-                  fontWeight: 700,
-                  fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                  fontWeight: 650,
+                  fontSize: { xs: "0.95rem", sm: "1.1rem" },
                   letterSpacing: "-0.03em",
-                  lineHeight: 1.15,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Property Pro
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "var(--pp-font-display)",
-                  fontWeight: 600,
-                  fontSize: { xs: "0.9rem", sm: "1rem" },
-                  letterSpacing: "-0.02em",
-                  fontVariantNumeric: "tabular-nums",
                   color: "secondary.main",
                   whiteSpace: "nowrap",
                 }}
@@ -188,33 +208,10 @@ export default function App() {
                   component="span"
                   variant="caption"
                   color="text.secondary"
-                  sx={{ ml: 0.35, fontWeight: 500, fontSize: "0.7rem" }}
+                  sx={{ ml: 0.35, fontWeight: 600, fontSize: "0.68rem" }}
                 >
                   /mo
                 </Typography>
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: { xs: "none", sm: "inline" },
-                  whiteSpace: "nowrap",
-                  fontSize: "0.72rem",
-                  fontWeight: 600,
-                }}
-              >
-                {activeHouseLabel}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: { xs: "none", md: "inline" },
-                  whiteSpace: "nowrap",
-                  fontSize: "0.72rem",
-                }}
-              >
-                {state.interestRateApr}% · {state.termYears}-yr
               </Typography>
             </Stack>
 
@@ -228,7 +225,7 @@ export default function App() {
                   void saveScenario();
                 }}
                 aria-label="Save all tab data"
-                sx={{ minHeight: 30, px: 1.25 }}
+                sx={{ minHeight: 32, px: 1.35, fontWeight: 700 }}
               >
                 Save all
               </Button>
@@ -238,7 +235,7 @@ export default function App() {
                 startIcon={<FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />}
                 onClick={exportExcel}
                 aria-label="Export scenario to Excel"
-                sx={{ minHeight: 30, px: 1.25 }}
+                sx={{ minHeight: 32, px: 1.25 }}
               >
                 <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
                   Export
@@ -292,6 +289,7 @@ export default function App() {
           cloudStatus={cloudStatus}
           cloudError={cloudError}
           properties={properties}
+          comparisons={comparisons}
           activePropertyId={activePropertyId}
           onSelect={houseHandlers.onSelect}
           onCreate={houseHandlers.onCreate}
@@ -303,13 +301,21 @@ export default function App() {
             flex: 1,
             minWidth: 0,
             px: { xs: 1.5, sm: 2 },
-            pt: 1,
+            pt: 1.1,
             pb: 1.5,
           }}
         >
+          <WorkspaceKpiStrip
+            houseLabel={activeHouseLabel}
+            row={activeComparison}
+            rateApr={state.interestRateApr}
+            termYears={state.termYears}
+          />
+
           <Box
             role="tablist"
             aria-label="Main sections"
+            className="pp-rise-delay"
             sx={{
               display: "inline-flex",
               maxWidth: "100%",
@@ -317,13 +323,13 @@ export default function App() {
               gap: 0.25,
               borderRadius: "10px",
               bgcolor: (t) =>
-                t.palette.mode === "light" ? alpha("#787880", 0.12) : alpha("#787880", 0.28),
+                t.palette.mode === "light" ? alpha("#0b1f33", 0.05) : alpha("#e8eef4", 0.08),
               border: "1px solid",
               borderColor: "divider",
               overflowX: "auto",
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": { display: "none" },
-              mb: 0.75,
+              mb: 1,
             }}
           >
             {TABS.map(({ label, id }, i) => {
@@ -339,33 +345,22 @@ export default function App() {
                   role="tab"
                   onClick={() => setTab(i)}
                   sx={{
-                    py: 0.45,
-                    px: { xs: 1, sm: 1.35 },
+                    py: 0.5,
+                    px: { xs: 1.05, sm: 1.4 },
                     minWidth: "auto",
-                    minHeight: 28,
+                    minHeight: 30,
                     borderRadius: "8px",
-                    bgcolor: selected
-                      ? (t) =>
-                          t.palette.mode === "light"
-                            ? alpha("#ffffff", 0.95)
-                            : alpha("#636366", 0.72)
-                      : "transparent !important",
-                    boxShadow: selected
-                      ? (t) =>
-                          t.palette.mode === "light"
-                            ? "0 1px 2px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)"
-                            : "0 1px 2px rgba(0,0,0,0.35)"
-                      : "none !important",
-                    color: selected ? "text.primary" : "text.secondary",
-                    fontWeight: selected ? 600 : 500,
+                    bgcolor: selected ? "secondary.main" : "transparent !important",
+                    color: selected ? "secondary.contrastText" : "text.secondary",
+                    fontWeight: selected ? 700 : 600,
                     fontSize: { xs: "0.75rem", sm: "0.8125rem" },
                     letterSpacing: "-0.015em",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
                     "&:hover": {
-                      color: "text.primary",
+                      color: selected ? "secondary.contrastText" : "text.primary",
                       bgcolor: selected
-                        ? undefined
+                        ? "secondary.dark"
                         : (t) => alpha(t.palette.text.primary, 0.04),
                     },
                   }}
