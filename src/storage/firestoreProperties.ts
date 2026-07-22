@@ -19,15 +19,19 @@ import { packHouseCategories, resolveScenarioFromHouseDoc } from "./houseTree";
 
 /**
  * Firestore collection of house root documents.
- * Each doc is one house; category tab data lives as child maps on that doc
- * (`property`, `financing`, `upfront`, `rental`, `exit`).
+ * Each doc is one house rooted by business `id` (`001`, `002`, …); category tab data
+ * lives as child maps (`property`, `financing`, `upfront`, `rental`, `exit`).
  */
 export const PROPERTIES_COLLECTION = "properties";
 export const ACTIVE_PROPERTY_KEY = "mortgage-pro:active-property-id";
 
 export type PropertyMeta = {
+  /** Firestore document path id (internal). */
   id: string;
-  /** Zero-padded business id, e.g. "001". */
+  /**
+   * Business house id — the root identity users see (`001`, `002`, …).
+   * Stored on the doc as both `id` (business) and `houseId` (alias).
+   */
   houseId: string;
   houseNumber: number;
   name: string;
@@ -105,9 +109,12 @@ export function normalizePropertyName(raw: string, houseId: string): string {
 }
 
 function resolveHouseId(data: Record<string, unknown>, houseNumber: number): string {
-  const raw = data.houseId;
-  if (typeof raw === "string" && /^\d+$/.test(raw.trim())) {
-    return formatHouseId(Number(raw.trim()));
+  // Prefer business root `id` (`001`), then legacy `houseId`.
+  for (const key of ["id", "houseId"] as const) {
+    const raw = data[key];
+    if (typeof raw === "string" && /^\d+$/.test(raw.trim())) {
+      return formatHouseId(Number(raw.trim()));
+    }
   }
   return formatHouseId(houseNumber);
 }
@@ -199,6 +206,7 @@ async function fetchAllPropertyRows(userId: string): Promise<RawRow[]> {
     const name = resolvePropertyName(data.name, houseId);
     const needsMigrate =
       data.houseId !== houseId ||
+      data.id !== houseId ||
       data.houseNumber !== houseNumber ||
       data.archived !== archived ||
       (archived ? data.archivedAt == null : data.archivedAt != null) ||
@@ -230,6 +238,8 @@ async function migrateMissingFields(rows: RawRow[]): Promise<void> {
   await Promise.all(
     pending.map((row) =>
       updateDoc(doc(fb.db, PROPERTIES_COLLECTION, row.id), {
+        // Business root id (`001`) — field `id` + alias `houseId`.
+        id: row.houseId,
         houseId: row.houseId,
         houseNumber: row.houseNumber,
         name: row.name,
@@ -306,6 +316,7 @@ export async function listProperties(
       await Promise.all(
         renumber.map((m) =>
           updateDoc(doc(fb.db, PROPERTIES_COLLECTION, m.id), {
+            id: m.houseId,
             houseId: m.houseId,
             houseNumber: m.houseNumber,
             name: m.name,
@@ -385,11 +396,13 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
   // Migrate missing fields on read (never wipe a custom name or category data).
   if (
     data.houseId !== houseId ||
+    data.id !== houseId ||
     nameMissing ||
     data.archived !== archived ||
     (archived ? data.archivedAt == null : data.archivedAt != null)
   ) {
     void updateDoc(doc(fb.db, PROPERTIES_COLLECTION, id), {
+      id: houseId,
       houseId,
       houseNumber,
       archived,
@@ -426,6 +439,8 @@ export async function createProperty(
   const categories = packHouseCategories(scenario);
   const ref = await addDoc(collection(fb.db, PROPERTIES_COLLECTION), {
     userId,
+    /** Business root id (`001`) — same value as `houseId`. */
+    id: houseId,
     houseId,
     houseNumber: n,
     name: houseLabel(houseId),
@@ -440,7 +455,7 @@ export async function createProperty(
 }
 
 /**
- * Persist all category data under this house root.
+ * Persist all category data under this house root (`id` = `001`…).
  * Writes `property` / `financing` / `upfront` / `rental` / `exit` child maps and clears
  * the legacy flat `scenario` blob. Archiving never clears category data.
  */
@@ -466,12 +481,14 @@ export async function savePropertyScenario(
     const n = options.houseNumber;
     const houseId = options.houseId ?? formatHouseId(n);
     payload.houseNumber = n;
+    payload.id = houseId;
     payload.houseId = houseId;
     if (options.name !== undefined) {
       payload.name = normalizePropertyName(options.name, houseId);
     }
   } else if (options?.houseId !== undefined) {
     const houseId = formatHouseId(Number(options.houseId));
+    payload.id = houseId;
     payload.houseId = houseId;
     if (options.name !== undefined) {
       payload.name = normalizePropertyName(options.name, houseId);

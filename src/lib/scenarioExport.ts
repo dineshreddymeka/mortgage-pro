@@ -43,7 +43,10 @@ export const SCENARIO_EXPORT_FORMULAS: Record<string, string> = {
     "At exit: netProceeds + sum of monthly amounts through exit − initial cash. While the loan is active: yield-adjusted cash flow (NOI − P&I with toggles). After the loan is paid off: effective gross income only (vacancy applied; no operating expenses or P&I).",
 };
 
-export function buildFullScenarioExport(state: AppPersisted) {
+export function buildFullScenarioExport(
+  state: AppPersisted,
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+) {
   const hp = Math.max(0, state.homePrice);
   const dp = Math.max(0, state.downPayment);
   const loanAmount = Math.max(0, hp - dp);
@@ -116,13 +119,13 @@ export function buildFullScenarioExport(state: AppPersisted) {
 
   const impliedAprVerify = impliedAnnualAppreciationPercent(hp, state.currentHomeValue, state.yearsOwned);
 
-  const house = buildHouseRoot(state);
+  const house = buildHouseRoot(state, houseMeta);
 
   return {
     exportKind: "property-pro-full-export",
     exportVersion: 3,
     exportedAt: new Date().toISOString(),
-    /** House is the root node; category tabs are child maps. */
+    /** House root keyed by business `id` (`001`); category tabs are child maps. */
     house,
     /** @deprecated Prefer `house` — flat fields kept for older Excel helpers. */
     scenario: state,

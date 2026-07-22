@@ -65,6 +65,27 @@ export function useMortgageSyncedState() {
     activeMeta?.houseNumber ?? (properties.length > 0 ? properties[0].houseNumber : 1);
   const activeHouseId = activeMeta?.houseId ?? formatHouseId(activeHouseNumber);
   const activeHouseLabel = activeMeta?.name?.trim() || houseLabel(activeHouseId);
+  const activeHouseIdRef = useRef(activeHouseId);
+  activeHouseIdRef.current = activeHouseId;
+  const activeHouseNumberRef = useRef(activeHouseNumber);
+  activeHouseNumberRef.current = activeHouseNumber;
+  const propertiesRef = useRef(properties);
+  propertiesRef.current = properties;
+  const archivedRef = useRef(archivedProperties);
+  archivedRef.current = archivedProperties;
+
+  /** Business root id (`001`) options for a Firestore doc path. */
+  const houseRootOptions = useCallback((firestoreDocId: string | null) => {
+    if (!firestoreDocId) return undefined;
+    const meta =
+      propertiesRef.current.find((p) => p.id === firestoreDocId) ??
+      archivedRef.current.find((p) => p.id === firestoreDocId);
+    if (meta) return { houseId: meta.houseId, houseNumber: meta.houseNumber };
+    if (firestoreDocId === activeIdRef.current) {
+      return { houseId: activeHouseIdRef.current, houseNumber: activeHouseNumberRef.current };
+    }
+    return undefined;
+  }, []);
 
   const refreshLists = useCallback(async (uid: string) => {
     const all = await listProperties(uid);
@@ -219,7 +240,7 @@ export function useMortgageSyncedState() {
       const uid = userIdRef.current;
       const id = activeIdRef.current;
       if (!uid || !id) return;
-      void savePropertyScenario(id, uid, stateRef.current)
+      void savePropertyScenario(id, uid, stateRef.current, houseRootOptions(id))
         .then(async () => {
           await refreshLists(uid);
           await refreshComparisons(uid);
@@ -231,7 +252,7 @@ export function useMortgageSyncedState() {
     }, CLOUD_SAVE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(handle);
-  }, [state, activePropertyId, userId, cloudStatus, refreshComparisons, refreshLists]);
+  }, [state, activePropertyId, userId, cloudStatus, houseRootOptions, refreshComparisons, refreshLists]);
 
   const patch = useCallback((partial: Partial<AppPersisted>) => {
     setState((prev) => {
@@ -294,11 +315,11 @@ export function useMortgageSyncedState() {
     const uid = userIdRef.current;
     const id = activeIdRef.current;
     if (!uid || !id || !cloudReadyRef.current) return false;
-    await savePropertyScenario(id, uid, stateRef.current);
+    await savePropertyScenario(id, uid, stateRef.current, houseRootOptions(id));
     await refreshLists(uid);
     await refreshComparisons(uid);
     return true;
-  }, [saveToBrowser, refreshComparisons, refreshLists]);
+  }, [saveToBrowser, houseRootOptions, refreshComparisons, refreshLists]);
 
   const selectProperty = useCallback(
     async (id: string) => {
@@ -317,7 +338,8 @@ export function useMortgageSyncedState() {
       if (uid && activeIdRef.current && cloudReadyRef.current) {
         try {
           // Flush all tab data for the house we're leaving.
-          await savePropertyScenario(activeIdRef.current, uid, stateRef.current);
+          const leavingId = activeIdRef.current;
+          await savePropertyScenario(leavingId, uid, stateRef.current, houseRootOptions(leavingId));
         } catch (err) {
           console.warn("[firestore] flush before switch failed", err);
         }
@@ -338,7 +360,7 @@ export function useMortgageSyncedState() {
         await refreshComparisons(uid);
       }
     },
-    [replace, refreshComparisons, refreshLists]
+    [houseRootOptions, replace, refreshComparisons, refreshLists]
   );
 
   const createNewProperty = useCallback(async () => {
@@ -347,7 +369,8 @@ export function useMortgageSyncedState() {
 
     if (activeIdRef.current) {
       try {
-        await savePropertyScenario(activeIdRef.current, uid, stateRef.current);
+        const leavingId = activeIdRef.current;
+        await savePropertyScenario(leavingId, uid, stateRef.current, houseRootOptions(leavingId));
       } catch {
         /* continue */
       }
@@ -364,7 +387,7 @@ export function useMortgageSyncedState() {
     await refreshLists(uid);
     await refreshComparisons(uid);
     return id;
-  }, [replace, refreshComparisons, refreshLists]);
+  }, [houseRootOptions, replace, refreshComparisons, refreshLists]);
 
   const archiveHouse = useCallback(
     async (id: string) => {
@@ -374,7 +397,7 @@ export function useMortgageSyncedState() {
       // Flush full scenario first — archive must never wipe tab data.
       if (id === activeIdRef.current) {
         try {
-          await savePropertyScenario(id, uid, stateRef.current);
+          await savePropertyScenario(id, uid, stateRef.current, houseRootOptions(id));
         } catch (err) {
           console.warn("[firestore] flush before archive failed", err);
         }
@@ -408,7 +431,7 @@ export function useMortgageSyncedState() {
       await refreshComparisons(uid);
       return true;
     },
-    [replace, refreshComparisons, refreshLists]
+    [houseRootOptions, replace, refreshComparisons, refreshLists]
   );
 
   const restoreHouse = useCallback(

@@ -1,9 +1,12 @@
 /**
- * House is the root persistence node. Category UI tabs map to child nodes under each house.
+ * House is the root persistence node, identified by business `id` (`001`, `002`, …).
+ * Category UI tabs map to child nodes under that id.
  *
- * Firestore document (`properties/{id}`):
- *   houseId, name, archived, …
- *   property / financing / upfront / rental / exit   ← category children
+ * Shape:
+ *   { id: "001", name, property, financing, upfront, rental, exit }
+ *
+ * Firestore keeps an internal doc path for multi-user uniqueness; the house root
+ * field `id` (and `houseId`) is the stable business id users see.
  *
  * In-app editing still uses flat `AppPersisted`; pack/unpack at the storage boundary.
  */
@@ -74,10 +77,11 @@ export type HouseCategoryTree = {
   exit: HouseExitNode;
 };
 
-/** Full house-rooted payload for export / docs (meta optional when exporting active scenario only). */
+/** Full house-rooted payload — `id` is the root key (`001`, `002`, …). */
 export type HouseRootExport = {
+  /** Business house id — root identity (e.g. `"001"`). */
+  id: string;
   v: typeof HOUSE_TREE_VERSION;
-  houseId?: string;
   houseNumber?: number;
   name?: string;
 } & HouseCategoryTree;
@@ -187,15 +191,21 @@ export function resolveScenarioFromHouseDoc(data: Record<string, unknown>): AppP
   return null;
 }
 
-/** House-rooted export object (categories under `house`). */
-export function buildHouseRoot(state: AppPersisted, meta?: {
-  houseId?: string;
-  houseNumber?: number;
-  name?: string;
-}): HouseRootExport {
+/** House-rooted object keyed by business `id` (`001`…), with category children. */
+export function buildHouseRoot(
+  state: AppPersisted,
+  meta?: {
+    /** Business house id (`001`). Required for a proper root; falls back to `"000"`. */
+    id?: string;
+    houseId?: string;
+    houseNumber?: number;
+    name?: string;
+  }
+): HouseRootExport {
+  const id = (meta?.id ?? meta?.houseId ?? "").trim() || "000";
   return {
+    id,
     v: HOUSE_TREE_VERSION,
-    ...(meta?.houseId ? { houseId: meta.houseId } : {}),
     ...(meta?.houseNumber !== undefined ? { houseNumber: meta.houseNumber } : {}),
     ...(meta?.name ? { name: meta.name } : {}),
     ...packHouseCategories(state),

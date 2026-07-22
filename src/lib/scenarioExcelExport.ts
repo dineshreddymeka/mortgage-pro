@@ -135,8 +135,11 @@ function amortRowSheet(title: string, row: Record<string, unknown> | null): Cell
 }
 
 /** Build .xlsx workbook: inputs, formulas, and calculated tables (multi-sheet). */
-export function buildScenarioExcelBlob(state: AppPersisted): Blob {
-  const ex = buildFullScenarioExport(state);
+export function buildScenarioExcelBlob(
+  state: AppPersisted,
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+): Blob {
+  const ex = buildFullScenarioExport(state, houseMeta);
   const wb = XLSX.utils.book_new();
 
   append(wb, "Info", [
@@ -258,8 +261,12 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
   });
 }
 
-export function downloadScenarioExcel(state: AppPersisted, filename = "property-pro-scenario.xlsx") {
-  const blob = buildScenarioExcelBlob(state);
+export function downloadScenarioExcel(
+  state: AppPersisted,
+  filename = "property-pro-scenario.xlsx",
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+) {
+  const blob = buildScenarioExcelBlob(state, houseMeta);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

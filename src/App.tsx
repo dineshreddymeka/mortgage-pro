@@ -127,7 +127,12 @@ export default function App() {
   }, [comparisons, activeComparison]);
 
   function exportExcel() {
-    downloadScenarioExcel(state);
+    downloadScenarioExcel(state, `house-${activeHouseId}.xlsx`, {
+      id: activeHouseId,
+      houseId: activeHouseId,
+      houseNumber: activeComparison.houseNumber,
+      name: activeHouseLabel,
+    });
     setToast({
       message: `Exported ${activeHouseLabel} to Excel.`,
       severity: "success",

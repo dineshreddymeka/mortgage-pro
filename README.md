@@ -29,11 +29,11 @@ Without a key, you can still type an address manually; autocomplete and the map 
 
 ## Data model
 
-**House is the root node.** Each Firestore doc in `properties` is one house (`houseId` `001`, `002`, …). Category tabs are child maps on that doc:
+**House is the root node, keyed by business `id` (`001`, `002`, …).** Category tabs are child maps under that id:
 
 ```
-properties/{docId}          ← house root
-  houseId, name, archived, …
+id: "001"                   ← root identity
+  name, archived, …
   property/                 ← Property tab + location
   financing/                ← Financing (loan, DTI, refi)
   upfront/                  ← Upfront cash / buyer costs
@@ -41,7 +41,7 @@ properties/{docId}          ← house root
   exit/                     ← When to sell
 ```
 
-The UI still edits a flat in-memory scenario; pack/unpack at the Firestore boundary. Legacy docs with a flat `scenario` blob are read and rewritten into category children on save.
+Firestore keeps an internal document path for multi-user uniqueness; the house field `id` (alias `houseId`) is the stable `001` / `002` users navigate. The UI still edits a flat in-memory scenario; pack/unpack at the storage boundary. Legacy flat `scenario` blobs migrate to category children on save.
 
 ## Firestore (multi-property sync)
 
