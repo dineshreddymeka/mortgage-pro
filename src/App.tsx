@@ -16,7 +16,8 @@ import {
 import { alpha, useColorScheme, useTheme } from "@mui/material/styles";
 import { useMemo, useState } from "react";
 import { CompareTab } from "./tabs/CompareTab";
-import { MortgageTab } from "./tabs/MortgageTab";
+import { FinancingTab } from "./tabs/MortgageTab";
+import { PropertyTab } from "./tabs/PropertyTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
@@ -34,13 +35,24 @@ const moneyDec = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
+/** One tab per category — editors are not duplicated across tabs. */
 const TABS = [
-  { label: "Mortgage", id: "mortgage" },
-  { label: "Compare", id: "compare" },
+  { label: "Property", id: "property" },
+  { label: "Financing", id: "financing" },
   { label: "Upfront", id: "upfront" },
   { label: "Rental", id: "rental" },
-  { label: "When to sell", id: "sell" },
+  { label: "Exit", id: "exit" },
+  { label: "Compare", id: "compare" },
 ] as const;
+
+const TAB_INDEX = {
+  property: 0,
+  financing: 1,
+  upfront: 2,
+  rental: 3,
+  exit: 4,
+  compare: 5,
+} as const;
 
 export default function App() {
   const { setMode } = useColorScheme();
@@ -143,7 +155,7 @@ export default function App() {
         .then((id) => {
           if (id) {
             setToast({ message: "New house added. All tabs start fresh.", severity: "success" });
-            setTab(0);
+            setTab(TAB_INDEX.property);
           }
         })
         .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
@@ -410,19 +422,66 @@ export default function App() {
 
           <Box
             role="tabpanel"
-            hidden={tab !== 0}
-            id="tabpanel-mortgage"
-            aria-labelledby="tab-mortgage"
+            hidden={tab !== TAB_INDEX.property}
+            id="tabpanel-property"
+            aria-labelledby="tab-property"
           >
-            {tab === 0 ? <MortgageTab state={state} patch={patch} /> : null}
+            {tab === TAB_INDEX.property ? <PropertyTab state={state} patch={patch} /> : null}
           </Box>
           <Box
             role="tabpanel"
-            hidden={tab !== 1}
+            hidden={tab !== TAB_INDEX.financing}
+            id="tabpanel-financing"
+            aria-labelledby="tab-financing"
+          >
+            {tab === TAB_INDEX.financing ? <FinancingTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== TAB_INDEX.upfront}
+            id="tabpanel-upfront"
+            aria-labelledby="tab-upfront"
+          >
+            {tab === TAB_INDEX.upfront ? <UpfrontCashTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== TAB_INDEX.rental}
+            id="tabpanel-rental"
+            aria-labelledby="tab-rental"
+          >
+            {tab === TAB_INDEX.rental ? (
+              <RentalTab
+                state={state}
+                patch={patch}
+                onGoToFinancing={() => setTab(TAB_INDEX.financing)}
+                onGoToUpfront={() => setTab(TAB_INDEX.upfront)}
+              />
+            ) : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== TAB_INDEX.exit}
+            id="tabpanel-exit"
+            aria-labelledby="tab-exit"
+          >
+            {tab === TAB_INDEX.exit ? (
+              <WhenToSellTab
+                state={state}
+                patch={patch}
+                onGoToFinancing={() => setTab(TAB_INDEX.financing)}
+                onGoToUpfront={() => setTab(TAB_INDEX.upfront)}
+                onGoToRental={() => setTab(TAB_INDEX.rental)}
+              />
+            ) : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== TAB_INDEX.compare}
             id="tabpanel-compare"
             aria-labelledby="tab-compare"
           >
-            {tab === 1 ? (
+            {tab === TAB_INDEX.compare ? (
               <CompareTab
                 rows={compareRows}
                 properties={properties}
@@ -432,20 +491,6 @@ export default function App() {
               />
             ) : null}
           </Box>
-          <Box
-            role="tabpanel"
-            hidden={tab !== 2}
-            id="tabpanel-upfront"
-            aria-labelledby="tab-upfront"
-          >
-            {tab === 2 ? <UpfrontCashTab state={state} patch={patch} /> : null}
-          </Box>
-          <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-rental" aria-labelledby="tab-rental">
-            {tab === 3 ? <RentalTab state={state} patch={patch} /> : null}
-          </Box>
-          <Box role="tabpanel" hidden={tab !== 4} id="tabpanel-sell" aria-labelledby="tab-sell">
-            {tab === 4 ? <WhenToSellTab state={state} patch={patch} /> : null}
-          </Box>
 
           <Typography
             variant="caption"
@@ -453,8 +498,8 @@ export default function App() {
             display="block"
             sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
           >
-            Estimates only. {activeHouseLabel}: all tabs save together
-            {cloudStatus === "ready" ? " to Firestore." : " in this browser."}
+            Estimates only. {activeHouseLabel}: one category per tab
+            {cloudStatus === "ready" ? " · synced to Firestore." : " · saved in this browser."}
             {cloudError ? ` ${cloudError}` : ""}
           </Typography>
         </Box>

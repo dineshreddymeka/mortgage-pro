@@ -6,7 +6,6 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Grid from "@mui/material/Grid2";
 import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
-import { MortgageBuyerCashPanel } from "../components/MortgageBuyerCashPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
 import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";
@@ -15,7 +14,6 @@ import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCa
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
-import { PropertyLocationCard } from "../components/PropertyLocationCard";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 import {
   aggregateYearlyPaydownDetailed,
@@ -47,12 +45,16 @@ const summarySx = {
   "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
 } as const;
 
-export type MortgageTabProps = {
+export type FinancingTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
 };
 
-export function MortgageTab({ state, patch }: MortgageTabProps) {
+/** @deprecated Use FinancingTab — category rename. */
+export type MortgageTabProps = FinancingTabProps;
+
+/** Category: Financing — loan inputs, payment, DTI, term/paydown/refi. */
+export function FinancingTab({ state, patch }: FinancingTabProps) {
   const extraPrincipalMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
 
   const breakdown = useMemo(
@@ -168,17 +170,10 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
   const widgets = useMemo(
     () => [
       {
-        id: "property",
-        title: "Property",
-        description: "Address for this scenario",
-        defaultLayout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 6 },
-        content: <PropertyLocationCard state={state} patch={patch} />,
-      },
-      {
         id: "loan",
         title: "Loan & payment",
         description: `${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}%`,
-        defaultLayout: { x: 0, y: 10, w: 12, h: 16, minW: 6, minH: 10 },
+        defaultLayout: { x: 0, y: 0, w: 12, h: 16, minW: 6, minH: 10 },
         content: (
           <Grid container spacing={1.25} alignItems="flex-start">
             <Grid size={{ xs: 12, md: 6 }}>
@@ -203,24 +198,10 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         ),
       },
       {
-        id: "cash-close",
-        title: "Cash to close",
-        description: "Shared with Upfront",
-        defaultLayout: { x: 0, y: 26, w: 6, h: 12, minW: 4, minH: 8 },
-        content: (
-          <MortgageBuyerCashPanel
-            state={state}
-            patch={patch}
-            loanAmount={breakdown.loanAmount}
-            cashToClose={cashToClose}
-          />
-        ),
-      },
-      {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 6, y: 26, w: 6, h: 12, minW: 4, minH: 8 },
+        defaultLayout: { x: 0, y: 16, w: 12, h: 12, minW: 4, minH: 8 },
         content: (
           <MortgageAffordabilityDtiPanel
             state={state}
@@ -230,10 +211,10 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
         ),
       },
       {
-        id: "compare",
-        title: "Compare",
-        description: "Term, paydown, refi",
-        defaultLayout: { x: 0, y: 38, w: 12, h: 14, minW: 6, minH: 8 },
+        id: "term-tools",
+        title: "Term tools",
+        description: "15 vs 30 · paydown · refi",
+        defaultLayout: { x: 0, y: 28, w: 12, h: 14, minW: 6, minH: 8 },
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -363,5 +344,8 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
     ]
   );
 
-  return <WidgetBoard boardId="mortgage" widgets={widgets} rowHeight={28} />;
+  return <WidgetBoard boardId="financing" widgets={widgets} rowHeight={28} />;
 }
+
+/** @deprecated Prefer FinancingTab. */
+export const MortgageTab = FinancingTab;
