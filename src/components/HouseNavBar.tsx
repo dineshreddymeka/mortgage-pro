@@ -229,7 +229,7 @@ export function HouseNavBar({
                 flexShrink: 0,
               }}
             >
-              {houseLabel(active.houseId)}
+              {active.name || houseLabel(active.houseId)}
             </Button>
           ) : (
             <Typography variant="caption" color="text.secondary">
@@ -271,12 +271,13 @@ export function HouseNavBar({
 
           {sorted.map((p) => {
             const selected = p.id === activePropertyId;
+            const label = p.name || houseLabel(p.houseId);
             return (
-              <Tooltip key={p.id} title={houseLabel(p.houseId)} placement="right">
+              <Tooltip key={p.id} title={label} placement="right">
                 <IconButton
                   size="small"
                   onClick={() => onSelect(p.id)}
-                  aria-label={houseLabel(p.houseId)}
+                  aria-label={label}
                   aria-current={selected ? "page" : undefined}
                   sx={{
                     width: 40,
@@ -408,16 +409,16 @@ export function HouseNavBar({
                           }}
                           noWrap
                         >
-                          {houseLabel(p.houseId)}
-                        </Typography>
-                        <Tooltip title={`Archive ${houseLabel(p.houseId)}`}>
-                          <IconButton
-                            size="small"
-                            aria-label={`Archive ${houseLabel(p.houseId)}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onArchive(p.id);
-                            }}
+                        {p.name || houseLabel(p.houseId)}
+                      </Typography>
+                      <Tooltip title={`Archive ${p.name || houseLabel(p.houseId)}`}>
+                        <IconButton
+                          size="small"
+                          aria-label={`Archive ${p.name || houseLabel(p.houseId)}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onArchive(p.id);
+                          }}
                             sx={{
                               mt: -0.25,
                               color: "text.secondary",
@@ -535,15 +536,15 @@ export function HouseNavBar({
                         }}
                         noWrap
                       >
-                        {houseLabel(p.houseId)}
-                      </Typography>
-                      <Tooltip title={`Restore ${houseLabel(p.houseId)}`}>
-                        <IconButton
-                          size="small"
-                          aria-label={`Restore ${houseLabel(p.houseId)}`}
-                          onClick={() => onRestore(p.id)}
-                          sx={{ color: "secondary.main" }}
-                        >
+                      {p.name || houseLabel(p.houseId)}
+                    </Typography>
+                    <Tooltip title={`Restore ${p.name || houseLabel(p.houseId)}`}>
+                      <IconButton
+                        size="small"
+                        aria-label={`Restore ${p.name || houseLabel(p.houseId)}`}
+                        onClick={() => onRestore(p.id)}
+                        sx={{ color: "secondary.main" }}
+                      >
                           <UnarchiveOutlinedIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Tooltip>

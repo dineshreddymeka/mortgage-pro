@@ -23,6 +23,7 @@ import {
   listProperties,
   listPropertyDocs,
   readActivePropertyId,
+  renameProperty,
   restoreProperty,
   savePropertyScenario,
   touchLastOpened,
@@ -63,6 +64,7 @@ export function useMortgageSyncedState() {
   const activeHouseNumber =
     activeMeta?.houseNumber ?? (properties.length > 0 ? properties[0].houseNumber : 1);
   const activeHouseId = activeMeta?.houseId ?? formatHouseId(activeHouseNumber);
+  const activeHouseLabel = activeMeta?.name?.trim() || houseLabel(activeHouseId);
 
   const refreshLists = useCallback(async (uid: string) => {
     const all = await listProperties(uid);
@@ -78,7 +80,9 @@ export function useMortgageSyncedState() {
       // Active houses only — archived never appear in smart compare.
       const docs = await listPropertyDocs(uid, { archived: false });
       setComparisonBase(
-        docs.map((d) => buildHouseComparisonRow(d.id, d.houseNumber, d.scenario, d.houseId))
+        docs.map((d) =>
+          buildHouseComparisonRow(d.id, d.houseNumber, d.scenario, d.houseId, d.name)
+        )
       );
     } catch (err) {
       console.warn("[firestore] comparison refresh failed", err);
@@ -92,7 +96,8 @@ export function useMortgageSyncedState() {
       activePropertyId,
       activeHouseNumber,
       state,
-      activeHouseId
+      activeHouseId,
+      activeHouseLabel
     );
     if (comparisonBase.length === 0) return [live];
     const hasActive = comparisonBase.some((r) => r.id === activePropertyId);
@@ -419,6 +424,21 @@ export function useMortgageSyncedState() {
     [refreshComparisons, refreshLists]
   );
 
+  const renameActiveHouse = useCallback(
+    async (name: string) => {
+      const uid = userIdRef.current;
+      const id = activeIdRef.current;
+      if (!uid || !id || !cloudReadyRef.current) return null;
+      const houseId =
+        properties.find((p) => p.id === id)?.houseId ?? formatHouseId(1);
+      const next = await renameProperty(id, name, houseId);
+      await refreshLists(uid);
+      await refreshComparisons(uid);
+      return next;
+    },
+    [properties, refreshComparisons, refreshLists]
+  );
+
   return {
     state,
     patch,
@@ -432,11 +452,12 @@ export function useMortgageSyncedState() {
     activePropertyId,
     activeHouseNumber,
     activeHouseId,
-    activeHouseLabel: houseLabel(activeHouseId),
+    activeHouseLabel,
     selectProperty,
     createNewProperty,
     archiveHouse,
     restoreHouse,
+    renameActiveHouse,
     cloudStatus,
     cloudError,
   };

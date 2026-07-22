@@ -92,6 +92,7 @@ export function CompareTab({
 
   const labelFor = (id: string) => {
     const fromProp = properties.find((p) => p.id === id);
+    if (fromProp?.name?.trim()) return fromProp.name.trim();
     if (fromProp) return houseLabel(fromProp.houseId);
     const fromRow = rows.find((r) => r.id === id);
     return fromRow?.label ?? "House";

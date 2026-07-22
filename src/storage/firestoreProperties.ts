@@ -65,7 +65,7 @@ export function formatHouseId(n: number): string {
   return String(safe).padStart(3, "0");
 }
 
-/** Display label: House 001 */
+/** Default display label when no custom name is set: House 001 */
 export function houseLabel(houseIdOrNumber: string | number): string {
   if (typeof houseIdOrNumber === "number") {
     return `House ${formatHouseId(houseIdOrNumber)}`;
@@ -75,6 +75,21 @@ export function houseLabel(houseIdOrNumber: string | number): string {
     return `House ${formatHouseId(Number(trimmed))}`;
   }
   return trimmed.startsWith("House ") ? trimmed : `House ${trimmed}`;
+}
+
+/** Prefer a custom property name; fall back to House 001. */
+export function resolvePropertyName(rawName: unknown, houseId: string): string {
+  if (typeof rawName === "string") {
+    const trimmed = rawName.trim();
+    if (trimmed.length > 0) return trimmed.slice(0, 80);
+  }
+  return houseLabel(houseId);
+}
+
+/** Normalize user-entered name; empty → default House ### label. */
+export function normalizePropertyName(raw: string, houseId: string): string {
+  const trimmed = raw.trim().replace(/\s+/g, " ").slice(0, 80);
+  return trimmed.length > 0 ? trimmed : houseLabel(houseId);
 }
 
 function resolveHouseId(data: Record<string, unknown>, houseNumber: number): string {
@@ -169,19 +184,20 @@ async function fetchAllPropertyRows(userId: string): Promise<RawRow[]> {
     const houseId = resolveHouseId(data, houseNumber);
     const archived = resolveArchived(data);
     const archivedAt = resolveArchivedAt(data, archived);
-    const expectedName = houseLabel(houseId);
+    const name = resolvePropertyName(data.name, houseId);
     const needsMigrate =
       data.houseId !== houseId ||
       data.houseNumber !== houseNumber ||
       data.archived !== archived ||
       (archived ? data.archivedAt == null : data.archivedAt != null) ||
-      data.name !== expectedName;
+      // Only backfill name when missing/blank — never overwrite a custom name.
+      (typeof data.name !== "string" || !data.name.trim());
 
     return {
       id: d.id,
       houseNumber,
       houseId,
-      name: expectedName,
+      name,
       archived,
       archivedAt,
       updatedAt: asMillis(data.updatedAt),
@@ -231,11 +247,19 @@ function normalizeHouseNumbers(rows: RawRow[]): PropertyMeta[] {
     }
     used.add(n);
     const houseId = formatHouseId(n);
+    // Keep custom name when houseId is unchanged; if number was reassigned, keep name unless it was the old default.
+    const prevDefault = houseLabel(row.houseId);
+    const name =
+      row.houseId === houseId
+        ? resolvePropertyName(row.name, houseId)
+        : row.name.trim() && row.name !== prevDefault
+          ? row.name.trim().slice(0, 80)
+          : houseLabel(houseId);
     return {
       id: row.id,
       houseNumber: n,
       houseId,
-      name: houseLabel(houseId),
+      name,
       archived: row.archived,
       archivedAt: row.archived ? row.archivedAt : null,
       updatedAt: row.updatedAt,
@@ -338,21 +362,22 @@ export async function getProperty(id: string): Promise<PropertyDoc | null> {
   const houseId = resolveHouseId(data, houseNumber);
   const archived = resolveArchived(data);
   const archivedAt = resolveArchivedAt(data, archived);
-  const name = houseLabel(houseId);
+  const name = resolvePropertyName(data.name, houseId);
+  const nameMissing = typeof data.name !== "string" || !data.name.trim();
 
-  // Migrate missing fields on read (never touch scenario).
+  // Migrate missing fields on read (never wipe a custom name or scenario).
   if (
     data.houseId !== houseId ||
-    data.name !== name ||
+    nameMissing ||
     data.archived !== archived ||
     (archived ? data.archivedAt == null : data.archivedAt != null)
   ) {
     void updateDoc(doc(fb.db, PROPERTIES_COLLECTION, id), {
       houseId,
       houseNumber,
-      name,
       archived,
       archivedAt,
+      ...(nameMissing ? { name } : {}),
     }).catch((err) => console.warn("[firestore] getProperty migrate failed", id, err));
   }
 
@@ -420,15 +445,32 @@ export async function savePropertyScenario(
     const houseId = options.houseId ?? formatHouseId(n);
     payload.houseNumber = n;
     payload.houseId = houseId;
-    payload.name = houseLabel(houseId);
+    if (options.name !== undefined) {
+      payload.name = normalizePropertyName(options.name, houseId);
+    }
   } else if (options?.houseId !== undefined) {
-    payload.houseId = formatHouseId(Number(options.houseId));
-    payload.name = houseLabel(payload.houseId as string);
+    const houseId = formatHouseId(Number(options.houseId));
+    payload.houseId = houseId;
+    if (options.name !== undefined) {
+      payload.name = normalizePropertyName(options.name, houseId);
+    }
   } else if (options?.name !== undefined) {
-    payload.name = options.name.trim() || "House";
+    payload.name = options.name.trim().replace(/\s+/g, " ").slice(0, 80) || "House";
   }
 
   await setDoc(doc(fb.db, PROPERTIES_COLLECTION, id), payload, { merge: true });
+}
+
+/** Rename a property. Empty input falls back to House ###. */
+export async function renameProperty(id: string, name: string, houseId: string): Promise<string> {
+  const fb = getFirebase();
+  const next = normalizePropertyName(name, houseId);
+  if (!fb) return next;
+  await updateDoc(doc(fb.db, PROPERTIES_COLLECTION, id), {
+    name: next,
+    updatedAt: Date.now(),
+  });
+  return next;
 }
 
 /** Soft-hide house. Scenario is left intact. */

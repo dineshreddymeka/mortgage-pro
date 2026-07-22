@@ -67,11 +67,13 @@ export default function App() {
     archivedProperties,
     comparisons,
     activePropertyId,
+    activeHouseId,
     activeHouseLabel,
     selectProperty,
     createNewProperty,
     archiveHouse,
     restoreHouse,
+    renameActiveHouse,
     cloudStatus,
     cloudError,
   } = useMortgageSyncedState();
@@ -109,8 +111,14 @@ export default function App() {
   const activeComparison = useMemo(() => {
     const fromCloud = comparisons.find((c) => c.id === activePropertyId);
     if (fromCloud) return fromCloud;
-    return buildHouseComparisonRow(activePropertyId ?? "local", 1, state);
-  }, [comparisons, activePropertyId, state]);
+    return buildHouseComparisonRow(
+      activePropertyId ?? "local",
+      1,
+      state,
+      activeHouseId,
+      activeHouseLabel
+    );
+  }, [comparisons, activePropertyId, activeHouseId, activeHouseLabel, state]);
 
   /** Always feed Compare at least the active house (works offline / before cloud sync). */
   const compareRows = useMemo(() => {
@@ -426,7 +434,27 @@ export default function App() {
             id="tabpanel-property"
             aria-labelledby="tab-property"
           >
-            {tab === TAB_INDEX.property ? <PropertyTab state={state} patch={patch} /> : null}
+            {tab === TAB_INDEX.property ? (
+              <PropertyTab
+                state={state}
+                patch={patch}
+                houseId={activeHouseId}
+                propertyName={activeHouseLabel}
+                cloudReady={cloudStatus === "ready"}
+                onRename={async (name) => {
+                  try {
+                    const next = await renameActiveHouse(name);
+                    if (next) {
+                      setToast({ message: `Renamed to “${next}”.`, severity: "success" });
+                    }
+                    return next;
+                  } catch {
+                    setToast({ message: "Could not rename property.", severity: "error" });
+                    return null;
+                  }
+                }}
+              />
+            ) : null}
           </Box>
           <Box
             role="tabpanel"

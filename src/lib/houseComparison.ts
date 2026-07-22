@@ -22,7 +22,8 @@ export function buildHouseComparisonRow(
   id: string,
   houseNumber: number,
   scenario: AppPersisted,
-  houseId?: string
+  houseId?: string,
+  name?: string
 ): HouseComparisonRow {
   const payment = computeMonthlyPayment(
     scenario.homePrice,
@@ -36,12 +37,14 @@ export function buildHouseComparisonRow(
   );
   const rental = computeRentalAnalysis(scenario, payment);
   const resolvedId = houseId ?? formatHouseId(houseNumber);
+  const label =
+    typeof name === "string" && name.trim() ? name.trim().slice(0, 80) : houseLabel(resolvedId);
 
   return {
     id,
     houseNumber,
     houseId: resolvedId,
-    label: houseLabel(resolvedId),
+    label,
     homePrice: Math.max(0, scenario.homePrice),
     downPayment: Math.max(0, scenario.downPayment),
     rateApr: scenario.interestRateApr,
