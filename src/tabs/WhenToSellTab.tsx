@@ -26,23 +26,19 @@ import Typography from "@mui/material/Typography";
 import { alpha, type Theme } from "@mui/material/styles";
 import { useMemo, type ReactNode } from "react";
 import { CategoryJump } from "../components/CategoryJump";
-import { computeMonthlyPayment } from "../lib/mortgageMath";
-import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
+import { deriveScenario } from "../lib/deriveScenario";
 import {
-  cashFlowAnnualFromYieldToggles,
-  computeRentalAnalysis,
   cumulativeCashFlowThroughExitMonths,
   RENTAL_YIELD_PI_ID,
   RENTAL_YIELD_PMI_ID,
 } from "../lib/rentalMath";
 import {
-  buildRealWealthExitSnapshots,
-  buildSellYearlyRows,
   futureHomeValue,
   REAL_WEALTH_MILESTONE_YEARS,
   type RealWealthExitSnapshot,
 } from "../lib/whenToSellMath";
 import type { AppPersisted } from "../storage/mortgageState";
+import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -218,12 +214,13 @@ export function WhenToSellTab({
   onGoToUpfront,
   onGoToRental,
 }: WhenToSellTabProps) {
-  const loanAmount = Math.max(0, state.homePrice - state.downPayment);
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const loanAmount = derived.loanAmount;
   const apr = state.interestRateApr;
-  const basePrice = Math.max(0, state.homePrice);
+  const basePrice = derived.purchasePrice;
 
   /** Sale / net-proceeds detail row follows Mortgage tab loan term (clamped 1–30 yr). */
-  const exitHorizonYears = Math.min(30, Math.max(1, Math.round(state.termYears)));
+  const exitHorizonYears = derived.termYears;
 
   const appreciationPct = state.sellAnnualAppreciationPercent;
   const sellingCostPct = state.sellClosingCostPercent;
@@ -234,94 +231,17 @@ export function WhenToSellTab({
     [basePrice, appreciationPct, yearsOwnedClamped]
   );
 
-  const monthly30 = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        apr,
-        30,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.homePrice,
-      state.downPayment,
-      apr,
-      state.propertyTaxAnnual,
-      state.insuranceAnnual,
-      state.hoaMonthly,
-      state.pmiMonthly,
-    ]
-  );
-
-  const monthly15 = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        apr,
-        15,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.homePrice,
-      state.downPayment,
-      apr,
-      state.propertyTaxAnnual,
-      state.insuranceAnnual,
-      state.hoaMonthly,
-      state.pmiMonthly,
-    ]
-  );
-
-  const monthlyUserTerm = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        apr,
-        exitHorizonYears,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.homePrice,
-      state.downPayment,
-      apr,
-      exitHorizonYears,
-      state.propertyTaxAnnual,
-      state.insuranceAnnual,
-      state.hoaMonthly,
-      state.pmiMonthly,
-    ]
-  );
-
-  const rental30Path = useMemo(() => computeRentalAnalysis(state, monthly30), [state, monthly30]);
-  const rental15Path = useMemo(() => computeRentalAnalysis(state, monthly15), [state, monthly15]);
-  const rentalUserTermPath = useMemo(
-    () => computeRentalAnalysis(state, monthlyUserTerm),
-    [state, monthlyUserTerm]
-  );
+  const rental30Path = derived.rental30;
+  const rental15Path = derived.rental15;
+  const rentalUserTermPath = derived.rental;
+  const monthly30 = derived.monthlyPayment30;
+  const monthly15 = derived.monthlyPayment15;
   /** Extra columns when the Mortgage tab term is not exactly 15 or 30 (those match the comparison paths). */
   const showUserTermColumn = exitHorizonYears !== 15 && exitHorizonYears !== 30;
   const initialCashInvested = rental30Path.initialCashInvested;
 
-  const yieldCf30Annual = useMemo(
-    () => cashFlowAnnualFromYieldToggles(rental30Path, state.sellRentalYieldInclude),
-    [rental30Path, state.sellRentalYieldInclude]
-  );
-  const yieldCf15Annual = useMemo(
-    () => cashFlowAnnualFromYieldToggles(rental15Path, state.sellRentalYieldInclude),
-    [rental15Path, state.sellRentalYieldInclude]
-  );
+  const yieldCf30Annual = derived.yieldCashFlowAnnual30;
+  const yieldCf15Annual = derived.yieldCashFlowAnnual15;
 
   /** Cumulative rent cash in gain math: P&amp;I only while that amortization is still active (then NOI-only months). */
   const cumulativeRentByExitYear = useMemo(() => {
@@ -378,32 +298,9 @@ export function WhenToSellTab({
   const upfrontMisc = Math.max(0, state.miscInitialCash);
   const upfrontTotal = upfrontDown + upfrontClosing + upfrontMisc;
 
-  const rows = useMemo(
-    () =>
-      buildSellYearlyRows(
-        loanAmount,
-        apr,
-        basePrice,
-        appreciationPct,
-        sellingCostPct,
-        30,
-        exitHorizonYears
-      ),
-    [loanAmount, apr, basePrice, appreciationPct, sellingCostPct, exitHorizonYears]
-  );
+  const rows = derived.sellRows;
 
-  const wealthSnapshots = useMemo(
-    () =>
-      buildRealWealthExitSnapshots(
-        state,
-        loanAmount,
-        apr,
-        rows,
-        REAL_WEALTH_MILESTONE_YEARS,
-        state.sellRentalYieldInclude
-      ),
-    [state, loanAmount, apr, rows]
-  );
+  const wealthSnapshots = derived.realWealthSnapshots;
 
   const totalGainHeadingYears = useMemo(() => {
     const ys = [...REAL_WEALTH_MILESTONE_YEARS];

@@ -26,7 +26,7 @@ import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { buildHouseComparisonRow } from "./lib/houseComparison";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
-import { computeMonthlyPayment } from "./lib/mortgageMath";
+import { deriveScenario } from "./lib/deriveScenario";
 
 const moneyDec = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -84,29 +84,8 @@ export default function App() {
 
   const isDark = theme.palette.mode === "dark";
 
-  const payment = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        state.interestRateApr,
-        state.termYears,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.downPayment,
-      state.homePrice,
-      state.hoaMonthly,
-      state.insuranceAnnual,
-      state.interestRateApr,
-      state.pmiMonthly,
-      state.propertyTaxAnnual,
-      state.termYears,
-    ]
-  );
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const payment = derived.monthlyPayment;
 
   const activeComparison = useMemo(() => {
     const fromCloud = comparisons.find((c) => c.id === activePropertyId);

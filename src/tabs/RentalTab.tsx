@@ -19,8 +19,8 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { CategoryJump } from "../components/CategoryJump";
 import { RentalExpenseComposition } from "../components/RentalExpenseComposition";
-import { computeMonthlyPayment, type MonthlyBreakdown } from "../lib/mortgageMath";
-import { computeRentalAnalysis } from "../lib/rentalMath";
+import { deriveScenario } from "../lib/deriveScenario";
+import type { MonthlyBreakdown } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
 
@@ -175,33 +175,9 @@ export type RentalTabProps = {
 
 /** Category: Rental — income, OpEx, pro forma. Financing/Upfront edited on their own tabs. */
 export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: RentalTabProps) {
-  const mortgage: MonthlyBreakdown = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        state.interestRateApr,
-        state.termYears,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.downPayment,
-      state.downPaymentPercent,
-      state.homePrice,
-      state.hoaMonthly,
-      state.insuranceAnnual,
-      state.interestRateApr,
-      state.propertyTaxAnnual,
-      state.propertyTaxPercent,
-      state.termYears,
-      state.pmiMonthly,
-    ]
-  );
-
-  const r = useMemo(() => computeRentalAnalysis(state, mortgage), [state, mortgage]);
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const mortgage: MonthlyBreakdown = derived.monthlyPayment;
+  const r = derived.rental;
   const egi = r.effectiveGrossIncomeMonthly;
   const totalOpexMo = r.operatingExpenseLines.reduce((a, x) => a + x.amount, 0);
   const totalCashIn = state.downPayment + state.closingCosts + state.miscInitialCash;

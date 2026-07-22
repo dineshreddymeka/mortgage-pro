@@ -15,11 +15,11 @@ import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
 import { WidgetBoard } from "../widgets/WidgetBoard";
+import { deriveScenario } from "../lib/deriveScenario";
 import {
   aggregateYearlyPaydownDetailed,
   buildAmortizationSchedule,
   buildAmortizationScheduleWithExtraPrincipal,
-  computeMonthlyPayment,
   scheduleTotals,
   type AmortizationRow,
 } from "../lib/mortgageMath";
@@ -57,36 +57,10 @@ export type MortgageTabProps = FinancingTabProps;
 export function FinancingTab({ state, patch }: FinancingTabProps) {
   const extraPrincipalMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
 
-  const breakdown = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        state.interestRateApr,
-        state.termYears,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.downPayment,
-      state.downPaymentPercent,
-      state.homePrice,
-      state.hoaMonthly,
-      state.insuranceAnnual,
-      state.interestRateApr,
-      state.propertyTaxAnnual,
-      state.propertyTaxPercent,
-      state.termYears,
-      state.pmiMonthly,
-    ]
-  );
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const breakdown = derived.monthlyPayment;
 
-  const baselineSchedule: AmortizationRow[] = useMemo(
-    () => buildAmortizationSchedule(breakdown.loanAmount, state.interestRateApr, state.termYears),
-    [breakdown.loanAmount, state.interestRateApr, state.termYears]
-  );
+  const baselineSchedule: AmortizationRow[] = derived.amortization;
 
   const baselineSchedule15: AmortizationRow[] = useMemo(
     () => buildAmortizationSchedule(breakdown.loanAmount, state.interestRateApr, 15),
@@ -116,22 +90,9 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
   );
 
   const schedule: AmortizationRow[] = useMemo(() => {
-    if (extraPrincipalMonthly > 0) {
-      return buildAmortizationScheduleWithExtraPrincipal(
-        breakdown.loanAmount,
-        state.interestRateApr,
-        state.termYears,
-        extraPrincipalMonthly
-      );
-    }
+    if (derived.amortizationWithExtraPrincipal) return derived.amortizationWithExtraPrincipal;
     return baselineSchedule;
-  }, [
-    baselineSchedule,
-    breakdown.loanAmount,
-    extraPrincipalMonthly,
-    state.interestRateApr,
-    state.termYears,
-  ]);
+  }, [baselineSchedule, derived.amortizationWithExtraPrincipal]);
 
   const baselineTotals = useMemo(() => scheduleTotals(baselineSchedule), [baselineSchedule]);
 

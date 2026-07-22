@@ -1,18 +1,6 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { buildHouseRoot } from "../storage/houseTree";
-import {
-  buildAmortizationSchedule,
-  buildAmortizationScheduleWithExtraPrincipal,
-  computeMonthlyPayment,
-  impliedAnnualAppreciationPercent,
-  scheduleTotals,
-} from "./mortgageMath";
-import { cashFlowAnnualFromYieldToggles, computeRentalAnalysis } from "./rentalMath";
-import {
-  buildRealWealthExitSnapshots,
-  buildSellYearlyRows,
-  REAL_WEALTH_MILESTONE_YEARS,
-} from "./whenToSellMath";
+import { deriveScenario } from "./deriveScenario";
 
 /**
  * Human-readable formulas matching app logic (Mortgage, Rental, When to sell).
@@ -47,77 +35,28 @@ export function buildFullScenarioExport(
   state: AppPersisted,
   houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
 ) {
-  const hp = Math.max(0, state.homePrice);
-  const dp = Math.max(0, state.downPayment);
-  const loanAmount = Math.max(0, hp - dp);
-  const apr = state.interestRateApr;
-  const termYears = Math.min(30, Math.max(1, Math.round(state.termYears)));
-
-  const monthlyScenario = computeMonthlyPayment(
-    hp,
-    dp,
-    apr,
+  const derived = deriveScenario(state);
+  const {
+    purchasePrice: hp,
+    downPayment: dp,
+    loanAmount,
     termYears,
-    state.propertyTaxAnnual,
-    state.insuranceAnnual,
-    state.hoaMonthly,
-    state.pmiMonthly
-  );
-  const monthly30 = computeMonthlyPayment(
-    hp,
-    dp,
-    apr,
-    30,
-    state.propertyTaxAnnual,
-    state.insuranceAnnual,
-    state.hoaMonthly,
-    state.pmiMonthly
-  );
-  const monthly15 = computeMonthlyPayment(
-    hp,
-    dp,
-    apr,
-    15,
-    state.propertyTaxAnnual,
-    state.insuranceAnnual,
-    state.hoaMonthly,
-    state.pmiMonthly
-  );
-
-  const schedTerm = buildAmortizationSchedule(loanAmount, apr, termYears);
-  const totalsTerm = scheduleTotals(schedTerm);
-  const schedPrepay =
-    state.extraPrincipalMonthly > 0
-      ? buildAmortizationScheduleWithExtraPrincipal(loanAmount, apr, termYears, state.extraPrincipalMonthly)
-      : null;
-  const totalsPrepay = schedPrepay ? scheduleTotals(schedPrepay) : null;
-
-  const rentalTerm = computeRentalAnalysis(state, monthlyScenario);
-  const rental30 = computeRentalAnalysis(state, monthly30);
-  const rental15 = computeRentalAnalysis(state, monthly15);
-
-  const yieldCf30 = cashFlowAnnualFromYieldToggles(rental30, state.sellRentalYieldInclude);
-  const yieldCf15 = cashFlowAnnualFromYieldToggles(rental15, state.sellRentalYieldInclude);
-
-  const sellRows = buildSellYearlyRows(
-    loanAmount,
-    apr,
-    hp,
-    state.sellAnnualAppreciationPercent,
-    state.sellClosingCostPercent,
-    30,
-    termYears
-  );
-  const milestones = buildRealWealthExitSnapshots(
-    state,
-    loanAmount,
-    apr,
+    monthlyPayment: monthlyScenario,
+    monthlyPayment30: monthly30,
+    monthlyPayment15: monthly15,
+    amortization: schedTerm,
+    amortizationTotals: totalsTerm,
+    amortizationWithExtraPrincipal: schedPrepay,
+    amortizationPrepayTotals: totalsPrepay,
+    rental: rentalTerm,
+    rental30,
+    rental15,
+    yieldCashFlowAnnual30: yieldCf30,
+    yieldCashFlowAnnual15: yieldCf15,
     sellRows,
-    REAL_WEALTH_MILESTONE_YEARS,
-    state.sellRentalYieldInclude
-  );
-
-  const impliedAprVerify = impliedAnnualAppreciationPercent(hp, state.currentHomeValue, state.yearsOwned);
+    realWealthSnapshots: milestones,
+    impliedAnnualAppreciationPercent: impliedAprVerify,
+  } = derived;
 
   const house = buildHouseRoot(state, houseMeta);
 

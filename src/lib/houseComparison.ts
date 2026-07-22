@@ -1,7 +1,6 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { formatHouseId, houseLabel } from "../storage/firestoreProperties";
-import { computeMonthlyPayment } from "./mortgageMath";
-import { computeRentalAnalysis } from "./rentalMath";
+import { deriveScenario } from "./deriveScenario";
 
 export type HouseComparisonRow = {
   id: string;
@@ -25,17 +24,9 @@ export function buildHouseComparisonRow(
   houseId?: string,
   name?: string
 ): HouseComparisonRow {
-  const payment = computeMonthlyPayment(
-    scenario.homePrice,
-    scenario.downPayment,
-    scenario.interestRateApr,
-    scenario.termYears,
-    scenario.propertyTaxAnnual,
-    scenario.insuranceAnnual,
-    scenario.hoaMonthly,
-    scenario.pmiMonthly
-  );
-  const rental = computeRentalAnalysis(scenario, payment);
+  const derived = deriveScenario(scenario);
+  const payment = derived.monthlyPayment;
+  const rental = derived.rental;
   const resolvedId = houseId ?? formatHouseId(houseNumber);
   const label =
     typeof name === "string" && name.trim() ? name.trim().slice(0, 80) : houseLabel(resolvedId);

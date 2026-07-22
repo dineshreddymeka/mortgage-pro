@@ -95,6 +95,60 @@ export type AppPersisted = {
 /** @deprecated Use AppPersisted */
 export type MortgagePersisted = AppPersisted;
 
+/** Known persisted scenario keys — extras from newer clients are preserved on merge/parse. */
+export const KNOWN_SCENARIO_KEYS = [
+  "v",
+  "homePrice",
+  "downPayment",
+  "downPaymentPercent",
+  "interestRateApr",
+  "termYears",
+  "propertyTaxAnnual",
+  "propertyTaxPercent",
+  "insuranceAnnual",
+  "hoaMonthly",
+  "pmiMonthly",
+  "extraPrincipalMonthly",
+  "annualGrossIncome",
+  "monthlyNonMortgageDebt",
+  "customHousingBudgetMonthly",
+  "refi",
+  "monthlyRent",
+  "otherMonthlyIncome",
+  "vacancyRatePercent",
+  "closingCosts",
+  "miscInitialCash",
+  "propertyMgmtPercent",
+  "maintenancePercent",
+  "capexPercent",
+  "rentalProFormaInclude",
+  "sellRentalYieldInclude",
+  "sellAnnualAppreciationPercent",
+  "sellClosingCostPercent",
+  "currentHomeValue",
+  "yearsOwned",
+  "propertyAddress",
+  "propertyPlaceId",
+  "propertyLatitude",
+  "propertyLongitude",
+  "buyingCostLineOverrides",
+] as const;
+
+const KNOWN_SCENARIO_KEY_SET = new Set<string>(KNOWN_SCENARIO_KEYS);
+
+/** Copy unknown top-level keys from a parsed blob onto the normalized scenario. */
+export function preserveUnknownScenarioFields(
+  source: Record<string, unknown>,
+  parsed: AppPersisted
+): AppPersisted {
+  const out: Record<string, unknown> = { ...parsed };
+  for (const [k, v] of Object.entries(source)) {
+    if (k === "v" || KNOWN_SCENARIO_KEY_SET.has(k)) continue;
+    out[k] = v;
+  }
+  return out as AppPersisted;
+}
+
 /**
  * Shape of `scenario-defaults.json`. Omit `v` (always current schema) and `sellAnnualAppreciationPercent`
  * (derived from purchase price, present value, and years owned).
@@ -185,7 +239,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const refi = parseRefiScenario(rawRefi);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
-  return {
+  const normalized: AppPersisted = {
     ...mergedRest,
     ...location,
     pmiMonthly: Math.max(0, Math.round(Number(merged.pmiMonthly) || 0)),
@@ -198,6 +252,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(refi ? { refi } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
+  return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
 }
 
 export const defaultMortgageState = defaultAppState;
@@ -402,13 +457,64 @@ function parseRentalFields(data: Record<string, unknown>, base: AppPersisted): R
   };
 }
 
+/** Parse known v2+ fields from JSON; does not reset on newer schema versions. */
+function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPersisted): AppPersisted {
+  const m0 = parseV1Mortgage(data);
+  const d = normalizeDownPayment(m0, data, base);
+  const m1 = { ...m0, ...d };
+  const t = normalizePropertyTax(m1, data, base);
+  const m = { ...m1, ...t };
+  const r = parseRentalFields(data, base);
+  const yearsOwned = Math.max(1, Math.round(num(data.yearsOwned, base.yearsOwned)));
+  const sellAprStored = num(data.sellAnnualAppreciationPercent, base.sellAnnualAppreciationPercent);
+  const hasExplicitPresent =
+    data.currentHomeValue !== undefined &&
+    data.currentHomeValue !== null &&
+    data.currentHomeValue !== "" &&
+    Number.isFinite(Number(data.currentHomeValue));
+  const currentHomeValue = hasExplicitPresent
+    ? Math.max(0, Number(data.currentHomeValue))
+    : m.homePrice * (1 + sellAprStored / 100) ** yearsOwned;
+  const sellAnnualAppreciationPercent = impliedAnnualAppreciationPercent(
+    m.homePrice,
+    currentHomeValue,
+    yearsOwned
+  );
+  const buyingCostLineOverrides = parseBuyingCostLineOverrides(data.buyingCostLineOverrides);
+  const rentalProFormaInclude = parseBooleanIncludeMap(data.rentalProFormaInclude);
+  const y = parseBooleanIncludeMap(data.sellRentalYieldInclude);
+  const refi = parseRefiScenario(data.refi);
+  const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
+  const loc = normalizePropertyLocation(data, base);
+  return {
+    v: SCHEMA_VERSION,
+    ...m,
+    ...r,
+    ...loc,
+    pmiMonthly: num(data.pmiMonthly, base.pmiMonthly),
+    extraPrincipalMonthly: num(data.extraPrincipalMonthly, base.extraPrincipalMonthly),
+    annualGrossIncome: num(data.annualGrossIncome, base.annualGrossIncome),
+    monthlyNonMortgageDebt: num(data.monthlyNonMortgageDebt, base.monthlyNonMortgageDebt),
+    yearsOwned,
+    currentHomeValue,
+    sellAnnualAppreciationPercent,
+    sellClosingCostPercent: num(data.sellClosingCostPercent, base.sellClosingCostPercent),
+    ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
+    ...(y !== undefined ? { sellRentalYieldInclude: y } : {}),
+    ...(refi ? { refi } : {}),
+    ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
+    ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
+  };
+}
+
 export function parseMortgageState(raw: string | null): AppPersisted {
   if (!raw) return defaultAppState();
   try {
     const data = JSON.parse(raw) as Record<string, unknown> & { v?: unknown };
     const base = defaultAppState();
+    const version = typeof data.v === "number" ? data.v : SCHEMA_VERSION;
 
-    if (data.v === SCHEMA_VERSION_LEGACY) {
+    if (version === SCHEMA_VERSION_LEGACY) {
       const m0 = parseV1Mortgage(data);
       const d = normalizeDownPayment(m0, data, base);
       const m1 = { ...m0, ...d };
@@ -425,7 +531,7 @@ export function parseMortgageState(raw: string | null): AppPersisted {
       const yearsOwned = Math.max(1, Math.round(merged.yearsOwned));
       const apr = merged.sellAnnualAppreciationPercent;
       const currentHomeValue = merged.homePrice * (1 + apr / 100) ** yearsOwned;
-      return {
+      const migrated = {
         ...merged,
         yearsOwned,
         currentHomeValue,
@@ -435,58 +541,16 @@ export function parseMortgageState(raw: string | null): AppPersisted {
           yearsOwned
         ),
       };
+      return preserveUnknownScenarioFields(data, migrated);
     }
 
-    if (data.v !== SCHEMA_VERSION) {
+    // Future numeric schema versions: parse known fields; never silently reset to factory defaults.
+    if (typeof version !== "number" || version < SCHEMA_VERSION) {
       return defaultAppState();
     }
 
-    const m0 = parseV1Mortgage(data);
-    const d = normalizeDownPayment(m0, data, base);
-    const m1 = { ...m0, ...d };
-    const t = normalizePropertyTax(m1, data, base);
-    const m = { ...m1, ...t };
-    const r = parseRentalFields(data, base);
-    const yearsOwned = Math.max(1, Math.round(num(data.yearsOwned, base.yearsOwned)));
-    const sellAprStored = num(data.sellAnnualAppreciationPercent, base.sellAnnualAppreciationPercent);
-    const hasExplicitPresent =
-      data.currentHomeValue !== undefined &&
-      data.currentHomeValue !== null &&
-      data.currentHomeValue !== "" &&
-      Number.isFinite(Number(data.currentHomeValue));
-    const currentHomeValue = hasExplicitPresent
-      ? Math.max(0, Number(data.currentHomeValue))
-      : m.homePrice * (1 + sellAprStored / 100) ** yearsOwned;
-    const sellAnnualAppreciationPercent = impliedAnnualAppreciationPercent(
-      m.homePrice,
-      currentHomeValue,
-      yearsOwned
-    );
-    const buyingCostLineOverrides = parseBuyingCostLineOverrides(data.buyingCostLineOverrides);
-    const rentalProFormaInclude = parseBooleanIncludeMap(data.rentalProFormaInclude);
-    const y = parseBooleanIncludeMap(data.sellRentalYieldInclude);
-    const refi = parseRefiScenario(data.refi);
-    const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
-    const loc = normalizePropertyLocation(data, base);
-    return {
-      v: SCHEMA_VERSION,
-      ...m,
-      ...r,
-      ...loc,
-      pmiMonthly: num(data.pmiMonthly, base.pmiMonthly),
-      extraPrincipalMonthly: num(data.extraPrincipalMonthly, base.extraPrincipalMonthly),
-      annualGrossIncome: num(data.annualGrossIncome, base.annualGrossIncome),
-      monthlyNonMortgageDebt: num(data.monthlyNonMortgageDebt, base.monthlyNonMortgageDebt),
-      yearsOwned,
-      currentHomeValue,
-      sellAnnualAppreciationPercent,
-      sellClosingCostPercent: num(data.sellClosingCostPercent, base.sellClosingCostPercent),
-      ...(rentalProFormaInclude ? { rentalProFormaInclude } : {}),
-      ...(y !== undefined ? { sellRentalYieldInclude: y } : {}),
-      ...(refi ? { refi } : {}),
-      ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
-      ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
-    };
+    const parsed = parseKnownScenarioFromData(data, base);
+    return preserveUnknownScenarioFields(data, parsed);
   } catch {
     return defaultAppState();
   }
