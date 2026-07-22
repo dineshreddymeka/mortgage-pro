@@ -27,6 +27,24 @@ The Mortgage tab can autocomplete a property address and show a compact map prev
 
 Without a key, you can still type an address manually; autocomplete and the map stay off.
 
+## Firestore (multi-property sync)
+
+Optional cloud sync for multiple saved properties. Uses the **Firebase web client SDK** only — never the Admin / service-account private key in this app.
+
+1. Firebase project with **Cloud Firestore** (native) and published rules (see [`firestore.rules`](firestore.rules)).
+2. **Authentication → Sign-in method → Anonymous → Enable**.
+3. **Authentication → Settings → Authorized domains**: add `dineshreddymeka.github.io` (and `localhost` for local).
+4. Register a **Web app** and copy the config into `.env.local` (see [`.env.example`](.env.example)).
+5. For GitHub Pages, set these repository secrets (same values):
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+
+Without Firebase env vars, the app keeps working with local browser storage only.
+
 ## GitHub Pages
 
 **Live URL:** https://dineshreddymeka.github.io/mortgage-pro/

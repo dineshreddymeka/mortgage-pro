@@ -20,6 +20,7 @@ import { MortgageTab } from "./tabs/MortgageTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
+import { PropertySwitcher } from "./components/PropertySwitcher";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { computeMonthlyPayment } from "./lib/mortgageMath";
@@ -41,7 +42,19 @@ const TABS = [
 export default function App() {
   const { setMode } = useColorScheme();
   const theme = useTheme();
-  const { state, patch, reset, saveToBrowser } = useMortgageSyncedState();
+  const {
+    state,
+    patch,
+    reset,
+    saveToBrowser,
+    saveToCloud,
+    properties,
+    activePropertyId,
+    selectProperty,
+    createNewProperty,
+    cloudStatus,
+    cloudError,
+  } = useMortgageSyncedState();
   const [tab, setTab] = useState(0);
   const [toast, setToast] = useState<{ message: string; severity: "success" | "error" } | null>(
     null
@@ -81,9 +94,20 @@ export default function App() {
     });
   }
 
-  function saveScenario() {
-    saveToBrowser();
-    setToast({ message: "Scenario saved in this browser.", severity: "success" });
+  async function saveScenario() {
+    try {
+      const cloud = await saveToCloud();
+      setToast({
+        message: cloud ? "Saved locally and to Firestore." : "Scenario saved in this browser.",
+        severity: "success",
+      });
+    } catch {
+      saveToBrowser();
+      setToast({
+        message: "Saved in this browser (cloud save failed).",
+        severity: "error",
+      });
+    }
   }
 
   return (
@@ -161,12 +185,36 @@ export default function App() {
             </Stack>
 
             <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+              <PropertySwitcher
+                cloudStatus={cloudStatus}
+                cloudError={cloudError}
+                properties={properties}
+                activePropertyId={activePropertyId}
+                onSelect={(id) => {
+                  void selectProperty(id).catch(() =>
+                    setToast({ message: "Could not open that property.", severity: "error" })
+                  );
+                }}
+                onCreate={() => {
+                  void createNewProperty()
+                    .then((id) => {
+                      if (id) {
+                        setToast({ message: "New property created in Firestore.", severity: "success" });
+                      }
+                    })
+                    .catch(() =>
+                      setToast({ message: "Could not create property.", severity: "error" })
+                    );
+                }}
+              />
               <Button
                 size="small"
                 variant="contained"
                 color="secondary"
                 startIcon={<SaveOutlinedIcon sx={{ fontSize: 16 }} />}
-                onClick={saveScenario}
+                onClick={() => {
+                  void saveScenario();
+                }}
                 aria-label="Save scenario"
                 sx={{ minHeight: 30, px: 1.25 }}
               >
@@ -316,7 +364,9 @@ export default function App() {
           display="block"
           sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
         >
-          Estimates only. One scenario across tabs; auto-saves locally.
+          Estimates only. Auto-saves locally
+          {cloudStatus === "ready" ? " and syncs properties to Firestore." : "."}
+          {cloudError ? ` ${cloudError}` : ""}
         </Typography>
       </Container>
 

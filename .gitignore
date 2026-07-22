@@ -7,3 +7,7 @@ dist
 .env
 .env.*
 !.env.example
+# Never commit Firebase Admin / service-account private keys
+*firebase-adminsdk*.json
+*serviceAccount*.json
+serviceAccountKey.json
