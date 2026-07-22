@@ -51,11 +51,14 @@ export default function App() {
     saveToBrowser,
     saveToCloud,
     properties,
+    archivedProperties,
     comparisons,
     activePropertyId,
     activeHouseLabel,
     selectProperty,
     createNewProperty,
+    archiveHouse,
+    restoreHouse,
     cloudStatus,
     cloudError,
   } = useMortgageSyncedState();
@@ -137,6 +140,30 @@ export default function App() {
           }
         })
         .catch(() => setToast({ message: "Could not create house.", severity: "error" }));
+    },
+    onArchive: (id: string) => {
+      void archiveHouse(id)
+        .then((ok) => {
+          if (ok) {
+            setToast({
+              message: "House archived. Full tab data kept — restore anytime.",
+              severity: "success",
+            });
+          }
+        })
+        .catch(() => setToast({ message: "Could not archive house.", severity: "error" }));
+    },
+    onRestore: (id: string) => {
+      void restoreHouse(id)
+        .then((ok) => {
+          if (ok) {
+            setToast({
+              message: "House restored with the same ID and full scenario.",
+              severity: "success",
+            });
+          }
+        })
+        .catch(() => setToast({ message: "Could not restore house.", severity: "error" }));
     },
   };
 
@@ -289,10 +316,13 @@ export default function App() {
           cloudStatus={cloudStatus}
           cloudError={cloudError}
           properties={properties}
+          archivedProperties={archivedProperties}
           comparisons={comparisons}
           activePropertyId={activePropertyId}
           onSelect={houseHandlers.onSelect}
           onCreate={houseHandlers.onCreate}
+          onArchive={houseHandlers.onArchive}
+          onRestore={houseHandlers.onRestore}
         />
 
         <Box

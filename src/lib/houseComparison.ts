@@ -1,11 +1,12 @@
 import type { AppPersisted } from "../storage/mortgageState";
-import { houseLabel } from "../storage/firestoreProperties";
+import { formatHouseId, houseLabel } from "../storage/firestoreProperties";
 import { computeMonthlyPayment } from "./mortgageMath";
 import { computeRentalAnalysis } from "./rentalMath";
 
 export type HouseComparisonRow = {
   id: string;
   houseNumber: number;
+  houseId: string;
   label: string;
   homePrice: number;
   downPayment: number;
@@ -20,7 +21,8 @@ export type HouseComparisonRow = {
 export function buildHouseComparisonRow(
   id: string,
   houseNumber: number,
-  scenario: AppPersisted
+  scenario: AppPersisted,
+  houseId?: string
 ): HouseComparisonRow {
   const payment = computeMonthlyPayment(
     scenario.homePrice,
@@ -33,11 +35,13 @@ export function buildHouseComparisonRow(
     scenario.pmiMonthly
   );
   const rental = computeRentalAnalysis(scenario, payment);
+  const resolvedId = houseId ?? formatHouseId(houseNumber);
 
   return {
     id,
     houseNumber,
-    label: houseLabel(houseNumber),
+    houseId: resolvedId,
+    label: houseLabel(resolvedId),
     homePrice: Math.max(0, scenario.homePrice),
     downPayment: Math.max(0, scenario.downPayment),
     rateApr: scenario.interestRateApr,

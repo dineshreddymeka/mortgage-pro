@@ -14,13 +14,16 @@ import {
   subscribeMortgageStateRemote,
 } from "../storage/localStore";
 import {
+  archiveProperty,
   createProperty,
   ensureFirebaseUser,
+  formatHouseId,
   getProperty,
   houseLabel,
   listProperties,
   listPropertyDocs,
   readActivePropertyId,
+  restoreProperty,
   savePropertyScenario,
   touchLastOpened,
   writeActivePropertyId,
@@ -34,7 +37,10 @@ export type CloudSyncStatus = "off" | "connecting" | "ready" | "error";
 
 export function useMortgageSyncedState() {
   const [state, setState] = useState<AppPersisted>(loadPersistedMortgageState);
+  /** Active (non-archived) houses for nav + compare. */
   const [properties, setProperties] = useState<PropertyMeta[]>([]);
+  /** Soft-hidden houses; full scenario retained. */
+  const [archivedProperties, setArchivedProperties] = useState<PropertyMeta[]>([]);
   const [activePropertyId, setActivePropertyId] = useState<string | null>(readActivePropertyId);
   const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>(
     isFirebaseConfigured() ? "connecting" : "off"
@@ -53,15 +59,26 @@ export function useMortgageSyncedState() {
   const cloudReadyRef = useRef(false);
   const skipNextCloudSave = useRef(false);
 
+  const activeMeta = properties.find((p) => p.id === activePropertyId);
   const activeHouseNumber =
-    properties.find((p) => p.id === activePropertyId)?.houseNumber ??
-    (properties.length > 0 ? properties[0].houseNumber : 1);
+    activeMeta?.houseNumber ?? (properties.length > 0 ? properties[0].houseNumber : 1);
+  const activeHouseId = activeMeta?.houseId ?? formatHouseId(activeHouseNumber);
+
+  const refreshLists = useCallback(async (uid: string) => {
+    const all = await listProperties(uid);
+    const active = all.filter((p) => !p.archived);
+    const archived = all.filter((p) => p.archived);
+    setProperties(active);
+    setArchivedProperties(archived);
+    return { active, archived };
+  }, []);
 
   const refreshComparisons = useCallback(async (uid: string) => {
     try {
-      const docs = await listPropertyDocs(uid);
+      // Active houses only — archived never appear in smart compare.
+      const docs = await listPropertyDocs(uid, { archived: false });
       setComparisonBase(
-        docs.map((d) => buildHouseComparisonRow(d.id, d.houseNumber, d.scenario))
+        docs.map((d) => buildHouseComparisonRow(d.id, d.houseNumber, d.scenario, d.houseId))
       );
     } catch (err) {
       console.warn("[firestore] comparison refresh failed", err);
@@ -71,7 +88,12 @@ export function useMortgageSyncedState() {
   // Live-compare: use current edits for the active house; saved snapshots for others.
   const comparisons: HouseComparisonRow[] = (() => {
     if (!activePropertyId) return comparisonBase;
-    const live = buildHouseComparisonRow(activePropertyId, activeHouseNumber, state);
+    const live = buildHouseComparisonRow(
+      activePropertyId,
+      activeHouseNumber,
+      state,
+      activeHouseId
+    );
     if (comparisonBase.length === 0) return [live];
     const hasActive = comparisonBase.some((r) => r.id === activePropertyId);
     if (!hasActive) {
@@ -123,23 +145,28 @@ export function useMortgageSyncedState() {
         setUserId(user.uid);
         userIdRef.current = user.uid;
 
-        let list = await listProperties(user.uid);
+        let { active, archived } = await refreshLists(user.uid);
         if (cancelled) return;
 
         let activeId = readActivePropertyId();
-        if (activeId && !list.some((p) => p.id === activeId)) {
-          activeId = null;
+        // Never open an archived house as the workspace active.
+        if (activeId && !active.some((p) => p.id === activeId)) {
+          if (archived.some((p) => p.id === activeId)) {
+            activeId = null;
+          } else {
+            activeId = null;
+          }
         }
 
-        if (!activeId && list.length > 0) {
-          activeId = list[0].id;
+        if (!activeId && active.length > 0) {
+          activeId = active[0].id;
         }
 
         if (!activeId) {
-          // First cloud session: upload the current local scenario as House 1.
+          // First cloud session (or all archived): create next house id (never reuse archived).
           skipNextCloudSave.current = true;
-          activeId = await createProperty(user.uid, stateRef.current, 1);
-          list = await listProperties(user.uid);
+          activeId = await createProperty(user.uid, stateRef.current);
+          ({ active, archived } = await refreshLists(user.uid));
         } else {
           const loaded = await getProperty(activeId);
           if (loaded?.scenario) {
@@ -155,7 +182,8 @@ export function useMortgageSyncedState() {
         writeActivePropertyId(activeId);
         setActivePropertyId(activeId);
         activeIdRef.current = activeId;
-        setProperties(list);
+        setProperties(active);
+        setArchivedProperties(archived);
         cloudReadyRef.current = true;
         setCloudStatus("ready");
         await refreshComparisons(user.uid);
@@ -171,7 +199,7 @@ export function useMortgageSyncedState() {
     return () => {
       cancelled = true;
     };
-  }, [refreshComparisons]);
+  }, [refreshComparisons, refreshLists]);
 
   // Debounced cloud save of full scenario (all tabs) when fields change.
   useEffect(() => {
@@ -188,8 +216,7 @@ export function useMortgageSyncedState() {
       if (!uid || !id) return;
       void savePropertyScenario(id, uid, stateRef.current)
         .then(async () => {
-          const list = await listProperties(uid);
-          setProperties(list);
+          await refreshLists(uid);
           await refreshComparisons(uid);
         })
         .catch((err) => {
@@ -199,7 +226,7 @@ export function useMortgageSyncedState() {
     }, CLOUD_SAVE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(handle);
-  }, [state, activePropertyId, userId, cloudStatus, refreshComparisons]);
+  }, [state, activePropertyId, userId, cloudStatus, refreshComparisons, refreshLists]);
 
   const patch = useCallback((partial: Partial<AppPersisted>) => {
     setState((prev) => {
@@ -263,16 +290,25 @@ export function useMortgageSyncedState() {
     const id = activeIdRef.current;
     if (!uid || !id || !cloudReadyRef.current) return false;
     await savePropertyScenario(id, uid, stateRef.current);
-    const list = await listProperties(uid);
-    setProperties(list);
+    await refreshLists(uid);
     await refreshComparisons(uid);
     return true;
-  }, [saveToBrowser, refreshComparisons]);
+  }, [saveToBrowser, refreshComparisons, refreshLists]);
 
   const selectProperty = useCallback(
     async (id: string) => {
       if (!id || id === activeIdRef.current) return;
       const uid = userIdRef.current;
+
+      // Block selecting archived houses into the workspace / compare.
+      if (uid) {
+        const archived = await listProperties(uid, { archived: true });
+        if (archived.some((p) => p.id === id)) {
+          console.warn("[firestore] cannot select archived house", id);
+          return;
+        }
+      }
+
       if (uid && activeIdRef.current && cloudReadyRef.current) {
         try {
           // Flush all tab data for the house we're leaving.
@@ -284,6 +320,7 @@ export function useMortgageSyncedState() {
 
       const loaded = await getProperty(id);
       if (!loaded?.scenario) return;
+      if (loaded.archived) return;
 
       skipNextCloudSave.current = true;
       replace(loaded.scenario);
@@ -292,12 +329,11 @@ export function useMortgageSyncedState() {
       activeIdRef.current = id;
       void touchLastOpened(id);
       if (uid) {
-        const list = await listProperties(uid);
-        setProperties(list);
+        await refreshLists(uid);
         await refreshComparisons(uid);
       }
     },
-    [replace, refreshComparisons]
+    [replace, refreshComparisons, refreshLists]
   );
 
   const createNewProperty = useCallback(async () => {
@@ -313,17 +349,75 @@ export function useMortgageSyncedState() {
     }
 
     const fresh = defaultMortgageState();
+    // nextHouseNumber considers active + archived so IDs are never reused.
     const id = await createProperty(uid, fresh);
     skipNextCloudSave.current = true;
     replace(fresh);
     writeActivePropertyId(id);
     setActivePropertyId(id);
     activeIdRef.current = id;
-    const list = await listProperties(uid);
-    setProperties(list);
+    await refreshLists(uid);
     await refreshComparisons(uid);
     return id;
-  }, [replace, refreshComparisons]);
+  }, [replace, refreshComparisons, refreshLists]);
+
+  const archiveHouse = useCallback(
+    async (id: string) => {
+      const uid = userIdRef.current;
+      if (!uid || !cloudReadyRef.current || !id) return false;
+
+      // Flush full scenario first — archive must never wipe tab data.
+      if (id === activeIdRef.current) {
+        try {
+          await savePropertyScenario(id, uid, stateRef.current);
+        } catch (err) {
+          console.warn("[firestore] flush before archive failed", err);
+        }
+      }
+
+      await archiveProperty(id);
+      const { active } = await refreshLists(uid);
+
+      if (id === activeIdRef.current) {
+        const nextId = active[0]?.id ?? null;
+        if (nextId) {
+          const loaded = await getProperty(nextId);
+          if (loaded?.scenario) {
+            skipNextCloudSave.current = true;
+            replace(loaded.scenario);
+            writeActivePropertyId(nextId);
+            setActivePropertyId(nextId);
+            activeIdRef.current = nextId;
+            void touchLastOpened(nextId);
+          }
+        } else {
+          // No active houses left — create none / show empty local zeros.
+          writeActivePropertyId(null);
+          setActivePropertyId(null);
+          activeIdRef.current = null;
+          skipNextCloudSave.current = true;
+          replace(emptyAppState());
+        }
+      }
+
+      await refreshComparisons(uid);
+      return true;
+    },
+    [replace, refreshComparisons, refreshLists]
+  );
+
+  const restoreHouse = useCallback(
+    async (id: string) => {
+      const uid = userIdRef.current;
+      if (!uid || !cloudReadyRef.current || !id) return false;
+
+      await restoreProperty(id);
+      await refreshLists(uid);
+      await refreshComparisons(uid);
+      return true;
+    },
+    [refreshComparisons, refreshLists]
+  );
 
   return {
     state,
@@ -333,12 +427,16 @@ export function useMortgageSyncedState() {
     saveToBrowser,
     saveToCloud,
     properties,
+    archivedProperties,
     comparisons,
     activePropertyId,
     activeHouseNumber,
-    activeHouseLabel: houseLabel(activeHouseNumber),
+    activeHouseId,
+    activeHouseLabel: houseLabel(activeHouseId),
     selectProperty,
     createNewProperty,
+    archiveHouse,
+    restoreHouse,
     cloudStatus,
     cloudError,
   };
