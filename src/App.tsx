@@ -36,10 +36,10 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 
 const TABS = [
   { label: "Mortgage", id: "mortgage" },
+  { label: "Compare", id: "compare" },
   { label: "Upfront", id: "upfront" },
   { label: "Rental", id: "rental" },
   { label: "When to sell", id: "sell" },
-  { label: "Compare", id: "compare" },
 ] as const;
 
 export default function App() {
@@ -99,6 +99,12 @@ export default function App() {
     if (fromCloud) return fromCloud;
     return buildHouseComparisonRow(activePropertyId ?? "local", 1, state);
   }, [comparisons, activePropertyId, state]);
+
+  /** Always feed Compare at least the active house (works offline / before cloud sync). */
+  const compareRows = useMemo(() => {
+    if (comparisons.length > 0) return comparisons;
+    return [activeComparison];
+  }, [comparisons, activeComparison]);
 
   function exportExcel() {
     downloadScenarioExcel(state);
@@ -413,32 +419,32 @@ export default function App() {
           <Box
             role="tabpanel"
             hidden={tab !== 1}
-            id="tabpanel-upfront"
-            aria-labelledby="tab-upfront"
-          >
-            {tab === 1 ? <UpfrontCashTab state={state} patch={patch} /> : null}
-          </Box>
-          <Box role="tabpanel" hidden={tab !== 2} id="tabpanel-rental" aria-labelledby="tab-rental">
-            {tab === 2 ? <RentalTab state={state} patch={patch} /> : null}
-          </Box>
-          <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-sell" aria-labelledby="tab-sell">
-            {tab === 3 ? <WhenToSellTab state={state} patch={patch} /> : null}
-          </Box>
-          <Box
-            role="tabpanel"
-            hidden={tab !== 4}
             id="tabpanel-compare"
             aria-labelledby="tab-compare"
           >
-            {tab === 4 ? (
+            {tab === 1 ? (
               <CompareTab
-                rows={comparisons}
+                rows={compareRows}
                 properties={properties}
                 activePropertyId={activePropertyId}
                 cloudReady={cloudStatus === "ready"}
                 onSelect={houseHandlers.onSelect}
               />
             ) : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== 2}
+            id="tabpanel-upfront"
+            aria-labelledby="tab-upfront"
+          >
+            {tab === 2 ? <UpfrontCashTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box role="tabpanel" hidden={tab !== 3} id="tabpanel-rental" aria-labelledby="tab-rental">
+            {tab === 3 ? <RentalTab state={state} patch={patch} /> : null}
+          </Box>
+          <Box role="tabpanel" hidden={tab !== 4} id="tabpanel-sell" aria-labelledby="tab-sell">
+            {tab === 4 ? <WhenToSellTab state={state} patch={patch} /> : null}
           </Box>
 
           <Typography
