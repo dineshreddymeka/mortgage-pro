@@ -4,9 +4,8 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Grid from "@mui/material/Grid2";
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
-import { AppSection } from "../components/AppSection";
 import { MortgageBuyerCashPanel } from "../components/MortgageBuyerCashPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
 import { MortgageInputsFields } from "../components/MortgageInputsFields";
@@ -17,6 +16,7 @@ import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
 import { PropertyLocationCard } from "../components/PropertyLocationCard";
+import { WidgetBoard } from "../widgets/WidgetBoard";
 import {
   aggregateYearlyPaydownDetailed,
   buildAmortizationSchedule,
@@ -165,76 +165,77 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
   const ltvPct = state.homePrice > 0 ? (breakdown.loanAmount / state.homePrice) * 100 : 0;
   const cashToClose = state.downPayment + state.closingCosts + state.miscInitialCash;
 
-  return (
-    <BoxSections>
-      <AppSection title="Property" description="Address for this scenario">
-        <PropertyLocationCard state={state} patch={patch} />
-      </AppSection>
-
-      <AppSection
-        title="Loan & payment"
-        description={`${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}% · cash ${money.format(cashToClose)}`}
-      >
-        <Grid container spacing={1.25} alignItems="flex-start">
-          <Grid size={{ xs: 12, md: 6 }}>
-            <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Stack spacing={1}>
-              <MortgagePaymentBreakdown breakdown={breakdown} />
-              <MortgageLoanSummaryCard
-                state={state}
-                breakdown={breakdown}
-                cashToClose={cashToClose}
-                ltvPct={ltvPct}
-                lifeInterest={lifeInterest}
-                lifePrincipal={lifePrincipal}
-                extraPrincipalMonthly={extraPrincipalMonthly}
-                prepaySummary={prepaySummary}
-              />
-            </Stack>
-          </Grid>
-        </Grid>
-      </AppSection>
-
-      <AppSection title="Cash to close" description="Shared with Upfront">
-        <MortgageBuyerCashPanel
-          state={state}
-          patch={patch}
-          loanAmount={breakdown.loanAmount}
-          cashToClose={cashToClose}
-        />
-      </AppSection>
-
-      <AppSection title="Compare" description="Term, paydown, refi">
-        <Stack spacing={0.75}>
-          <Accordion defaultExpanded={false} disableGutters elevation={0}>
-            <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={0.75}
-                alignItems={{ sm: "flex-end" }}
-                justifyContent="space-between"
-                sx={{ width: "100%", gap: 0.75 }}
-              >
-                <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="subtitle2">Compare loan length</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    15 vs 30 · monthly split &amp; life interest
-                  </Typography>
-                </Stack>
-                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
-                  <AccordionSummaryMetric label="Loan" value={money.format(breakdown.loanAmount)} />
-                  <AccordionSummaryMetric label="P&I /mo" value={moneyDec.format(breakdown.principalAndInterest)} />
-                </Stack>
+  const widgets = useMemo(
+    () => [
+      {
+        id: "property",
+        title: "Property",
+        description: "Address for this scenario",
+        defaultLayout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 6 },
+        content: <PropertyLocationCard state={state} patch={patch} />,
+      },
+      {
+        id: "loan",
+        title: "Loan & payment",
+        description: `${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}%`,
+        defaultLayout: { x: 0, y: 10, w: 12, h: 16, minW: 6, minH: 10 },
+        content: (
+          <Grid container spacing={1.25} alignItems="flex-start">
+            <Grid size={{ xs: 12, md: 6 }}>
+              <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Stack spacing={1}>
+                <MortgagePaymentBreakdown breakdown={breakdown} />
+                <MortgageLoanSummaryCard
+                  state={state}
+                  breakdown={breakdown}
+                  cashToClose={cashToClose}
+                  ltvPct={ltvPct}
+                  lifeInterest={lifeInterest}
+                  lifePrincipal={lifePrincipal}
+                  extraPrincipalMonthly={extraPrincipalMonthly}
+                  prepaySummary={prepaySummary}
+                />
               </Stack>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0 }}>
-              <MortgageLoanCompareCards state={state} />
-            </AccordionDetails>
-          </Accordion>
-
-          {breakdown.loanAmount > 0 ? (
+            </Grid>
+          </Grid>
+        ),
+      },
+      {
+        id: "cash-close",
+        title: "Cash to close",
+        description: "Shared with Upfront",
+        defaultLayout: { x: 0, y: 26, w: 6, h: 12, minW: 4, minH: 8 },
+        content: (
+          <MortgageBuyerCashPanel
+            state={state}
+            patch={patch}
+            loanAmount={breakdown.loanAmount}
+            cashToClose={cashToClose}
+          />
+        ),
+      },
+      {
+        id: "affordability",
+        title: "Affordability",
+        description: "DTI from income and other debt",
+        defaultLayout: { x: 6, y: 26, w: 6, h: 12, minW: 4, minH: 8 },
+        content: (
+          <MortgageAffordabilityDtiPanel
+            state={state}
+            patch={patch}
+            currentHousingPaymentMonthly={breakdown.total}
+          />
+        ),
+      },
+      {
+        id: "compare",
+        title: "Compare",
+        description: "Term, paydown, refi",
+        defaultLayout: { x: 0, y: 38, w: 12, h: 14, minW: 6, minH: 8 },
+        content: (
+          <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
               <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
                 <Stack
@@ -245,86 +246,122 @@ export function MortgageTab({ state, patch }: MortgageTabProps) {
                   sx={{ width: "100%", gap: 0.75 }}
                 >
                   <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2">Year-by-year paydown</Typography>
+                    <Typography variant="subtitle2">Compare loan length</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      15-yr vs {state.termYears}-yr
+                      15 vs 30 · monthly split &amp; life interest
                     </Typography>
                   </Stack>
                   <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
-                    <AccordionSummaryMetric label="Life int (15)" value={money.format(lifeInterest15)} />
+                    <AccordionSummaryMetric label="Loan" value={money.format(breakdown.loanAmount)} />
                     <AccordionSummaryMetric
-                      label={`Life int (${state.termYears})`}
-                      value={money.format(lifeInterest)}
+                      label="P&I /mo"
+                      value={moneyDec.format(breakdown.principalAndInterest)}
                     />
                   </Stack>
                 </Stack>
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0 }}>
-                <PaydownYearlyColorLegend />
-                <PaydownYearlyMergedCompare
-                  rows15={yearlyDetailed15}
-                  rowsTerm={yearlyDetailed}
-                  termYearsLabel={state.termYears}
-                  lifePrincipal15={lifePrincipal15}
-                  lifeInterest15={lifeInterest15}
-                  lifePrincipalTerm={lifePrincipal}
-                  lifeInterestTerm={lifeInterest}
-                />
+                <MortgageLoanCompareCards state={state} />
               </AccordionDetails>
             </Accordion>
-          ) : null}
 
-          {breakdown.loanAmount > 0 ? (
-            <Accordion defaultExpanded={false} disableGutters elevation={0}>
-              <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={0.75}
-                  alignItems={{ sm: "flex-end" }}
-                  justifyContent="space-between"
-                  sx={{ width: "100%", gap: 0.75 }}
-                >
-                  <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2">Refi breakeven</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      New rate vs costs
-                    </Typography>
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Year-by-year paydown</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        15-yr vs {state.termYears}-yr
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric label="Life int (15)" value={money.format(lifeInterest15)} />
+                      <AccordionSummaryMetric
+                        label={`Life int (${state.termYears})`}
+                        value={money.format(lifeInterest)}
+                      />
+                    </Stack>
                   </Stack>
-                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
-                    <AccordionSummaryMetric label="P&I now" value={moneyDec.format(breakdown.principalAndInterest)} />
-                    <AccordionSummaryMetric label="Note %" value={`${state.interestRateApr}%`} />
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <PaydownYearlyColorLegend />
+                  <PaydownYearlyMergedCompare
+                    rows15={yearlyDetailed15}
+                    rowsTerm={yearlyDetailed}
+                    termYearsLabel={state.termYears}
+                    lifePrincipal15={lifePrincipal15}
+                    lifeInterest15={lifeInterest15}
+                    lifePrincipalTerm={lifePrincipal}
+                    lifeInterestTerm={lifeInterest}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
+
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Refi breakeven</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        New rate vs costs
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric
+                        label="P&I now"
+                        value={moneyDec.format(breakdown.principalAndInterest)}
+                      />
+                      <AccordionSummaryMetric label="Note %" value={`${state.interestRateApr}%`} />
+                    </Stack>
                   </Stack>
-                </Stack>
-              </AccordionSummary>
-              <AccordionDetails sx={{ pt: 0 }}>
-                <MortgageRefiBreakevenCard
-                  scenarioLoanAmount={breakdown.loanAmount}
-                  scenarioPrincipalAndInterest={breakdown.principalAndInterest}
-                  scenarioAprPercent={state.interestRateApr}
-                  defaultRefiClosingCosts={state.closingCosts}
-                  schedule={schedule}
-                />
-              </AccordionDetails>
-            </Accordion>
-          ) : null}
-        </Stack>
-      </AppSection>
-
-      <AppSection title="Affordability" description="DTI from income and other debt">
-        <MortgageAffordabilityDtiPanel
-          state={state}
-          patch={patch}
-          currentHousingPaymentMonthly={breakdown.total}
-        />
-      </AppSection>
-
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", pt: 0.25, lineHeight: 1.35 }}>
-        Single-scenario calculator — numbers stay in your browser until export or reset.
-      </Typography>
-    </BoxSections>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <MortgageRefiBreakevenCard
+                    scenarioLoanAmount={breakdown.loanAmount}
+                    scenarioPrincipalAndInterest={breakdown.principalAndInterest}
+                    scenarioAprPercent={state.interestRateApr}
+                    defaultRefiClosingCosts={state.closingCosts}
+                    schedule={schedule}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
+          </Stack>
+        ),
+      },
+    ],
+    [
+      breakdown,
+      cashToClose,
+      extraPrincipalMonthly,
+      lifeInterest,
+      lifeInterest15,
+      lifePrincipal,
+      lifePrincipal15,
+      ltvPct,
+      patch,
+      prepaySummary,
+      schedule,
+      state,
+      yearlyDetailed,
+      yearlyDetailed15,
+    ]
   );
-}
 
-function BoxSections({ children }: { children: ReactNode }) {
-  return <Stack spacing={0}>{children}</Stack>;
+  return <WidgetBoard boardId="mortgage" widgets={widgets} rowHeight={28} />;
 }

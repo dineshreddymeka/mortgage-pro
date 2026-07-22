@@ -3,9 +3,10 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { AppSection } from "../components/AppSection";
+import { useMemo } from "react";
 import { UpfrontCashScenarioPanel } from "../components/UpfrontCashScenarioPanel";
 import type { AppPersisted } from "../storage/mortgageState";
+import { WidgetBoard } from "../widgets/WidgetBoard";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -66,166 +67,176 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
   const loanAmount = Math.max(0, state.homePrice - state.downPayment);
   const cashToClose = state.downPayment + state.closingCosts + state.miscInitialCash;
 
-  return (
-    <Stack spacing={0}>
-      <AppSection
-        title="Cash at settlement"
-        description="Down + closing + misc · syncs Mortgage & Rental"
-        aside={
-          <Typography
-            sx={{
-              fontFamily: "var(--pp-font-display)",
-              fontWeight: 800,
-              fontSize: "1.35rem",
-              letterSpacing: "-0.03em",
-              lineHeight: 1,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {moneyDec.format(cashToClose)}
-          </Typography>
-        }
-      >
-        <Grid container spacing={1.5} sx={{ pt: 0.25 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryStat label="Down" value={money.format(state.downPayment)} />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryStat
-              label="Closing + misc"
-              value={money.format(state.closingCosts + state.miscInitialCash)}
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryStat label="Financed" value={money.format(loanAmount)} />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryStat label="Total due" value={moneyDec.format(cashToClose)} />
-          </Grid>
-        </Grid>
-      </AppSection>
-
-      <AppSection title="Inputs & modeled costs" description="Edit left · compare model on the right">
-        <Grid container spacing={1.5} alignItems="flex-start">
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Grid container spacing={1}>
-              <Grid size={12}>
-                <TextField
-                  label="Purchase price"
-                  size="small"
-                  fullWidth
-                  value={formatNumberField(state.homePrice)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                    if (!Number.isFinite(n)) return;
-                    const hp = Math.max(0, n);
-                    patch({
-                      homePrice: hp,
-                      downPayment: Math.round((hp * state.downPaymentPercent) / 100),
-                      propertyTaxAnnual: Math.round((hp * state.propertyTaxPercent) / 100),
-                    });
-                  }}
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    },
-                  }}
+  const widgets = useMemo(
+    () => [
+      {
+        id: "settlement",
+        title: "Cash at settlement",
+        description: "Down + closing + misc · syncs Mortgage & Rental",
+        defaultLayout: { x: 0, y: 0, w: 12, h: 7, minW: 4, minH: 5 },
+        content: (
+          <Stack spacing={1}>
+            <Typography
+              className="pp-mono"
+              sx={{
+                fontWeight: 800,
+                fontSize: "1.35rem",
+                letterSpacing: "-0.03em",
+                lineHeight: 1,
+              }}
+            >
+              {moneyDec.format(cashToClose)}
+            </Typography>
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <SummaryStat label="Down" value={money.format(state.downPayment)} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <SummaryStat
+                  label="Closing + misc"
+                  value={money.format(state.closingCosts + state.miscInitialCash)}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Down payment"
-                  size="small"
-                  fullWidth
-                  value={formatNumberField(state.downPayment)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                    if (!Number.isFinite(n)) return;
-                    const hp = state.homePrice;
-                    const dp = Math.max(0, n);
-                    const capped = hp > 0 ? Math.min(dp, hp) : dp;
-                    patch({
-                      downPayment: capped,
-                      downPaymentPercent: hp > 0 ? (capped / hp) * 100 : 0,
-                    });
-                  }}
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    },
-                  }}
-                />
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <SummaryStat label="Financed" value={money.format(loanAmount)} />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Down %"
-                  size="small"
-                  fullWidth
-                  value={formatPercentField(state.downPaymentPercent)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                    if (!Number.isFinite(n)) return;
-                    const pct = Math.min(100, Math.max(0, n));
-                    const hp = state.homePrice;
-                    patch({
-                      downPaymentPercent: pct,
-                      downPayment: hp > 0 ? Math.round((hp * pct) / 100) : state.downPayment,
-                    });
-                  }}
-                  slotProps={{
-                    input: {
-                      endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Closing costs"
-                  size="small"
-                  fullWidth
-                  value={formatNumberField(state.closingCosts)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                    if (Number.isFinite(n)) patch({ closingCosts: Math.max(0, n) });
-                  }}
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Misc. one-time"
-                  size="small"
-                  fullWidth
-                  value={formatNumberField(state.miscInitialCash)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                    if (Number.isFinite(n)) patch({ miscInitialCash: Math.max(0, n) });
-                  }}
-                  slotProps={{
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    },
-                  }}
-                />
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <SummaryStat label="Total due" value={moneyDec.format(cashToClose)} />
               </Grid>
             </Grid>
+          </Stack>
+        ),
+      },
+      {
+        id: "inputs-model",
+        title: "Inputs & modeled costs",
+        description: "Edit left · compare model on the right",
+        defaultLayout: { x: 0, y: 7, w: 12, h: 18, minW: 6, minH: 10 },
+        content: (
+          <Grid container spacing={1.5} alignItems="flex-start">
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Grid container spacing={1}>
+                <Grid size={12}>
+                  <TextField
+                    label="Purchase price"
+                    size="small"
+                    fullWidth
+                    value={formatNumberField(state.homePrice)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                      if (!Number.isFinite(n)) return;
+                      const hp = Math.max(0, n);
+                      patch({
+                        homePrice: hp,
+                        downPayment: Math.round((hp * state.downPaymentPercent) / 100),
+                        propertyTaxAnnual: Math.round((hp * state.propertyTaxPercent) / 100),
+                      });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Down payment"
+                    size="small"
+                    fullWidth
+                    value={formatNumberField(state.downPayment)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                      if (!Number.isFinite(n)) return;
+                      const hp = state.homePrice;
+                      const dp = Math.max(0, n);
+                      const capped = hp > 0 ? Math.min(dp, hp) : dp;
+                      patch({
+                        downPayment: capped,
+                        downPaymentPercent: hp > 0 ? (capped / hp) * 100 : 0,
+                      });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Down %"
+                    size="small"
+                    fullWidth
+                    value={formatPercentField(state.downPaymentPercent)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                      if (!Number.isFinite(n)) return;
+                      const pct = Math.min(100, Math.max(0, n));
+                      const hp = state.homePrice;
+                      patch({
+                        downPaymentPercent: pct,
+                        downPayment: hp > 0 ? Math.round((hp * pct) / 100) : state.downPayment,
+                      });
+                    }}
+                    slotProps={{
+                      input: {
+                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Closing costs"
+                    size="small"
+                    fullWidth
+                    value={formatNumberField(state.closingCosts)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                      if (Number.isFinite(n)) patch({ closingCosts: Math.max(0, n) });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Misc. one-time"
+                    size="small"
+                    fullWidth
+                    value={formatNumberField(state.miscInitialCash)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                      if (Number.isFinite(n)) patch({ miscInitialCash: Math.max(0, n) });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <UpfrontCashScenarioPanel
+                state={state}
+                patch={patch}
+                loanAmount={loanAmount}
+                cashToClose={cashToClose}
+                hideEditHint
+              />
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <UpfrontCashScenarioPanel
-              state={state}
-              patch={patch}
-              loanAmount={loanAmount}
-              cashToClose={cashToClose}
-              hideEditHint
-            />
-          </Grid>
-        </Grid>
-      </AppSection>
-    </Stack>
+        ),
+      },
+    ],
+    [cashToClose, loanAmount, patch, state]
   );
+
+  return <WidgetBoard boardId="upfront" widgets={widgets} rowHeight={28} />;
 }

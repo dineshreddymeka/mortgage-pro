@@ -23,6 +23,7 @@ import { RentalExpenseComposition } from "../components/RentalExpenseComposition
 import { computeMonthlyPayment, type MonthlyBreakdown } from "../lib/mortgageMath";
 import { computeRentalAnalysis } from "../lib/rentalMath";
 import type { AppPersisted } from "../storage/mortgageState";
+import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -263,9 +264,12 @@ export function RentalTab({ state, patch }: RentalTabProps) {
   return (
     <Stack spacing={0.75}>
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-        Same scenario as <strong>Mortgage</strong> — financing + upfront sync instantly.
+        Same scenario as <strong>Mortgage</strong> — financing + upfront sync instantly. Drag widget
+        titles to rearrange · resize from the corner.
       </Typography>
 
+      <WidgetBoardFromPanels boardId="rental">
+      <WidgetPanel id="financing" title="Financing & property" description="Loan inputs" h={16}>
       <Accordion
         expanded={financingOpen}
         onChange={(_, expanded) => setFinancingOpen(expanded)}
@@ -323,7 +327,9 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </Box>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
 
+      <WidgetPanel id="upfront-cash" title="Upfront cash" description="Cash invested" h={16}>
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
@@ -543,7 +549,9 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </Stack>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
 
+      <WidgetPanel id="analysis" title="Metrics & pro forma" description="Cash flow · OpEx · tables" h={28}>
       <Box id="rental-metrics-row" className="pp-fade-in">
         <Stack direction="row" alignItems="baseline" justifyContent="space-between" gap={1} sx={{ mb: 0.65 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.02em" }}>
@@ -1101,6 +1109,8 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </TableContainer>
         </AccordionDetails>
       </Accordion>
+      </WidgetPanel>
+      </WidgetBoardFromPanels>
     </Stack>
   );
 }
