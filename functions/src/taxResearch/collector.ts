@@ -1,7 +1,8 @@
+import { productionTaxResearchCollector } from "../providers/taxResearch/collector.js";
 import type { TaxResearchCollector, TaxResearchCollectorInput, TaxResearchCollectorResult } from "./types.js";
 
 /**
- * Stub collector — subsequent work replaces this with real source adapters.
+ * Stub collector — kept for tests and explicit fallback wiring.
  * Returns a bounded pending snapshot without fetching external pages.
  */
 export const stubTaxResearchCollector: TaxResearchCollector = {
@@ -30,7 +31,7 @@ export const stubTaxResearchCollector: TaxResearchCollector = {
   },
 };
 
-let activeCollector: TaxResearchCollector = stubTaxResearchCollector;
+let activeCollector: TaxResearchCollector = productionTaxResearchCollector;
 
 export function getTaxResearchCollector(): TaxResearchCollector {
   return activeCollector;
@@ -41,5 +42,5 @@ export function setTaxResearchCollectorForTests(collector: TaxResearchCollector)
 }
 
 export function resetTaxResearchCollectorForTests(): void {
-  activeCollector = stubTaxResearchCollector;
+  activeCollector = productionTaxResearchCollector;
 }

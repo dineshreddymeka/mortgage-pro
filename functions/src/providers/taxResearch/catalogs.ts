@@ -1,0 +1,465 @@
+import type { FederalRegisterQuery, FederalResourceSpec, StatePortalSpec } from "./types.js";
+
+/** IRS and federal reference links verified server-side — mirrors client curated pack. */
+export const FEDERAL_IRS_RESOURCES: FederalResourceSpec[] = [
+  {
+    id: "irs-rental-hub",
+    topic: "rental_income",
+    title: "IRS — Rental Income and Expenses (Real Estate Tax Tips)",
+    url: "https://www.irs.gov/businesses/small-businesses-self-employed/rental-income-and-expenses-real-estate-tax-tips",
+    source: "IRS",
+    blurb: "Federal rental income, deductions, and recordkeeping overview.",
+  },
+  {
+    id: "irs-pub-530",
+    topic: "property_tax",
+    title: "IRS Pub 530 — Tax Information for Homeowners",
+    url: "https://www.irs.gov/publications/p530",
+    source: "IRS",
+    blurb: "Mortgage interest, SALT cap, and property tax deduction basics.",
+  },
+  {
+    id: "irs-pub-527",
+    topic: "rental_income",
+    title: "IRS Pub 527 — Residential Rental Property",
+    url: "https://www.irs.gov/publications/p527",
+    source: "IRS",
+    blurb: "Landlord income, expenses, and vacation-home rules.",
+  },
+  {
+    id: "irs-pub-946",
+    topic: "depreciation",
+    title: "IRS Pub 946 — How to Depreciate Property",
+    url: "https://www.irs.gov/publications/p946",
+    source: "IRS",
+    blurb: "MACRS, 27.5-year residential rental, and basis rules.",
+  },
+  {
+    id: "irs-qbi-faq",
+    topic: "qbi",
+    title: "IRS — Qualified Business Income Deduction (§199A)",
+    url: "https://www.irs.gov/newsroom/qualified-business-income-deduction",
+    source: "IRS",
+    blurb: "QBI eligibility, SSTB limits, and rental safe harbor.",
+  },
+  {
+    id: "irs-1031",
+    topic: "1031",
+    title: "IRS — Like-Kind Exchanges (1031) Real Estate",
+    url: "https://www.irs.gov/businesses/small-businesses-self-employed/like-kind-exchanges-real-estate-tax-tips",
+    source: "IRS",
+    blurb: "Deferral basics, boot, and replacement property requirements.",
+  },
+  {
+    id: "irs-pub-544",
+    topic: "capital_gains",
+    title: "IRS Pub 544 — Sales and Other Dispositions of Assets",
+    url: "https://www.irs.gov/publications/p544",
+    source: "IRS",
+    blurb: "Capital gains, Section 1250 recapture, installment sales.",
+  },
+  {
+    id: "irs-passive",
+    topic: "passive_loss",
+    title: "IRS Pub 925 — Passive Activity and At-Risk Rules",
+    url: "https://www.irs.gov/publications/p925",
+    source: "IRS",
+    blurb: "Passive loss limits and real estate professional rules.",
+  },
+  {
+    id: "irs-schedule-e",
+    topic: "rental_income",
+    title: "IRS — Schedule E (Supplemental Income and Loss)",
+    url: "https://www.irs.gov/forms-pubs/about-schedule-e-form-1040",
+    source: "IRS",
+    blurb: "Where rental activity is reported on Form 1040.",
+  },
+];
+
+export const FEDERAL_REGISTER_QUERIES: FederalRegisterQuery[] = [
+  { topic: "property_tax", term: "property tax deduction", perPage: 2 },
+  { topic: "rental_income", term: "rental income", perPage: 2 },
+  { topic: "1031", term: "like-kind exchange", perPage: 2 },
+  { topic: "qbi", term: "qualified business income", perPage: 2 },
+  { topic: "depreciation", term: "depreciation real property", perPage: 2 },
+  { topic: "passive_loss", term: "passive activity loss", perPage: 2 },
+];
+
+/** Official state revenue / property-tax portals (all states + DC). */
+export const STATE_PORTALS: Record<string, StatePortalSpec> = {
+  AL: {
+    title: "Alabama Department of Revenue — Property Tax",
+    url: "https://revenue.alabama.gov/property-tax/",
+    blurb: "State property tax administration and local assessor guidance.",
+  },
+  AK: {
+    title: "Alaska Department of Revenue — Tax Division",
+    url: "https://www.tax.alaska.gov/",
+    blurb: "Alaska has no statewide property tax; borough/city assessors set rates.",
+  },
+  AZ: {
+    title: "Arizona Department of Revenue — Property Tax",
+    url: "https://azdor.gov/property-tax",
+    blurb: "State oversight and links to county assessors.",
+  },
+  AR: {
+    title: "Arkansas DFA — Property Tax",
+    url: "https://www.dfa.arkansas.gov/office/taxes/property-tax/",
+    blurb: "State property tax info and county assessor references.",
+  },
+  CA: {
+    title: "California Franchise Tax Board — Rental Income",
+    url: "https://www.ftb.ca.gov/file/business/types/rental-income.html",
+    blurb: "State income tax on rental; pair with county assessor for property tax.",
+  },
+  CO: {
+    title: "Colorado — Property Tax Overview",
+    url: "https://tax.colorado.gov/property-tax",
+    blurb: "State property tax overview and county assessor links.",
+  },
+  CT: {
+    title: "Connecticut DRS — Property Tax",
+    url: "https://portal.ct.gov/DRS/Individual/Individual-Tax/Frequently-Asked-Questions/Property-Tax",
+    blurb: "Connecticut property tax guidance (levied locally).",
+  },
+  DE: {
+    title: "Delaware Division of Revenue",
+    url: "https://revenue.delaware.gov/",
+    blurb: "State taxes; property tax is county-level in Delaware.",
+  },
+  DC: {
+    title: "DC Office of Tax and Revenue — Real Property",
+    url: "https://otr.cfo.dc.gov/page/real-property-tax",
+    blurb: "District real property tax and assessments.",
+  },
+  FL: {
+    title: "Florida DOR — Property Tax",
+    url: "https://floridorevenue.com/property/Pages/default.aspx",
+    blurb: "State oversight; property appraised by county property appraisers.",
+  },
+  GA: {
+    title: "Georgia DOR — Property Tax",
+    url: "https://dor.georgia.gov/property-tax",
+    blurb: "State property tax administration and county tax commissioner links.",
+  },
+  HI: {
+    title: "Hawaii Department of Taxation",
+    url: "https://tax.hawaii.gov/",
+    blurb: "State taxes; real property tax is county-level in Hawaii.",
+  },
+  ID: {
+    title: "Idaho State Tax Commission — Property Tax",
+    url: "https://tax.idaho.gov/taxes/property-tax/",
+    blurb: "State property tax resources and county assessor directory.",
+  },
+  IL: {
+    title: "Illinois DOR — Property Tax",
+    url: "https://www2.illinois.gov/rev/research/taxinformation/property/Pages/default.aspx",
+    blurb: "State property tax overview; assessments are local.",
+  },
+  IN: {
+    title: "Indiana DOR — Property Tax",
+    url: "https://www.in.gov/dor/property-tax/",
+    blurb: "Indiana property tax basics and county assessor references.",
+  },
+  IA: {
+    title: "Iowa Department of Revenue — Property Tax",
+    url: "https://tax.iowa.gov/property-tax",
+    blurb: "State property tax and county assessor information.",
+  },
+  KS: {
+    title: "Kansas DOR — Property Valuation and Taxation",
+    url: "https://www.ksrevenue.gov/pr-tax.html",
+    blurb: "State property tax oversight and county appraiser links.",
+  },
+  KY: {
+    title: "Kentucky Department of Revenue — Property Tax",
+    url: "https://revenue.ky.gov/Property/Pages/default.aspx",
+    blurb: "State property tax and local PVA (assessor) offices.",
+  },
+  LA: {
+    title: "Louisiana Department of Revenue — Property Tax",
+    url: "https://revenue.louisiana.gov/PropertyTax",
+    blurb: "State property tax administration and parish assessors.",
+  },
+  ME: {
+    title: "Maine Revenue Services — Property Tax",
+    url: "https://www.maine.gov/revenue/propertytax",
+    blurb: "State property tax programs and municipal assessor info.",
+  },
+  MD: {
+    title: "Maryland SDAT — Property Tax",
+    url: "https://dat.maryland.gov/pages/propertyTax.aspx",
+    blurb: "State assessments and county/city property tax links.",
+  },
+  MA: {
+    title: "Massachusetts DOR — Property Tax",
+    url: "https://www.mass.gov/guides/property-tax",
+    blurb: "Massachusetts property tax overview (local assessors).",
+  },
+  MI: {
+    title: "Michigan Treasury — Property Tax",
+    url: "https://www.michigan.gov/taxes/property",
+    blurb: "State property tax and local assessor resources.",
+  },
+  MN: {
+    title: "Minnesota Department of Revenue — Property Tax",
+    url: "https://www.revenue.state.mn.us/property-tax",
+    blurb: "State property tax and county assessor information.",
+  },
+  MS: {
+    title: "Mississippi DOR — Ad Valorem Tax",
+    url: "https://www.dor.ms.gov/business/ad-valorem-tax",
+    blurb: "Mississippi property (ad valorem) tax and county tax assessors.",
+  },
+  MO: {
+    title: "Missouri DOR — Property Tax",
+    url: "https://dor.mo.gov/taxation/business/tax-types/property/",
+    blurb: "Missouri property tax and county assessor references.",
+  },
+  MT: {
+    title: "Montana DOR — Property Tax",
+    url: "https://mtrevenue.gov/taxes/property-taxes/",
+    blurb: "Montana property tax and county treasurer/assessor links.",
+  },
+  NE: {
+    title: "Nebraska DOR — Property Assessment and Taxation",
+    url: "https://revenue.nebraska.gov/businesses/property-assessment-and-taxation",
+    blurb: "Nebraska property tax and county assessor directory.",
+  },
+  NV: {
+    title: "Nevada Department of Taxation",
+    url: "https://tax.nv.gov/",
+    blurb: "No state property tax; county assessors set rates in Nevada.",
+  },
+  NH: {
+    title: "New Hampshire DRA — Property Tax",
+    url: "https://www.revenue.nh.gov/assessing/index.htm",
+    blurb: "NH property tax is local; state assessing standards and resources.",
+  },
+  NJ: {
+    title: "New Jersey Division of Taxation — Property Tax",
+    url: "https://www.nj.gov/treasury/taxation/propertytax.shtml",
+    blurb: "NJ property tax programs and municipal assessor info.",
+  },
+  NM: {
+    title: "New Mexico Taxation and Revenue — Property Tax",
+    url: "https://www.tax.newmexico.gov/businesses/property-tax-overview/",
+    blurb: "NM property tax and county assessor references.",
+  },
+  NY: {
+    title: "NY Dept of Taxation — Real Property",
+    url: "https://www.tax.ny.gov/research/property/default.htm",
+    blurb: "NY property tax and local assessor resources.",
+  },
+  NC: {
+    title: "North Carolina DOR — Property Tax",
+    url: "https://www.ncdor.gov/taxes-forms/property-tax",
+    blurb: "NC property tax and county assessor information.",
+  },
+  ND: {
+    title: "North Dakota Office of State Tax Commissioner — Property Tax",
+    url: "https://www.tax.nd.gov/business/property-tax",
+    blurb: "ND property tax and county director of tax equalization links.",
+  },
+  OH: {
+    title: "Ohio Department of Taxation — Property Tax",
+    url: "https://tax.ohio.gov/wps/portal/gov/tax/business/property-tax",
+    blurb: "Ohio property tax and county auditor/assessor resources.",
+  },
+  OK: {
+    title: "Oklahoma Tax Commission — Ad Valorem",
+    url: "https://oklahoma.gov/tax/businesses/ad-valorem.html",
+    blurb: "Oklahoma property tax and county assessor references.",
+  },
+  OR: {
+    title: "Oregon Department of Revenue — Property Tax",
+    url: "https://www.oregon.gov/dor/programs/property/pages/default.aspx",
+    blurb: "Oregon property tax and county assessor links.",
+  },
+  PA: {
+    title: "Pennsylvania DOR — Property Tax",
+    url: "https://www.revenue.pa.gov/TaxTypes/PropertyTax/Pages/default.aspx",
+    blurb: "PA property tax and county assessment offices.",
+  },
+  RI: {
+    title: "Rhode Island Division of Taxation — Property Tax",
+    url: "https://tax.ri.gov/tax-sections/property-tax",
+    blurb: "RI property tax relief programs and municipal assessors.",
+  },
+  SC: {
+    title: "South Carolina DOR — Property Tax",
+    url: "https://dor.sc.gov/tax/property",
+    blurb: "SC property tax and county assessor references.",
+  },
+  SD: {
+    title: "South Dakota DOR — Property Tax",
+    url: "https://dor.sd.gov/businesses/taxes/property-tax/",
+    blurb: "SD property tax and county director of equalization links.",
+  },
+  TN: {
+    title: "Tennessee DOR — Property Tax",
+    url: "https://www.tn.gov/revenue/taxes/property-tax.html",
+    blurb: "TN property tax and county assessor of property links.",
+  },
+  TX: {
+    title: "Texas Comptroller — Property Tax",
+    url: "https://comptroller.texas.gov/taxes/property-tax/",
+    blurb: "Texas property tax oversight and appraisal district directory.",
+  },
+  UT: {
+    title: "Utah State Tax Commission — Property Tax",
+    url: "https://tax.utah.gov/utah-taxes/property-tax",
+    blurb: "Utah property tax and county assessor references.",
+  },
+  VT: {
+    title: "Vermont Department of Taxes — Property Tax",
+    url: "https://tax.vermont.gov/property-tax",
+    blurb: "VT property tax and town listers (local assessors).",
+  },
+  VA: {
+    title: "Virginia Tax — Local Tax & Assessment",
+    url: "https://www.tax.virginia.gov/local-tax",
+    blurb: "Virginia local property tax and commissioner of revenue links.",
+  },
+  WA: {
+    title: "Washington DOR — Property Tax",
+    url: "https://dor.wa.gov/taxes-rates/property-tax",
+    blurb: "Washington property tax and county assessor directory.",
+  },
+  WV: {
+    title: "West Virginia State Tax Department — Property Tax",
+    url: "https://tax.wv.gov/Business/PropertyTax/Pages/PropertyTax.aspx",
+    blurb: "WV property tax and county assessor references.",
+  },
+  WI: {
+    title: "Wisconsin DOR — Property Tax",
+    url: "https://www.revenue.wi.gov/Pages/PropertyTax.aspx",
+    blurb: "Wisconsin property tax and local assessor resources.",
+  },
+  WY: {
+    title: "Wyoming Department of Revenue — Property Tax",
+    url: "https://wyo.gov/revenue/tax-division/property-tax",
+    blurb: "Wyoming property tax and county assessor links.",
+  },
+};
+
+/** Official county assessor / appraisal district directory pages by state. */
+export const COUNTY_DIRECTORIES: Partial<Record<string, StatePortalSpec>> = {
+  AL: {
+    title: "Alabama — County Revenue Commissioners",
+    url: "https://revenue.alabama.gov/property-tax/county-offices/",
+    blurb: "Find your county tax office and assessment contacts.",
+  },
+  AZ: {
+    title: "Arizona — County Assessors",
+    url: "https://azdor.gov/about/legal/county-assessors",
+    blurb: "Directory of Arizona county assessors.",
+  },
+  CA: {
+    title: "California BOE — County Assessor Contacts",
+    url: "https://www.boe.ca.gov/proptaxes/countycontacts.htm",
+    blurb: "Official county assessor contact list for property tax.",
+  },
+  CO: {
+    title: "Colorado — County Assessor Directory",
+    url: "https://dpt.colorado.gov/locality-search",
+    blurb: "Search Colorado county assessors and property records.",
+  },
+  FL: {
+    title: "Florida — County Property Appraisers",
+    url: "https://floridarevenue.com/property/pages/counties.aspx",
+    blurb: "Official list of Florida county property appraisers.",
+  },
+  GA: {
+    title: "Georgia — County Tax Commissioners",
+    url: "https://dor.georgia.gov/county-tax-commissioners",
+    blurb: "County tax commissioners and property tax administration.",
+  },
+  IL: {
+    title: "Illinois — Chief County Assessment Officers",
+    url: "https://www2.illinois.gov/rev/localgovernments/property/Pages/CCAO-List.aspx",
+    blurb: "County assessment office contacts in Illinois.",
+  },
+  IN: {
+    title: "Indiana — County Assessor Directory",
+    url: "https://www.in.gov/dor/property-tax/overview-for-taxpayers/county-assessors/",
+    blurb: "Indiana county assessor contact directory.",
+  },
+  MI: {
+    title: "Michigan — County Equalization Directors",
+    url: "https://www.michigan.gov/taxes/property/county-directory",
+    blurb: "Michigan county equalization and assessment contacts.",
+  },
+  NC: {
+    title: "North Carolina — County Tax Assessor Directory",
+    url: "https://www.ncdor.gov/local-government/local-government-services/county-tax-administrators",
+    blurb: "NC county tax administrators and assessors.",
+  },
+  NY: {
+    title: "New York — Local Assessors",
+    url: "https://www.tax.ny.gov/research/property/assessors.htm",
+    blurb: "NY local assessor and county real property tax services.",
+  },
+  OH: {
+    title: "Ohio — County Auditors",
+    url: "https://ohioauditor.gov/auditsearch/Search.aspx",
+    blurb: "Ohio county auditors (property tax and assessments).",
+  },
+  PA: {
+    title: "Pennsylvania — County Assessment Offices",
+    url: "https://www.revenue.pa.gov/GeneralTaxInformation/TaxTypes/Pages/PropertyTax-CountyDirectory.aspx",
+    blurb: "PA county assessment office directory.",
+  },
+  TX: {
+    title: "Texas — Appraisal District Directory",
+    url: "https://comptroller.texas.gov/taxes/property-tax/county-directory.php",
+    blurb: "Official Texas county appraisal district lookup.",
+  },
+  VA: {
+    title: "Virginia — Commissioner of Revenue Directory",
+    url: "https://www.tax.virginia.gov/local-tax-commissioner-revenue",
+    blurb: "Local commissioners of the revenue and assessors in Virginia.",
+  },
+  WA: {
+    title: "Washington — County Assessor Directory",
+    url: "https://dor.wa.gov/taxes-rates/property-tax/county-assessors",
+    blurb: "Washington county assessor contacts and records.",
+  },
+};
+
+export function normalizeStateCode(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const code = raw.trim().toUpperCase().slice(0, 2);
+  return code.length === 2 ? code : undefined;
+}
+
+export function buildCensusGeocoderUrl(oneLineAddress: string): string {
+  const params = new URLSearchParams({
+    address: oneLineAddress,
+    benchmark: "Public_AR_Current",
+    vintage: "Current_Current",
+    format: "json",
+  });
+  return `https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?${params.toString()}`;
+}
+
+export function buildFederalRegisterApiUrl(query: FederalRegisterQuery): string {
+  const params = new URLSearchParams({
+    "conditions[agencies][]": "internal-revenue-service",
+    "conditions[term]": query.term,
+    order: "newest",
+    per_page: String(query.perPage ?? 2),
+  });
+  return `https://www.federalregister.gov/api/v1/documents.json?${params.toString()}`;
+}
+
+export function normalizedUrlKey(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    return `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
