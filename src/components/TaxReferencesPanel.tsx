@@ -414,7 +414,7 @@ export function TaxReferencesPanel({
   onOpenFullResearch,
   activePropertyId = null,
 }: TaxReferencesPanelProps) {
-  const taxIssues = research.taxIssues ?? [];
+  const taxIssues = useMemo(() => research.taxIssues ?? [], [research.taxIssues]);
   const externalSnapshot = research.externalTaxResearch;
   const [view, setView] = useState<ViewTab>("references");
   const [search, setSearch] = useState("");

@@ -99,7 +99,7 @@ describe("persistExternalTaxResearchSnapshot", () => {
 
     expect(runTransaction).toHaveBeenCalledTimes(1);
     expect(txUpdate).toHaveBeenCalledTimes(1);
-    const [_, payload] = txUpdate.mock.calls[0] as [unknown, Record<string, unknown>];
+    const payload = (txUpdate.mock.calls[0] as [unknown, Record<string, unknown>])[1];
     expect(payload).not.toHaveProperty("collaboration");
     expect(payload.scenario).toMatchObject({
       propertyAddress: "123 Main St",

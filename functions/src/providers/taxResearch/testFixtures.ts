@@ -10,10 +10,14 @@ function loadFixture(name: string): string {
 }
 
 function jsonResponse(body: string, status = 200, finalUrl?: string): Response {
-  return new Response(body, {
+  const response = new Response(body, {
     status,
     headers: { "content-type": "application/json; charset=utf-8" },
   });
+  if (finalUrl) {
+    Object.defineProperty(response, "url", { value: finalUrl });
+  }
+  return response;
 }
 
 function htmlResponse(body: string, status = 200, finalUrl?: string): Response {
