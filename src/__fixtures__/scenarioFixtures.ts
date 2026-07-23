@@ -169,6 +169,17 @@ export const fixtureAllKnownFields: AppPersisted = {
         addedAt: "2026-01-15T12:00:00.000Z",
       },
     ],
+    taxIssues: [
+      {
+        id: "tax-1",
+        topic: "depreciation",
+        title: "IRS Pub 946",
+        url: "https://www.irs.gov/publications/p946",
+        source: "IRS",
+        notes: "27.5-year rental depreciation reference",
+        addedAt: "2026-01-15T12:00:00.000Z",
+      },
+    ],
   },
 };
 

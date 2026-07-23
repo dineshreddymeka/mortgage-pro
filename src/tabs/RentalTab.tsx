@@ -190,10 +190,11 @@ export type RentalTabProps = {
   onGoToFinancing?: () => void;
   /** @deprecated Inline editors replace tab jumps; kept for call-site compatibility. */
   onGoToUpfront?: () => void;
+  onGoToResearch?: () => void;
 };
 
 /** Category: Rental — income, OpEx, pro forma. Shared financing/upfront fields edit inline. */
-export function RentalTab({ state, patch }: RentalTabProps) {
+export function RentalTab({ state, patch, onGoToResearch }: RentalTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
   const incomeMode = derived.rentalIncome.mode;
   const incomeLocked = incomeMode !== "simple";
@@ -819,7 +820,14 @@ export function RentalTab({ state, patch }: RentalTabProps) {
           </Typography>
         }
       >
-        <TaxAssumptionsPanel state={state} patch={patch} derivedTax={derived.tax} variant="rental" />
+        <TaxAssumptionsPanel
+          state={state}
+          patch={patch}
+          derivedTax={derived.tax}
+          variant="rental"
+          onGoToResearch={onGoToResearch}
+          taxIssueCount={state.research?.taxIssues?.length ?? 0}
+        />
       </RentalPanelCard>
 
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>

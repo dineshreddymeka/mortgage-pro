@@ -5,7 +5,7 @@ describe("parseResearchNotes", () => {
   it("returns undefined for empty payloads", () => {
     expect(parseResearchNotes(undefined)).toBeUndefined();
     expect(parseResearchNotes({})).toBeUndefined();
-    expect(parseResearchNotes({ notes: "   ", links: [], comps: [], docs: [] })).toBeUndefined();
+    expect(parseResearchNotes({ notes: "   ", links: [], comps: [], docs: [], taxIssues: [] })).toBeUndefined();
   });
 
   it("keeps notes, links, comps, and docs with safe trimming", () => {
@@ -43,5 +43,36 @@ describe("parseResearchNotes", () => {
     });
     expect(parsed?.links).toHaveLength(1);
     expect(parsed?.comps).toHaveLength(1);
+  });
+
+  it("keeps taxIssues with topic normalization", () => {
+    const parsed = parseResearchNotes({
+      taxIssues: [
+        {
+          id: "t1",
+          topic: "depreciation",
+          title: " Pub 946 ",
+          url: "https://www.irs.gov/publications/p946",
+          source: " IRS ",
+          notes: " reference ",
+        },
+        { id: "bad", topic: "nope", title: "" },
+      ],
+    });
+    expect(parsed?.taxIssues).toHaveLength(1);
+    expect(parsed?.taxIssues?.[0]).toMatchObject({
+      id: "t1",
+      topic: "depreciation",
+      title: "Pub 946",
+      source: "IRS",
+      notes: "reference",
+    });
+  });
+
+  it("defaults unknown tax topic to other", () => {
+    const parsed = parseResearchNotes({
+      taxIssues: [{ id: "t2", topic: "invalid-topic", title: "Custom note" }],
+    });
+    expect(parsed?.taxIssues?.[0]?.topic).toBe("other");
   });
 });

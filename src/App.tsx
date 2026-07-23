@@ -581,6 +581,7 @@ export default function App() {
                 patch={patch}
                 onGoToFinancing={() => setTab(TAB_INDEX.financing)}
                 onGoToUpfront={() => setTab(TAB_INDEX.upfront)}
+                onGoToResearch={() => setTab(TAB_INDEX.research)}
               />
             ) : null}
           </Box>
@@ -597,6 +598,7 @@ export default function App() {
                 onGoToFinancing={() => setTab(TAB_INDEX.financing)}
                 onGoToUpfront={() => setTab(TAB_INDEX.upfront)}
                 onGoToRental={() => setTab(TAB_INDEX.rental)}
+                onGoToResearch={() => setTab(TAB_INDEX.research)}
               />
             ) : null}
           </Box>

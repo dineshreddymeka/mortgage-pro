@@ -223,10 +223,11 @@ export type WhenToSellTabProps = {
   onGoToFinancing?: () => void;
   onGoToUpfront?: () => void;
   onGoToRental?: () => void;
+  onGoToResearch?: () => void;
 };
 
 /** Category: Exit — sale assumptions + gain. Shared inputs editable inline in workspace accordions. */
-export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
+export function WhenToSellTab({ state, patch, onGoToResearch }: WhenToSellTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
   const incomeLocked = derived.rentalIncome.mode !== "simple";
   const loanAmount = derived.loanAmount;
@@ -865,7 +866,14 @@ export function WhenToSellTab({ state, patch }: WhenToSellTabProps) {
       </WidgetPanel>
 
       <WidgetPanel id="tax-modeling" title="Tax & after-tax exit" description="Optional sale tax · 1031 · not tax advice" h={16}>
-        <TaxAssumptionsPanel state={state} patch={patch} derivedTax={derived.tax} variant="exit" />
+        <TaxAssumptionsPanel
+          state={state}
+          patch={patch}
+          derivedTax={derived.tax}
+          variant="exit"
+          onGoToResearch={onGoToResearch}
+          taxIssueCount={state.research?.taxIssues?.length ?? 0}
+        />
       </WidgetPanel>
 
       <WidgetPanel id="total-gain" title="Total gain by exit year" description="Sale + rent − upfront" h={20}>

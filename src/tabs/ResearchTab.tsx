@@ -3,8 +3,10 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {
+  Alert,
   Box,
   Button,
+  Chip,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -12,16 +14,27 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  buildTaxResourcePack,
+  filterTaxResources,
+  relevantTaxTopics,
+  type TaxResourceEntry,
+} from "../lib/taxResourcePack";
 import {
   newResearchId,
   parseResearchNotes,
   researchOrEmpty,
+  taxIssueFromCurated,
+  taxIssueTopicLabel,
+  TAX_ISSUE_TOPICS,
   type ResearchCompPersisted,
   type ResearchDocPersisted,
   type ResearchLinkKind,
   type ResearchLinkPersisted,
   type ResearchPersisted,
+  type TaxIssuePersisted,
+  type TaxIssueTopic,
 } from "../storage/researchNotes";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoard } from "../widgets/WidgetBoard";
@@ -77,6 +90,264 @@ function NotesPanel({
       onChange={(e) => onChange({ ...research, notes: e.target.value })}
       helperText="Saved with this house scenario (local + cloud)."
     />
+  );
+}
+
+function TaxIssuesPanel({
+  state,
+  research,
+  onChange,
+}: {
+  state: AppPersisted;
+  research: ResearchPersisted;
+  onChange: (next: ResearchPersisted) => void;
+}) {
+  const taxIssues = research.taxIssues ?? [];
+  const [topicFilter, setTopicFilter] = useState<TaxIssueTopic | "all">("all");
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [notes, setNotes] = useState("");
+  const [source, setSource] = useState("");
+  const [manualTopic, setManualTopic] = useState<TaxIssueTopic>("other");
+
+  const curatedPack = useMemo(() => buildTaxResourcePack(state), [state.propertyState]);
+  const highlighted = useMemo(() => relevantTaxTopics(state), [state]);
+  const filteredCurated = useMemo(
+    () => filterTaxResources(curatedPack, topicFilter),
+    [curatedPack, topicFilter]
+  );
+  const filteredSaved = useMemo(
+    () => (topicFilter === "all" ? taxIssues : taxIssues.filter((t) => t.topic === topicFilter)),
+    [taxIssues, topicFilter]
+  );
+
+  function addCurated(entry: TaxResourceEntry) {
+    const exists = taxIssues.some((t) => t.url === entry.url && t.title === entry.title);
+    if (exists) return;
+    onChange({
+      ...research,
+      taxIssues: [taxIssueFromCurated(entry), ...taxIssues].slice(0, 50),
+    });
+  }
+
+  function addManual() {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const href = url.trim() ? safeHref(url) : null;
+    const row: TaxIssuePersisted = {
+      id: newResearchId(),
+      topic: manualTopic,
+      title: trimmed.slice(0, 200),
+      addedAt: new Date().toISOString(),
+      ...(href ? { url: href } : {}),
+      ...(notes.trim() ? { notes: notes.trim().slice(0, 2000) } : {}),
+      ...(source.trim() ? { source: source.trim().slice(0, 80) } : {}),
+    };
+    onChange({ ...research, taxIssues: [row, ...taxIssues].slice(0, 50) });
+    setTitle("");
+    setUrl("");
+    setNotes("");
+    setSource("");
+  }
+
+  return (
+    <Stack spacing={1.5}>
+      <Alert severity="info" variant="outlined" sx={{ py: 0.35 }}>
+        <Typography variant="caption" sx={{ lineHeight: 1.4, display: "block" }}>
+          Collect tax references from IRS, state, and county sites — research only, not tax advice.
+          Property tax <strong>amounts</strong> use External estimates on the Property tab (confirm
+          before apply).
+        </Typography>
+      </Alert>
+
+      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+        <Chip
+          size="small"
+          label="All topics"
+          color={topicFilter === "all" ? "secondary" : "default"}
+          variant={topicFilter === "all" ? "filled" : "outlined"}
+          onClick={() => setTopicFilter("all")}
+        />
+        {TAX_ISSUE_TOPICS.map((topic) => (
+          <Chip
+            key={topic}
+            size="small"
+            label={taxIssueTopicLabel(topic)}
+            color={topicFilter === topic ? "secondary" : highlighted.has(topic) ? "primary" : "default"}
+            variant={topicFilter === topic ? "filled" : "outlined"}
+            onClick={() => setTopicFilter(topic)}
+          />
+        ))}
+      </Stack>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
+          Curated references
+        </Typography>
+        <Stack spacing={0.75}>
+          {filteredCurated.map((entry) => {
+            const saved = taxIssues.some((t) => t.url === entry.url);
+            return (
+              <Stack
+                key={entry.id}
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1}
+                alignItems={{ sm: "center" }}
+                sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography variant="body2" fontWeight={600}>
+                      {entry.title}
+                    </Typography>
+                    <Chip size="small" label={taxIssueTopicLabel(entry.topic)} variant="outlined" />
+                    {highlighted.has(entry.topic) ? (
+                      <Chip size="small" label="Relevant" color="primary" variant="outlined" />
+                    ) : null}
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {entry.source} · {entry.blurb}
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={0.5}>
+                  <IconButton
+                    size="small"
+                    aria-label="Open reference"
+                    component="a"
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={saved}
+                    onClick={() => addCurated(entry)}
+                  >
+                    {saved ? "Saved" : "Add to my list"}
+                  </Button>
+                </Stack>
+              </Stack>
+            );
+          })}
+        </Stack>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
+          My tax references ({taxIssues.length})
+        </Typography>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+          <TextField
+            size="small"
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            sx={{ flex: 1.2, minWidth: 140 }}
+          />
+          <TextField
+            size="small"
+            select
+            label="Topic"
+            value={manualTopic}
+            onChange={(e) => setManualTopic(e.target.value as TaxIssueTopic)}
+            sx={{ minWidth: 140 }}
+          >
+            {TAX_ISSUE_TOPICS.map((t) => (
+              <MenuItem key={t} value={t}>
+                {taxIssueTopicLabel(t)}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            size="small"
+            label="URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            sx={{ flex: 1.4, minWidth: 160 }}
+          />
+          <TextField
+            size="small"
+            label="Source"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="IRS, CPA…"
+            sx={{ width: { xs: "100%", sm: 100 } }}
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<AddOutlinedIcon />}
+            disabled={!title.trim()}
+            onClick={addManual}
+          >
+            Add
+          </Button>
+        </Stack>
+        <TextField
+          size="small"
+          label="Notes (optional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          fullWidth
+          sx={{ mb: 1 }}
+        />
+        {filteredSaved.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No saved tax references yet — add from the curated pack or paste your own links.
+          </Typography>
+        ) : (
+          <Stack spacing={0.75}>
+            {filteredSaved.map((issue) => (
+              <Stack
+                key={issue.id}
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {issue.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {taxIssueTopicLabel(issue.topic)}
+                    {issue.source ? ` · ${issue.source}` : ""}
+                    {issue.notes ? ` · ${issue.notes}` : ""}
+                  </Typography>
+                </Box>
+                {issue.url && safeHref(issue.url) ? (
+                  <IconButton
+                    size="small"
+                    aria-label="Open tax reference"
+                    component="a"
+                    href={safeHref(issue.url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                ) : null}
+                <IconButton
+                  size="small"
+                  aria-label="Remove tax reference"
+                  onClick={() =>
+                    onChange({
+                      ...research,
+                      taxIssues: taxIssues.filter((t) => t.id !== issue.id),
+                    })
+                  }
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+            ))}
+          </Stack>
+        )}
+      </Box>
+    </Stack>
   );
 }
 
@@ -459,31 +730,38 @@ export function ResearchTab({ state, patch }: ResearchTabProps) {
 
   const widgets = [
     {
+      id: "tax-issues",
+      title: "Tax issues & references",
+      description: "IRS · state · saved links",
+      defaultLayout: { x: 0, y: 0, w: 12, h: 18, minW: 4, minH: 10 },
+      content: <TaxIssuesPanel state={state} research={research} onChange={onChange} />,
+    },
+    {
       id: "notes",
       title: "Notes",
       description: "Freeform diligence for this house",
-      defaultLayout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 6 },
+      defaultLayout: { x: 0, y: 18, w: 12, h: 10, minW: 4, minH: 6 },
       content: <NotesPanel research={research} onChange={onChange} />,
     },
     {
       id: "links",
       title: "Links",
       description: "Listings · records · bookmarks",
-      defaultLayout: { x: 0, y: 10, w: 12, h: 12, minW: 4, minH: 6 },
+      defaultLayout: { x: 0, y: 28, w: 12, h: 12, minW: 4, minH: 6 },
       content: <LinksPanel research={research} onChange={onChange} />,
     },
     {
       id: "comps",
       title: "Comps",
       description: "Manual comparable sales",
-      defaultLayout: { x: 0, y: 22, w: 12, h: 12, minW: 4, minH: 6 },
+      defaultLayout: { x: 0, y: 40, w: 12, h: 12, minW: 4, minH: 6 },
       content: <CompsPanel research={research} onChange={onChange} />,
     },
     {
       id: "docs",
       title: "Documents",
       description: "URL references only",
-      defaultLayout: { x: 0, y: 34, w: 12, h: 10, minW: 4, minH: 5 },
+      defaultLayout: { x: 0, y: 52, w: 12, h: 10, minW: 4, minH: 5 },
       content: <DocsPanel research={research} onChange={onChange} />,
     },
   ];

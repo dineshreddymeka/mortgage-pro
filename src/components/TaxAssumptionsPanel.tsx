@@ -1,7 +1,9 @@
 import {
   Alert,
   Box,
+  Button,
   Checkbox,
+  Chip,
   FormControlLabel,
   InputAdornment,
   Stack,
@@ -72,6 +74,9 @@ export type TaxAssumptionsPanelProps = {
   derivedTax: DerivedTaxMetrics | null;
   /** Rental = operating focus; exit = sale / 1031 focus. */
   variant: "rental" | "exit";
+  /** Open Research tab tax collection widget. */
+  onGoToResearch?: () => void;
+  taxIssueCount?: number;
 };
 
 function TaxDisclaimer() {
@@ -199,7 +204,14 @@ function ExitDerivedSummary({ tax }: { tax: DerivedTaxMetrics }) {
 }
 
 /** Optional tax assumptions + derived summary (Rental / Exit). Off until enabled. */
-export function TaxAssumptionsPanel({ state, patch, derivedTax, variant }: TaxAssumptionsPanelProps) {
+export function TaxAssumptionsPanel({
+  state,
+  patch,
+  derivedTax,
+  variant,
+  onGoToResearch,
+  taxIssueCount = 0,
+}: TaxAssumptionsPanelProps) {
   const enabled = state.tax?.enabled === true;
   const landPercent = state.tax?.landPercent ?? 20;
   const improvementsBasis = state.tax?.improvementsBasis ?? 0;
@@ -213,6 +225,19 @@ export function TaxAssumptionsPanel({ state, patch, derivedTax, variant }: TaxAs
   return (
     <Stack spacing={0.85}>
       <TaxDisclaimer />
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+        {onGoToResearch ? (
+          <Button size="small" variant="outlined" onClick={onGoToResearch}>
+            Collect tax references
+            {taxIssueCount > 0 ? (
+              <Chip size="small" label={taxIssueCount} color="secondary" sx={{ ml: 0.75 }} />
+            ) : null}
+          </Button>
+        ) : null}
+        <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+          Property tax amounts: use External estimates on Property (confirm before apply).
+        </Typography>
+      </Stack>
       <FormControlLabel
         control={
           <Switch

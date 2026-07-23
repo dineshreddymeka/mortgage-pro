@@ -1,6 +1,17 @@
-/** Diligence notes, links, comps, and doc refs — optional scenario block. */
+/** Diligence notes, links, comps, doc refs, and tax issue references — optional scenario block. */
 
 export type ResearchLinkKind = "listing" | "comp" | "doc" | "other";
+
+export type TaxIssueTopic =
+  | "property_tax"
+  | "rental_income"
+  | "depreciation"
+  | "qbi"
+  | "1031"
+  | "capital_gains"
+  | "passive_loss"
+  | "state_local"
+  | "other";
 
 export type ResearchLinkPersisted = {
   id: string;
@@ -28,11 +39,22 @@ export type ResearchDocPersisted = {
   addedAt: string;
 };
 
+export type TaxIssuePersisted = {
+  id: string;
+  topic: TaxIssueTopic;
+  title: string;
+  url?: string;
+  notes?: string;
+  source?: string;
+  addedAt: string;
+};
+
 export type ResearchPersisted = {
   notes?: string;
   links?: ResearchLinkPersisted[];
   comps?: ResearchCompPersisted[];
   docs?: ResearchDocPersisted[];
+  taxIssues?: TaxIssuePersisted[];
 };
 
 const MAX_NOTES = 20_000;
@@ -42,6 +64,35 @@ const MAX_URL = 2_000;
 const MAX_NOTE = 2_000;
 
 const LINK_KINDS = new Set<ResearchLinkKind>(["listing", "comp", "doc", "other"]);
+
+export const TAX_ISSUE_TOPICS = [
+  "property_tax",
+  "rental_income",
+  "depreciation",
+  "qbi",
+  "1031",
+  "capital_gains",
+  "passive_loss",
+  "state_local",
+  "other",
+] as const satisfies readonly TaxIssueTopic[];
+
+const TAX_TOPIC_SET = new Set<TaxIssueTopic>(TAX_ISSUE_TOPICS);
+
+export function taxIssueTopicLabel(topic: TaxIssueTopic): string {
+  const labels: Record<TaxIssueTopic, string> = {
+    property_tax: "Property tax",
+    rental_income: "Rental income",
+    depreciation: "Depreciation",
+    qbi: "QBI (§199A)",
+    "1031": "1031 exchange",
+    capital_gains: "Capital gains",
+    passive_loss: "Passive loss",
+    state_local: "State / local",
+    other: "Other",
+  };
+  return labels[topic];
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -128,6 +179,28 @@ function parseDoc(raw: unknown): ResearchDocPersisted | null {
   };
 }
 
+function parseTaxTopic(raw: unknown): TaxIssueTopic {
+  const t = asTrimmedString(raw, 30);
+  if (t && TAX_TOPIC_SET.has(t as TaxIssueTopic)) return t as TaxIssueTopic;
+  return "other";
+}
+
+function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
+  if (!isPlainObject(raw)) return null;
+  const id = asTrimmedString(raw.id, 80) ?? newResearchId();
+  const title = asTrimmedString(raw.title, MAX_TEXT);
+  if (!title) return null;
+  return {
+    id,
+    topic: parseTaxTopic(raw.topic),
+    title,
+    ...(asTrimmedString(raw.url, MAX_URL) ? { url: asTrimmedString(raw.url, MAX_URL) } : {}),
+    ...(asTrimmedString(raw.notes, MAX_NOTE) ? { notes: asTrimmedString(raw.notes, MAX_NOTE) } : {}),
+    ...(asTrimmedString(raw.source, 80) ? { source: asTrimmedString(raw.source, 80) } : {}),
+    addedAt: asIsoDate(raw.addedAt),
+  };
+}
+
 /** Normalize optional research block; omit when empty. */
 export function parseResearchNotes(raw: unknown): ResearchPersisted | undefined {
   if (raw === null || raw === undefined) return undefined;
@@ -143,18 +216,33 @@ export function parseResearchNotes(raw: unknown): ResearchPersisted | undefined 
   const docs = Array.isArray(raw.docs)
     ? raw.docs.map(parseDoc).filter((x): x is ResearchDocPersisted => x != null).slice(0, MAX_ITEMS)
     : [];
+  const taxIssues = Array.isArray(raw.taxIssues)
+    ? raw.taxIssues
+        .map(parseTaxIssue)
+        .filter((x): x is TaxIssuePersisted => x != null)
+        .slice(0, MAX_ITEMS)
+    : [];
 
-  if (!notes && links.length === 0 && comps.length === 0 && docs.length === 0) return undefined;
+  if (
+    !notes &&
+    links.length === 0 &&
+    comps.length === 0 &&
+    docs.length === 0 &&
+    taxIssues.length === 0
+  ) {
+    return undefined;
+  }
   return {
     ...(notes ? { notes } : {}),
     ...(links.length ? { links } : {}),
     ...(comps.length ? { comps } : {}),
     ...(docs.length ? { docs } : {}),
+    ...(taxIssues.length ? { taxIssues } : {}),
   };
 }
 
 export function emptyResearchNotes(): ResearchPersisted {
-  return { notes: "", links: [], comps: [], docs: [] };
+  return { notes: "", links: [], comps: [], docs: [], taxIssues: [] };
 }
 
 export function researchOrEmpty(research: ResearchPersisted | undefined): ResearchPersisted {
@@ -163,5 +251,25 @@ export function researchOrEmpty(research: ResearchPersisted | undefined): Resear
     links: research?.links ?? [],
     comps: research?.comps ?? [],
     docs: research?.docs ?? [],
+    taxIssues: research?.taxIssues ?? [],
+  };
+}
+
+/** Convert a curated pack entry into a persisted tax issue row. */
+export function taxIssueFromCurated(entry: {
+  topic: TaxIssueTopic;
+  title: string;
+  url: string;
+  source: string;
+  blurb?: string;
+}): TaxIssuePersisted {
+  return {
+    id: newResearchId(),
+    topic: entry.topic,
+    title: entry.title,
+    url: entry.url,
+    source: entry.source,
+    ...(entry.blurb ? { notes: entry.blurb.slice(0, MAX_NOTE) } : {}),
+    addedAt: new Date().toISOString(),
   };
 }
