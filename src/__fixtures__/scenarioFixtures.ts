@@ -181,6 +181,37 @@ export const fixtureAllKnownFields: AppPersisted = {
         addedAt: "2026-01-15T12:00:00.000Z",
       },
     ],
+    externalTaxResearch: {
+      collectionStatus: "complete",
+      addressFingerprint: "sha256:94107|123-main-st|place-abc",
+      collectedAt: "2026-01-20T18:30:00.000Z",
+      sourceProvenance: {
+        provider: "tax-resource-pack",
+        providerVersion: "1.0.0",
+        bundleId: "ca-san-francisco-county",
+        sources: [
+          "https://www.irs.gov/publications/p946",
+          "https://www.cdtfa.ca.gov/taxes-and-fees/property-tax.htm",
+        ],
+      },
+      normalizedReferences: [
+        {
+          id: "ext-ref-1",
+          topic: "property_tax",
+          jurisdiction: "state",
+          title: "California Property Tax Overview",
+          url: "https://www.cdtfa.ca.gov/taxes-and-fees/property-tax.htm",
+          source: "CDTFA",
+          externalRefId: "ca-property-tax",
+          normalizedKey: "state:ca:property_tax",
+          excerpt: "Overview of California property tax assessment and collection.",
+          publishedAt: "2024-06-01T00:00:00.000Z",
+          retrievedAt: "2026-01-20T18:30:00.000Z",
+          linkStatus: "ok",
+        },
+      ],
+      errors: [],
+    },
   },
 };
 

@@ -115,6 +115,46 @@ describe("validatePropertyProScenario", () => {
     expect(result.repairedScenario).toBeUndefined();
   });
 
+  it("validates external tax research separately from manual taxIssues", () => {
+    const result = validatePropertyProScenario({
+      ...fixtureV2Full,
+      research: {
+        taxIssues: "not-an-array",
+        externalTaxResearch: {
+          collectionStatus: "done",
+          addressFingerprint: "",
+          normalizedReferences: [
+            {
+              title: "",
+              topic: "bad-topic",
+              linkStatus: "dead",
+              publishedAt: "not-a-date",
+            },
+          ],
+          errors: [{ code: "", message: "" }, "not-an-object"],
+          sourceProvenance: { sources: "not-an-array" },
+        },
+      },
+    });
+
+    expect(result.issues.map((issue) => issue.path)).toEqual(
+      expect.arrayContaining([
+        "scenario.research.taxIssues",
+        "scenario.research.externalTaxResearch.collectionStatus",
+        "scenario.research.externalTaxResearch.addressFingerprint",
+        "scenario.research.externalTaxResearch.collectedAt",
+        "scenario.research.externalTaxResearch.sourceProvenance.sources",
+        "scenario.research.externalTaxResearch.normalizedReferences[0].title",
+        "scenario.research.externalTaxResearch.normalizedReferences[0].topic",
+        "scenario.research.externalTaxResearch.normalizedReferences[0].linkStatus",
+        "scenario.research.externalTaxResearch.normalizedReferences[0].publishedAt",
+        "scenario.research.externalTaxResearch.errors[0].code",
+        "scenario.research.externalTaxResearch.errors[0].message",
+        "scenario.research.externalTaxResearch.errors[1]",
+      ])
+    );
+  });
+
   it("checks nested refi, payment, loan, tax, STR, strategy, and target blocks", () => {
     const result = validatePropertyProScenario({
       ...fixtureV2Full,

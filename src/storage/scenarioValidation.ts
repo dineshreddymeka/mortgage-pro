@@ -6,6 +6,11 @@ import {
   type AppPersisted,
 } from "./mortgageState";
 import {
+  EXTERNAL_TAX_RESEARCH_LINK_STATUSES,
+  EXTERNAL_TAX_RESEARCH_STATUSES,
+  TAX_ISSUE_TOPICS,
+} from "./researchNotes";
+import {
   HOUSE_TREE_VERSION,
   hasHouseCategoryNodes,
   resolveScenarioFromHouseDoc,
@@ -199,6 +204,35 @@ Object.assign(SCENARIO_FUTURE_SHAPE, {
     taxIssues: [
       futureShape(["id", "topic", "title", "url", "notes", "source", "jurisdiction", "curatedRefId", "addedAt"]),
     ],
+    externalTaxResearch: {
+      collectionStatus: true,
+      addressFingerprint: true,
+      collectedAt: true,
+      sourceProvenance: futureShape([
+        "provider",
+        "providerVersion",
+        "bundleId",
+        "requestId",
+        "sources",
+      ]),
+      normalizedReferences: [
+        futureShape([
+          "id",
+          "topic",
+          "title",
+          "url",
+          "source",
+          "jurisdiction",
+          "externalRefId",
+          "normalizedKey",
+          "excerpt",
+          "publishedAt",
+          "retrievedAt",
+          "linkStatus",
+        ]),
+      ],
+      errors: [futureShape(["code", "message", "source", "at"])],
+    },
   },
 });
 
@@ -1371,6 +1405,174 @@ function validateDealStrategy(scenario: PlainObject, collector: IssueCollector):
   }
 }
 
+const TAX_JURISDICTIONS = ["federal", "state", "county"] as const;
+
+function validateResearch(scenario: PlainObject, collector: IssueCollector): void {
+  const research = readObject(scenario, "research", "scenario.research", collector);
+  if (!research) return;
+
+  if (research.taxIssues !== undefined && !Array.isArray(research.taxIssues)) {
+    collector.add(
+      "error",
+      "ARRAY_EXPECTED",
+      "scenario.research.taxIssues",
+      "Expected an array of manual tax issue references.",
+      "automatic"
+    );
+  }
+
+  const external = readObject(
+    research,
+    "externalTaxResearch",
+    "scenario.research.externalTaxResearch",
+    collector
+  );
+  if (!external) return;
+
+  checkEnum(
+    external,
+    "collectionStatus",
+    EXTERNAL_TAX_RESEARCH_STATUSES,
+    "scenario.research.externalTaxResearch.collectionStatus",
+    collector,
+    true
+  );
+  readString(
+    external,
+    "addressFingerprint",
+    "scenario.research.externalTaxResearch.addressFingerprint",
+    collector,
+    true
+  );
+  const fingerprint = external.addressFingerprint;
+  if (typeof fingerprint === "string" && fingerprint.trim() === "") {
+    collector.add(
+      "error",
+      "FIELD_EMPTY",
+      "scenario.research.externalTaxResearch.addressFingerprint",
+      "Address fingerprint cannot be empty.",
+      "automatic"
+    );
+  }
+  if (external.collectedAt !== undefined && external.collectedAt !== null && external.collectedAt !== "") {
+    if (typeof external.collectedAt !== "string" || !Number.isFinite(Date.parse(external.collectedAt))) {
+      collector.add(
+        "error",
+        "FIELD_TYPE",
+        "scenario.research.externalTaxResearch.collectedAt",
+        "Expected an ISO-8601 timestamp.",
+        "automatic"
+      );
+    }
+  } else {
+    collector.add(
+      "warning",
+      "FIELD_DEFAULTED",
+      "scenario.research.externalTaxResearch.collectedAt",
+      "Missing collectedAt will default to the current time during normalization.",
+      "automatic"
+    );
+  }
+
+  const provenance = readObject(
+    external,
+    "sourceProvenance",
+    "scenario.research.externalTaxResearch.sourceProvenance",
+    collector
+  );
+  if (provenance?.sources !== undefined && !Array.isArray(provenance.sources)) {
+    collector.add(
+      "error",
+      "ARRAY_EXPECTED",
+      "scenario.research.externalTaxResearch.sourceProvenance.sources",
+      "Expected an array of source labels or URLs.",
+      "automatic"
+    );
+  }
+
+  if (external.normalizedReferences !== undefined && !Array.isArray(external.normalizedReferences)) {
+    collector.add(
+      "error",
+      "ARRAY_EXPECTED",
+      "scenario.research.externalTaxResearch.normalizedReferences",
+      "Expected an array of normalized tax references.",
+      "automatic"
+    );
+  } else if (Array.isArray(external.normalizedReferences)) {
+    external.normalizedReferences.forEach((item, index) => {
+      const path = `scenario.research.externalTaxResearch.normalizedReferences[${index}]`;
+      if (!isPlainObject(item)) {
+        collector.add("error", "OBJECT_EXPECTED", path, "Expected a reference object.", "automatic");
+        return;
+      }
+      readString(item, "title", `${path}.title`, collector, true);
+      if (typeof item.title === "string" && item.title.trim() === "") {
+        collector.add(
+          "error",
+          "FIELD_EMPTY",
+          `${path}.title`,
+          "Reference title cannot be empty.",
+          "automatic"
+        );
+      }
+      checkEnum(item, "topic", TAX_ISSUE_TOPICS, `${path}.topic`, collector);
+      checkEnum(item, "jurisdiction", TAX_JURISDICTIONS, `${path}.jurisdiction`, collector);
+      checkEnum(item, "linkStatus", EXTERNAL_TAX_RESEARCH_LINK_STATUSES, `${path}.linkStatus`, collector);
+      for (const dateKey of ["publishedAt", "retrievedAt"] as const) {
+        const raw = item[dateKey];
+        if (raw === undefined || raw === null || raw === "") continue;
+        if (typeof raw !== "string" || !Number.isFinite(Date.parse(raw))) {
+          collector.add(
+            "error",
+            "FIELD_TYPE",
+            `${path}.${dateKey}`,
+            "Expected an ISO-8601 timestamp.",
+            "automatic"
+          );
+        }
+      }
+    });
+  }
+
+  if (external.errors !== undefined && !Array.isArray(external.errors)) {
+    collector.add(
+      "error",
+      "ARRAY_EXPECTED",
+      "scenario.research.externalTaxResearch.errors",
+      "Expected an array of collection errors.",
+      "automatic"
+    );
+  } else if (Array.isArray(external.errors)) {
+    external.errors.forEach((item, index) => {
+      const path = `scenario.research.externalTaxResearch.errors[${index}]`;
+      if (!isPlainObject(item)) {
+        collector.add("error", "OBJECT_EXPECTED", path, "Expected an error object.", "automatic");
+        return;
+      }
+      readString(item, "code", `${path}.code`, collector, true);
+      readString(item, "message", `${path}.message`, collector, true);
+      if (typeof item.code === "string" && item.code.trim() === "") {
+        collector.add(
+          "error",
+          "FIELD_EMPTY",
+          `${path}.code`,
+          "Error code cannot be empty.",
+          "automatic"
+        );
+      }
+      if (typeof item.message === "string" && item.message.trim() === "") {
+        collector.add(
+          "error",
+          "FIELD_EMPTY",
+          `${path}.message`,
+          "Error message cannot be empty.",
+          "automatic"
+        );
+      }
+    });
+  }
+}
+
 function validateOtherDecisionBlocks(scenario: PlainObject, collector: IssueCollector): void {
   const rentVsBuy = readObject(scenario, "rentVsBuy", "scenario.rentVsBuy", collector);
   if (rentVsBuy) {
@@ -1425,6 +1627,7 @@ function validateNestedBlocks(scenario: PlainObject, collector: IssueCollector):
   validateOfferTargets(scenario, collector);
   validateRentalIncome(scenario, collector);
   validateDealStrategy(scenario, collector);
+  validateResearch(scenario, collector);
   validateOtherDecisionBlocks(scenario, collector);
 }
 

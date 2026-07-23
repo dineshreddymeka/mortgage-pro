@@ -3,7 +3,7 @@ import { normalizePostal, normalizeStateCode } from "../lib/locationCostEstimato
 import { impliedAnnualAppreciationPercent } from "../lib/mortgageMath";
 import { parseResearchNotes, type ResearchPersisted } from "./researchNotes";
 
-export type { ResearchPersisted } from "./researchNotes";
+export type { ExternalTaxResearchPersisted, ResearchPersisted } from "./researchNotes";
 
 export const STORAGE_KEY = "mortgage-pro:v1";
 export const SYNC_CHANNEL = "mortgage-pro-sync";

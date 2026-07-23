@@ -54,12 +54,80 @@ export type TaxIssuePersisted = {
   addedAt: string;
 };
 
+/** Machine-driven per-address tax reference collection lifecycle. */
+export type ExternalTaxResearchCollectionStatus =
+  | "idle"
+  | "pending"
+  | "running"
+  | "complete"
+  | "partial"
+  | "failed"
+  | "stale";
+
+/** Provider / upstream metadata for an automated tax reference fetch. */
+export type ExternalTaxResearchSourceProvenance = {
+  provider?: string;
+  providerVersion?: string;
+  bundleId?: string;
+  requestId?: string;
+  /** Human-readable upstream source labels or URLs consulted. */
+  sources?: string[];
+};
+
+/** Link health observed when the reference URL was fetched. */
+export type ExternalTaxResearchLinkStatus = "ok" | "redirected" | "broken" | "unknown";
+
+/** Normalized jurisdictional reference row produced by external collection. */
+export type ExternalTaxResearchReferencePersisted = {
+  id: string;
+  topic: TaxIssueTopic;
+  title: string;
+  url?: string;
+  source?: string;
+  jurisdiction?: TaxIssueJurisdiction;
+  /** Provider or curated-pack identifier when known. */
+  externalRefId?: string;
+  /** Stable dedupe key within a provider namespace. */
+  normalizedKey?: string;
+  /** Short summary or snippet from the source page. */
+  excerpt?: string;
+  /** When the source material was originally published, if known. */
+  publishedAt?: string;
+  /** When this reference was last retrieved by the collector. */
+  retrievedAt?: string;
+  linkStatus?: ExternalTaxResearchLinkStatus;
+};
+
+/** Bounded error row when automated collection fails or skips sources. */
+export type ExternalTaxResearchErrorPersisted = {
+  code: string;
+  message: string;
+  source?: string;
+  at?: string;
+};
+
+/**
+ * Per-house automated tax research snapshot — separate from user-curated `taxIssues`.
+ * Omitted until an external collector writes results for the current address fingerprint.
+ */
+export type ExternalTaxResearchPersisted = {
+  collectionStatus: ExternalTaxResearchCollectionStatus;
+  /** Stable hash of normalized property identity (address, place id, postal). */
+  addressFingerprint: string;
+  collectedAt: string;
+  sourceProvenance?: ExternalTaxResearchSourceProvenance;
+  normalizedReferences?: ExternalTaxResearchReferencePersisted[];
+  errors?: ExternalTaxResearchErrorPersisted[];
+};
+
 export type ResearchPersisted = {
   notes?: string;
   links?: ResearchLinkPersisted[];
   comps?: ResearchCompPersisted[];
   docs?: ResearchDocPersisted[];
+  /** User-saved manual tax references — never merged with `externalTaxResearch`. */
   taxIssues?: TaxIssuePersisted[];
+  externalTaxResearch?: ExternalTaxResearchPersisted;
 };
 
 const MAX_NOTES = 20_000;
@@ -67,6 +135,15 @@ const MAX_ITEMS = 50;
 const MAX_TEXT = 200;
 const MAX_URL = 2_000;
 const MAX_NOTE = 2_000;
+const MAX_ADDRESS_FINGERPRINT = 128;
+const MAX_EXTERNAL_REFS = 50;
+const MAX_EXTERNAL_ERRORS = 20;
+const MAX_PROVENANCE_SOURCES = 20;
+const MAX_ERROR_CODE = 80;
+const MAX_ERROR_MESSAGE = 500;
+const MAX_PROVIDER_LABEL = 80;
+const MAX_NORMALIZED_KEY = 120;
+const MAX_EXTERNAL_REF_ID = 80;
 
 const LINK_KINDS = new Set<ResearchLinkKind>(["listing", "comp", "doc", "other"]);
 
@@ -82,7 +159,28 @@ export const TAX_ISSUE_TOPICS = [
   "other",
 ] as const satisfies readonly TaxIssueTopic[];
 
+export const EXTERNAL_TAX_RESEARCH_STATUSES = [
+  "idle",
+  "pending",
+  "running",
+  "complete",
+  "partial",
+  "failed",
+  "stale",
+] as const satisfies readonly ExternalTaxResearchCollectionStatus[];
+
+export const EXTERNAL_TAX_RESEARCH_LINK_STATUSES = [
+  "ok",
+  "redirected",
+  "broken",
+  "unknown",
+] as const satisfies readonly ExternalTaxResearchLinkStatus[];
+
 const TAX_TOPIC_SET = new Set<TaxIssueTopic>(TAX_ISSUE_TOPICS);
+const COLLECTION_STATUS_SET = new Set<ExternalTaxResearchCollectionStatus>(
+  EXTERNAL_TAX_RESEARCH_STATUSES
+);
+const LINK_STATUS_SET = new Set<ExternalTaxResearchLinkStatus>(EXTERNAL_TAX_RESEARCH_LINK_STATUSES);
 
 const TAX_JURISDICTIONS = new Set<TaxIssueJurisdiction>(["federal", "state", "county"]);
 
@@ -118,6 +216,13 @@ function asIsoDate(value: unknown): string {
     if (Number.isFinite(t)) return new Date(t).toISOString();
   }
   return new Date().toISOString();
+}
+
+function asOptionalIsoDate(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const t = Date.parse(value);
+  if (!Number.isFinite(t)) return undefined;
+  return new Date(t).toISOString();
 }
 
 function asNonNegNumber(value: unknown): number | undefined {
@@ -218,6 +323,139 @@ function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
   };
 }
 
+function parseCollectionStatus(raw: unknown): ExternalTaxResearchCollectionStatus {
+  const t = asTrimmedString(raw, 30)?.toLowerCase();
+  if (t && COLLECTION_STATUS_SET.has(t as ExternalTaxResearchCollectionStatus)) {
+    return t as ExternalTaxResearchCollectionStatus;
+  }
+  return "idle";
+}
+
+function parseLinkStatus(raw: unknown): ExternalTaxResearchLinkStatus | undefined {
+  const t = asTrimmedString(raw, 20)?.toLowerCase();
+  if (t && LINK_STATUS_SET.has(t as ExternalTaxResearchLinkStatus)) {
+    return t as ExternalTaxResearchLinkStatus;
+  }
+  if (raw !== undefined && raw !== null && raw !== "") return "unknown";
+  return undefined;
+}
+
+function parseExternalTaxReference(raw: unknown): ExternalTaxResearchReferencePersisted | null {
+  if (!isPlainObject(raw)) return null;
+  const id = asTrimmedString(raw.id, 80) ?? newResearchId();
+  const title = asTrimmedString(raw.title, MAX_TEXT);
+  if (!title) return null;
+  const jurisdiction = parseTaxJurisdiction(raw.jurisdiction);
+  const externalRefId = asTrimmedString(raw.externalRefId, MAX_EXTERNAL_REF_ID);
+  const normalizedKey = asTrimmedString(raw.normalizedKey, MAX_NORMALIZED_KEY);
+  const excerpt = asTrimmedString(raw.excerpt, MAX_NOTE);
+  const publishedAt = asOptionalIsoDate(raw.publishedAt);
+  const retrievedAt = asOptionalIsoDate(raw.retrievedAt);
+  const linkStatus = parseLinkStatus(raw.linkStatus);
+  return {
+    id,
+    topic: parseTaxTopic(raw.topic),
+    title,
+    ...(asTrimmedString(raw.url, MAX_URL) ? { url: asTrimmedString(raw.url, MAX_URL) } : {}),
+    ...(asTrimmedString(raw.source, MAX_PROVIDER_LABEL)
+      ? { source: asTrimmedString(raw.source, MAX_PROVIDER_LABEL) }
+      : {}),
+    ...(jurisdiction ? { jurisdiction } : {}),
+    ...(externalRefId ? { externalRefId } : {}),
+    ...(normalizedKey ? { normalizedKey } : {}),
+    ...(excerpt ? { excerpt } : {}),
+    ...(publishedAt ? { publishedAt } : {}),
+    ...(retrievedAt ? { retrievedAt } : {}),
+    ...(linkStatus ? { linkStatus } : {}),
+  };
+}
+
+function parseExternalTaxError(raw: unknown): ExternalTaxResearchErrorPersisted | null {
+  if (!isPlainObject(raw)) return null;
+  const code = asTrimmedString(raw.code, MAX_ERROR_CODE);
+  const message = asTrimmedString(raw.message, MAX_ERROR_MESSAGE);
+  if (!code || !message) return null;
+  const source = asTrimmedString(raw.source, MAX_PROVIDER_LABEL);
+  const atRaw = raw.at;
+  const at =
+    typeof atRaw === "string" && atRaw.trim() && Number.isFinite(Date.parse(atRaw))
+      ? new Date(atRaw).toISOString()
+      : undefined;
+  return {
+    code,
+    message,
+    ...(source ? { source } : {}),
+    ...(at ? { at } : {}),
+  };
+}
+
+function parseSourceProvenance(raw: unknown): ExternalTaxResearchSourceProvenance | undefined {
+  if (!isPlainObject(raw)) return undefined;
+  const provider = asTrimmedString(raw.provider, MAX_PROVIDER_LABEL);
+  const providerVersion = asTrimmedString(raw.providerVersion, 40);
+  const bundleId = asTrimmedString(raw.bundleId, 80);
+  const requestId = asTrimmedString(raw.requestId, 80);
+  const sources = Array.isArray(raw.sources)
+    ? raw.sources
+        .map((item) => asTrimmedString(item, MAX_URL))
+        .filter((item): item is string => item != null)
+        .slice(0, MAX_PROVENANCE_SOURCES)
+    : [];
+  if (!provider && !providerVersion && !bundleId && !requestId && sources.length === 0) {
+    return undefined;
+  }
+  return {
+    ...(provider ? { provider } : {}),
+    ...(providerVersion ? { providerVersion } : {}),
+    ...(bundleId ? { bundleId } : {}),
+    ...(requestId ? { requestId } : {}),
+    ...(sources.length ? { sources } : {}),
+  };
+}
+
+/** Normalize optional automated tax research block; omit when empty or invalid. */
+export function parseExternalTaxResearch(raw: unknown): ExternalTaxResearchPersisted | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (!isPlainObject(raw)) return undefined;
+
+  const addressFingerprint = asTrimmedString(raw.addressFingerprint, MAX_ADDRESS_FINGERPRINT);
+  const normalizedReferences = Array.isArray(raw.normalizedReferences)
+    ? raw.normalizedReferences
+        .map(parseExternalTaxReference)
+        .filter((x): x is ExternalTaxResearchReferencePersisted => x != null)
+        .slice(0, MAX_EXTERNAL_REFS)
+    : [];
+  const errors = Array.isArray(raw.errors)
+    ? raw.errors
+        .map(parseExternalTaxError)
+        .filter((x): x is ExternalTaxResearchErrorPersisted => x != null)
+        .slice(0, MAX_EXTERNAL_ERRORS)
+    : [];
+  const sourceProvenance = parseSourceProvenance(raw.sourceProvenance);
+  const hasAny =
+    raw.collectionStatus !== undefined ||
+    raw.addressFingerprint !== undefined ||
+    raw.collectedAt !== undefined ||
+    raw.sourceProvenance !== undefined ||
+    (Array.isArray(raw.normalizedReferences) && raw.normalizedReferences.length > 0) ||
+    (Array.isArray(raw.errors) && raw.errors.length > 0);
+
+  if (!hasAny) return undefined;
+  if (!addressFingerprint) return undefined;
+
+  const collectionStatus = parseCollectionStatus(raw.collectionStatus);
+  const collectedAt = asIsoDate(raw.collectedAt);
+
+  return {
+    collectionStatus,
+    addressFingerprint,
+    collectedAt,
+    ...(sourceProvenance ? { sourceProvenance } : {}),
+    ...(normalizedReferences.length ? { normalizedReferences } : {}),
+    ...(errors.length ? { errors } : {}),
+  };
+}
+
 /** Normalize optional research block; omit when empty. */
 export function parseResearchNotes(raw: unknown): ResearchPersisted | undefined {
   if (raw === null || raw === undefined) return undefined;
@@ -239,13 +477,15 @@ export function parseResearchNotes(raw: unknown): ResearchPersisted | undefined 
         .filter((x): x is TaxIssuePersisted => x != null)
         .slice(0, MAX_ITEMS)
     : [];
+  const externalTaxResearch = parseExternalTaxResearch(raw.externalTaxResearch);
 
   if (
     !notes &&
     links.length === 0 &&
     comps.length === 0 &&
     docs.length === 0 &&
-    taxIssues.length === 0
+    taxIssues.length === 0 &&
+    !externalTaxResearch
   ) {
     return undefined;
   }
@@ -255,6 +495,7 @@ export function parseResearchNotes(raw: unknown): ResearchPersisted | undefined 
     ...(comps.length ? { comps } : {}),
     ...(docs.length ? { docs } : {}),
     ...(taxIssues.length ? { taxIssues } : {}),
+    ...(externalTaxResearch ? { externalTaxResearch } : {}),
   };
 }
 
