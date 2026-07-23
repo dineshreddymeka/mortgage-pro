@@ -545,7 +545,9 @@ export default function App() {
             id="tabpanel-research"
             aria-labelledby="tab-research"
           >
-            {tab === TAB_INDEX.research ? <ResearchTab state={state} patch={patch} /> : null}
+            {tab === TAB_INDEX.research ? (
+              <ResearchTab state={state} patch={patch} activePropertyId={activePropertyId} />
+            ) : null}
           </Box>
           <Box
             role="tabpanel"

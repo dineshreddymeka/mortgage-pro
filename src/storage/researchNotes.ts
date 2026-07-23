@@ -510,6 +510,7 @@ export function researchOrEmpty(research: ResearchPersisted | undefined): Resear
     comps: research?.comps ?? [],
     docs: research?.docs ?? [],
     taxIssues: research?.taxIssues ?? [],
+    ...(research?.externalTaxResearch ? { externalTaxResearch: research.externalTaxResearch } : {}),
   };
 }
 

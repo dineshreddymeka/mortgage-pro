@@ -144,11 +144,6 @@ describe("parseExternalTaxResearch", () => {
 
   it("normalizes status, provenance, references, and errors with bounds", () => {
     const longTitle = "x".repeat(300);
-    const refs = Array.from({ length: 60 }, (_, index) => ({
-      id: `ref-${index}`,
-      topic: "property_tax",
-      title: `Ref ${index}`,
-    }));
     const errors = Array.from({ length: 25 }, (_, index) => ({
       code: `E${index}`,
       message: `Error ${index}`,

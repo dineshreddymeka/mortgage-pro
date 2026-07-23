@@ -210,7 +210,6 @@ export const fixtureAllKnownFields: AppPersisted = {
           linkStatus: "ok",
         },
       ],
-      errors: [],
     },
   },
 };

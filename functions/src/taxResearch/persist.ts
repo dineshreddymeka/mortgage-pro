@@ -25,28 +25,17 @@ export function mergeResearchSnapshot(
   };
 }
 
-function bumpCollaborationMeta(
-  prev: Record<string, unknown> | undefined,
-  uid: string,
-  nowIso: string
-): Record<string, unknown> {
-  const revision =
-    typeof prev?.revision === "number" && Number.isFinite(prev.revision) ? Math.max(1, prev.revision + 1) : 1;
-  return {
-    revision,
-    updatedAt: nowIso,
-    updatedByUid: uid,
-    editorSessionId: "server-tax-collector",
-  };
-}
-
 /**
  * Persist bounded external tax research into `scenario.research.externalTaxResearch`.
  * Caller must verify property access before invoking.
+ *
+ * Machine snapshot writes intentionally do **not** bump `collaboration.revision` or
+ * overwrite collaboration metadata — the interactive client merges the same snapshot
+ * locally and saves through the normal revision flow.
  */
 export async function persistExternalTaxResearchSnapshot(
   propertyDocId: string,
-  uid: string,
+  _uid: string,
   snapshot: ExternalTaxResearchSnapshot
 ): Promise<void> {
   const bounded = boundTaxResearchSnapshot(snapshot);
@@ -62,16 +51,9 @@ export async function persistExternalTaxResearchSnapshot(
     if (!scenario) throw new Error("House scenario is missing.");
 
     const nextScenario = mergeResearchSnapshot(scenario, bounded);
-    const nowIso = new Date().toISOString();
-    const collaboration = bumpCollaborationMeta(
-      isPlainObject(data.collaboration) ? (data.collaboration as Record<string, unknown>) : undefined,
-      uid,
-      nowIso
-    );
 
     tx.update(ref, {
       scenario: nextScenario,
-      collaboration,
       updatedAt: Date.now(),
       lastOpenedAt: Date.now(),
     });

@@ -36,6 +36,7 @@ const money = new Intl.NumberFormat(undefined, {
 export type ResearchTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  activePropertyId: string | null;
 };
 
 function commitResearch(
@@ -455,7 +456,7 @@ function DocsPanel({
   );
 }
 
-export function ResearchTab({ state, patch }: ResearchTabProps) {
+export function ResearchTab({ state, patch, activePropertyId }: ResearchTabProps) {
   const research = researchOrEmpty(state.research);
   const onChange = (next: ResearchPersisted) => commitResearch(patch, next);
 
@@ -465,7 +466,15 @@ export function ResearchTab({ state, patch }: ResearchTabProps) {
       title: "Tax issues & references",
       description: "IRS · state · saved links",
       defaultLayout: { x: 0, y: 0, w: 12, h: 22, minW: 4, minH: 12 },
-      content: <TaxReferencesPanel state={state} research={research} onChange={onChange} focus="all" />,
+      content: (
+        <TaxReferencesPanel
+          state={state}
+          research={research}
+          onChange={onChange}
+          focus="all"
+          activePropertyId={activePropertyId}
+        />
+      ),
     },
     {
       id: "notes",
