@@ -40,4 +40,14 @@ describe("validateCollectHouseTaxResearchBody", () => {
     });
     expect(result.ok).toBe(false);
   });
+
+  it("accepts forceRefresh boolean", () => {
+    const result = validateCollectHouseTaxResearchBody({
+      propertyDocId: "doc-123",
+      propertyAddress: "123 Main St",
+      forceRefresh: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.body.forceRefresh).toBe(true);
+  });
 });

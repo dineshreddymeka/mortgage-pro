@@ -75,4 +75,22 @@ describe("dedupeReferences", () => {
     ]);
     expect(deduped).toHaveLength(1);
   });
+
+  it("dedupes URLs that differ only by tracking params or trailing slash", () => {
+    const deduped = dedupeReferences([
+      {
+        id: "a",
+        topic: "property_tax",
+        title: "One",
+        url: "https://www.irs.gov/publications/p530?utm_source=a",
+      },
+      {
+        id: "b",
+        topic: "property_tax",
+        title: "Duplicate",
+        url: "https://WWW.IRS.gov/publications/p530/?fbclid=123#section",
+      },
+    ]);
+    expect(deduped).toHaveLength(1);
+  });
 });

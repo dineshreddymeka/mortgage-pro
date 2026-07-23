@@ -10,7 +10,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function mergeResearchSnapshot(
+/** Merge bounded external research while preserving manual research fields such as `taxIssues`. */
+export function mergeResearchSnapshot(
   scenario: ScenarioRecord,
   snapshot: ExternalTaxResearchSnapshot
 ): ScenarioRecord {

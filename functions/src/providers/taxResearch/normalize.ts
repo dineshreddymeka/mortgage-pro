@@ -1,4 +1,4 @@
-import { normalizeAllowedUrl } from "../../taxResearch/allowedUrls.js";
+import { canonicalUrlDedupeKey } from "../../taxResearch/canonicalUrl.js";
 import type {
   ExternalTaxResearchCollectionStatus,
   ExternalTaxResearchError,
@@ -8,16 +8,8 @@ import type {
 function referenceKey(ref: ExternalTaxResearchReference): string {
   if (ref.normalizedKey) return ref.normalizedKey.toLowerCase();
   if (ref.url) {
-    const normalized = normalizeAllowedUrl(ref.url);
-    if (normalized) {
-      try {
-        const parsed = new URL(normalized);
-        parsed.hash = "";
-        return `${parsed.hostname}${parsed.pathname}`.toLowerCase();
-      } catch {
-        return normalized.toLowerCase();
-      }
-    }
+    const dedupeKey = canonicalUrlDedupeKey(ref.url);
+    if (dedupeKey) return dedupeKey;
   }
   return `${ref.jurisdiction ?? "unknown"}:${ref.topic}:${ref.id}`.toLowerCase();
 }

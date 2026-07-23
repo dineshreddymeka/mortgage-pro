@@ -75,6 +75,7 @@ export function validateCollectHouseTaxResearchBody(raw: unknown): TaxResearchVa
   }
 
   const persist = optionalBoolean(data.persist);
+  const forceRefresh = optionalBoolean(data.forceRefresh);
 
   const hasIdentity =
     Boolean(propertyAddress) ||
@@ -101,6 +102,7 @@ export function validateCollectHouseTaxResearchBody(raw: unknown): TaxResearchVa
       ...(propertyLatitude !== undefined ? { propertyLatitude } : {}),
       ...(propertyLongitude !== undefined ? { propertyLongitude } : {}),
       ...(persist !== undefined ? { persist } : {}),
+      ...(forceRefresh !== undefined ? { forceRefresh } : {}),
     },
   };
 }

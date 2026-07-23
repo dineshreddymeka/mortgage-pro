@@ -15,6 +15,7 @@ import {
   persistExternalTaxResearchSnapshot,
   readScenarioIdentity,
 } from "../taxResearch/persist.js";
+import { findReusableTaxResearchSnapshot } from "../taxResearch/snapshotReuse.js";
 import { resolvePropertyAccess } from "../taxResearch/propertyAccess.js";
 import type { CollectHouseTaxResearchResponse } from "../taxResearch/types.js";
 import { validateCollectHouseTaxResearchBody } from "../taxResearch/validate.js";
@@ -125,6 +126,25 @@ export async function handleCollectHouseTaxResearch(req: HandlerRequest, res: Ha
   const requestId = randomUUID();
 
   try {
+    const cachedSnapshot = findReusableTaxResearchSnapshot({
+      scenarioData: property.data,
+      addressFingerprint,
+      ttlSeconds: config.cacheTtlSeconds,
+      forceRefresh: parsed.body.forceRefresh === true,
+    });
+
+    if (cachedSnapshot) {
+      const payload: CollectHouseTaxResearchResponse = {
+        ok: true,
+        snapshot: cachedSnapshot,
+        persisted: false,
+        cacheHit: true,
+        accessRole,
+      };
+      writeJson(res, 200, payload, corsHeaders);
+      return;
+    }
+
     const collector = getTaxResearchCollector();
     const rawSnapshot = await collector.collect({
       request: parsed.body,
@@ -147,6 +167,7 @@ export async function handleCollectHouseTaxResearch(req: HandlerRequest, res: Ha
       ok: true,
       snapshot,
       persisted,
+      cacheHit: false,
       accessRole,
     };
     writeJson(res, 200, payload, corsHeaders);

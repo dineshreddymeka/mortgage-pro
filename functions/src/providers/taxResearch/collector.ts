@@ -1,4 +1,5 @@
 import { getConfig } from "../../config.js";
+import { canonicalUrlDedupeKey } from "../../taxResearch/canonicalUrl.js";
 import type {
   TaxResearchCollector,
   TaxResearchCollectorInput,
@@ -17,7 +18,15 @@ function perRequestTimeoutMs(): number {
 }
 
 function dedupeUrls(urls: string[]): string[] {
-  return [...new Set(urls)];
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const url of urls) {
+    const key = canonicalUrlDedupeKey(url) ?? url.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(url);
+  }
+  return deduped;
 }
 
 export const productionTaxResearchCollector: TaxResearchCollector = {

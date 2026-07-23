@@ -72,12 +72,16 @@ export type CollectHouseTaxResearchRequest = {
   propertyLongitude?: number | null;
   /** When true (default), merge bounded snapshot into the authorized property scenario. */
   persist?: boolean;
+  /** When true, bypass a fresh stored snapshot and re-run collection. */
+  forceRefresh?: boolean;
 };
 
 export type CollectHouseTaxResearchResponse = {
   ok: true;
   snapshot: ExternalTaxResearchSnapshot;
   persisted: boolean;
+  /** True when a fresh stored snapshot was reused instead of re-collecting. */
+  cacheHit: boolean;
   accessRole: "owner" | "member";
 };
 
