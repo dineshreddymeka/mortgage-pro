@@ -154,9 +154,9 @@ const STATE_PORTALS: Record<string, StatePortal> = {
     blurb: "State taxes; property tax is county-level in Delaware.",
   },
   DC: {
-    title: "DC Office of Tax and Revenue — Real Property",
-    url: "https://otr.cfo.dc.gov/page/real-property-tax-rates-and-billing-faqs",
-    blurb: "District real property tax and assessments.",
+    title: "MyTax.DC.gov — Real Property Tax",
+    url: "https://mytax.dc.gov/_/",
+    blurb: "District real property tax bills, assessments, and account services.",
   },
   FL: {
     title: "Florida DOR — Property Tax",
