@@ -129,7 +129,7 @@ export const STATE_PORTALS: Record<string, StatePortalSpec> = {
   },
   DC: {
     title: "DC Office of Tax and Revenue — Real Property",
-    url: "https://otr.cfo.dc.gov/page/real-property-tax",
+    url: "https://otr.cfo.dc.gov/page/real-property-tax-rates-and-billing-faqs",
     blurb: "District real property tax and assessments.",
   },
   FL: {
