@@ -16,7 +16,8 @@
     "functions:install": "npm --prefix functions ci",
     "functions:build": "npm --prefix functions run build",
     "functions:test": "npm --prefix functions test",
-    "functions:typecheck": "npm --prefix functions run typecheck"
+    "functions:typecheck": "npm --prefix functions run typecheck",
+    "tax-research:live-smoke": "npm --prefix functions run build && npm --prefix functions run tax-research:live-smoke --"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

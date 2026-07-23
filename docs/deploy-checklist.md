@@ -19,7 +19,7 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 Sources: [`firestore.rules`](../firestore.rules), [`firestore.indexes.json`](../firestore.indexes.json), wired in [`firebase.json`](../firebase.json).
 
-## 3. Cloud Functions (estimate proxy)
+## 3. Cloud Functions (estimate + tax research proxy)
 
 ```bash
 npm --prefix functions ci
@@ -30,10 +30,14 @@ firebase deploy --only functions
 Configure server env / secrets from [`functions/.env.example`](../functions/.env.example):
 
 - `ALLOWED_ORIGINS` — include the GitHub Pages origin
+- `CACHE_TTL_SECONDS` — 6h default; shared by estimates cache and tax research snapshot reuse
 - Optional upstream `*_API_URL` / `*_API_KEY`
 - Rate limits as needed
 
-Details: [`docs/external-estimates-api.md`](./external-estimates-api.md).
+Details:
+
+- Estimates: [`docs/external-estimates-api.md`](./external-estimates-api.md)
+- Per-house tax research: [`docs/per-house-tax-research.md`](./per-house-tax-research.md)
 
 ## 4. Client env (local)
 
@@ -45,6 +49,8 @@ Copy [`.env.example`](../.env.example) → `.env.local`:
 | `VITE_GOOGLE_MAPS_API_KEY` | Places + map preview (optional; external Maps link works without it) |
 | `VITE_ESTIMATE_API_BASE_URL` | Functions base URL (blank = offline stubs) |
 | `VITE_ESTIMATE_API_TIMEOUT_MS` | Proxy timeout (default 12000) |
+| `VITE_TAX_RESEARCH_API_BASE_URL` | Tax research base URL (optional; falls back to estimate URL) |
+| `VITE_TAX_RESEARCH_API_TIMEOUT_MS` | Tax collect timeout (default 35000) |
 
 ## 5. GitHub Pages secrets
 
@@ -58,6 +64,7 @@ Repository → **Settings → Secrets and variables → Actions**:
 - `VITE_FIREBASE_APP_ID`
 - `GOOGLE_MAPS_API_KEY` (mapped to `VITE_GOOGLE_MAPS_API_KEY` in deploy workflow)
 - `VITE_ESTIMATE_API_BASE_URL`
+- `VITE_TAX_RESEARCH_API_BASE_URL` (optional; omit to reuse estimate URL)
 
 Pages source must be **GitHub Actions** (see README).
 
@@ -68,7 +75,8 @@ Pages source must be **GitHub Actions** (see README).
 3. Link Google; copy UID; invite a second account
 4. Research tab: notes/links persist after reload
 5. Estimates panel: proxy or offline stub with confidence chips
-6. Revision conflict: edit same house in two sessions → dialog shows local vs remote rev
+6. Research tab → Tax references: **Collect** / **Refresh** when tax API URL configured; official links appear under external snapshot
+7. Revision conflict: edit same house in two sessions → dialog shows local vs remote rev
 
 ## Known production limits
 

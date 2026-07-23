@@ -219,4 +219,128 @@ describe("handleCollectHouseTaxResearch", () => {
     expect(mock.body).toMatchObject({ ok: true, cacheHit: false });
     expect(collect).toHaveBeenCalledTimes(1);
   });
+
+  it("rejects disallowed origins", async () => {
+    const mock = mockResponse();
+    await handleCollectHouseTaxResearch(
+      {
+        method: "POST",
+        headers: { origin: "https://evil.example", authorization: "Bearer token" },
+        body: {
+          propertyDocId: "doc-1",
+          propertyAddress: "123 Main St",
+          propertyPostalCode: "94107",
+        },
+      },
+      mock.res
+    );
+
+    expect(mock.statusCode).toBe(403);
+    expect(mock.body).toMatchObject({ ok: false, error: "Origin not allowed." });
+    expect(collect).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing authorization", async () => {
+    verifyBearerToken.mockResolvedValue(null);
+    const mock = mockResponse();
+    await handleCollectHouseTaxResearch(
+      {
+        method: "POST",
+        headers: { origin: "http://localhost:5173" },
+        body: {
+          propertyDocId: "doc-1",
+          propertyAddress: "123 Main St",
+          propertyPostalCode: "94107",
+        },
+      },
+      mock.res
+    );
+
+    expect(mock.statusCode).toBe(401);
+    expect(mock.body).toMatchObject({ ok: false });
+    expect(collect).not.toHaveBeenCalled();
+  });
+
+  it("rejects viewers without property access", async () => {
+    verifyBearerToken.mockResolvedValue({ uid: "stranger-uid" });
+    const mock = mockResponse();
+    await handleCollectHouseTaxResearch(
+      {
+        method: "POST",
+        headers: { origin: "http://localhost:5173", authorization: "Bearer token" },
+        body: {
+          propertyDocId: "doc-1",
+          propertyAddress: "123 Main St",
+          propertyPostalCode: "94107",
+        },
+      },
+      mock.res
+    );
+
+    expect(mock.statusCode).toBe(403);
+    expect(mock.body).toMatchObject({ ok: false, error: "You do not have access to this house." });
+    expect(collect).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when request identity does not match saved scenario", async () => {
+    loadPropertyRecord.mockResolvedValue({
+      exists: true,
+      data: {
+        userId: "owner-uid",
+        scenario: {
+          propertyAddress: "999 Other Ave",
+          propertyPostalCode: "10001",
+        },
+      },
+    });
+
+    const mock = mockResponse();
+    await handleCollectHouseTaxResearch(
+      {
+        method: "POST",
+        headers: { origin: "http://localhost:5173", authorization: "Bearer token" },
+        body: {
+          propertyDocId: "doc-1",
+          propertyAddress: "123 Main St",
+          propertyPostalCode: "94107",
+        },
+      },
+      mock.res
+    );
+
+    expect(mock.statusCode).toBe(409);
+    expect(mock.body).toMatchObject({
+      ok: false,
+      error: "Request address identity does not match the saved property scenario.",
+    });
+    expect(collect).not.toHaveBeenCalled();
+  });
+
+  it("skips server persist when persist is false", async () => {
+    loadPropertyRecord.mockResolvedValue({
+      exists: true,
+      data: mockPropertyData(),
+    });
+
+    const mock = mockResponse();
+    await handleCollectHouseTaxResearch(
+      {
+        method: "POST",
+        headers: { origin: "http://localhost:5173", authorization: "Bearer token" },
+        body: {
+          propertyDocId: "doc-1",
+          propertyAddress: "123 Main St",
+          propertyPostalCode: "94107",
+          persist: false,
+          forceRefresh: true,
+        },
+      },
+      mock.res
+    );
+
+    expect(mock.statusCode).toBe(200);
+    expect(mock.body).toMatchObject({ ok: true, persisted: false, cacheHit: false });
+    expect(collect).toHaveBeenCalledTimes(1);
+    expect(persistExternalTaxResearchSnapshot).not.toHaveBeenCalled();
+  });
 });

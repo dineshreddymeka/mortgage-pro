@@ -11,7 +11,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "tax-research:live-smoke": "node scripts/taxResearchLiveSmoke.mjs"
   },
   "dependencies": {
     "firebase-admin": "^14.2.0",

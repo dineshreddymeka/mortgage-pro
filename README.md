@@ -61,6 +61,7 @@ Optional cloud sync for multiple saved properties. Uses the **Firebase web clien
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
    - `VITE_ESTIMATE_API_BASE_URL` (optional estimate proxy; blank = offline stubs)
+   - `VITE_TAX_RESEARCH_API_BASE_URL` (optional tax research proxy; falls back to estimate URL)
    - `GOOGLE_MAPS_API_KEY` (optional Maps autocomplete)
 
 Without Firebase env vars, the app keeps working with local browser storage only.
@@ -90,12 +91,17 @@ CI sets `VITE_BASE_PATH` to `/mortgage-pro/`. Locally the base is `/`.
 | `npm run lint` | ESLint |
 | `npm run test` | Vitest unit tests |
 | `npm run functions:test` | Firebase Functions unit tests |
+| `npm run tax-research:live-smoke` | Opt-in live adapter smoke (requires `--network` + `--address`; not CI) |
 
 ## External estimate proxy (Phase 8)
 
 Optional server-side proxy for mortgage rates, property tax, insurance, rent, and comps. See [`docs/external-estimates-api.md`](docs/external-estimates-api.md) for deploy notes, env vars, and provider limitations.
 
 Set `VITE_ESTIMATE_API_BASE_URL` in `.env.local` (or GitHub Actions secret) to your Firebase Functions base URL. Without it, estimate panels use offline heuristic stubs with explicit apply-only confirmation.
+
+## Per-house tax research
+
+Research tab can collect **official** federal/state/county tax reference links for the active saved house via `collectHouseTaxResearch`. Configure `VITE_TAX_RESEARCH_API_BASE_URL` (or reuse `VITE_ESTIMATE_API_BASE_URL`). See [`docs/per-house-tax-research.md`](docs/per-house-tax-research.md) for endpoint contract, cache, persistence, and security controls.
 
 ## License
 
