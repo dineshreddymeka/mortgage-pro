@@ -15,7 +15,7 @@ export function applyCorsHeaders(
   headers["Access-Control-Allow-Origin"] = origin;
   headers["Vary"] = "Origin";
   headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
-  headers["Access-Control-Allow-Headers"] = "Content-Type, X-Estimate-User-Id";
+  headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Estimate-User-Id";
   headers["Access-Control-Max-Age"] = "86400";
   if (config.allowedOrigins.includes("*")) {
     headers["Access-Control-Allow-Origin"] = origin;
