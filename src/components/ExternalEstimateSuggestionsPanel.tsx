@@ -270,14 +270,16 @@ export function ExternalEstimateSuggestionsPanel({
         <DialogContent>
           <DialogContentText component="div">
             <Typography variant="body2" gutterBottom>
-              This will overwrite matching scenario fields. Review each value — offline stubs are low confidence.
+              This will overwrite matching scenario fields. Nothing applies without this confirm.
+              Offline stubs and low-confidence rows should be verified against primary sources.
             </Typography>
             <Stack component="ul" sx={{ pl: 2, m: 0 }} spacing={0.5}>
               {visible
                 .filter((s) => selected.has(s.id))
                 .map((s) => (
                   <Typography component="li" variant="body2" key={s.id}>
-                    {s.label}: {formatValue(s)}
+                    {s.label}: {formatValue(s)} ({s.confidence}
+                    {offline ? ", offline stub" : ""})
                   </Typography>
                 ))}
             </Stack>

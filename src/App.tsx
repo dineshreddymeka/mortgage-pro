@@ -20,6 +20,7 @@ import { useMemo, useState } from "react";
 import { CompareTab } from "./tabs/CompareTab";
 import { FinancingTab } from "./tabs/MortgageTab";
 import { PropertyTab } from "./tabs/PropertyTab";
+import { ResearchTab } from "./tabs/ResearchTab";
 import { RentalTab } from "./tabs/RentalTab";
 import { UpfrontCashTab } from "./tabs/UpfrontCashTab";
 import { WhenToSellTab } from "./tabs/WhenToSellTab";
@@ -47,6 +48,7 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 /** One tab per category — editors are not duplicated across tabs. */
 const TABS = [
   { label: "Property", id: "property" },
+  { label: "Research", id: "research" },
   { label: "Financing", id: "financing" },
   { label: "Upfront", id: "upfront" },
   { label: "Rental", id: "rental" },
@@ -56,11 +58,12 @@ const TABS = [
 
 const TAB_INDEX = {
   property: 0,
-  financing: 1,
-  upfront: 2,
-  rental: 3,
-  exit: 4,
-  compare: 5,
+  research: 1,
+  financing: 2,
+  upfront: 3,
+  rental: 4,
+  exit: 5,
+  compare: 6,
 } as const;
 
 export default function App() {
@@ -535,6 +538,14 @@ export default function App() {
                 }}
               />
             ) : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== TAB_INDEX.research}
+            id="tabpanel-research"
+            aria-labelledby="tab-research"
+          >
+            {tab === TAB_INDEX.research ? <ResearchTab state={state} patch={patch} /> : null}
           </Box>
           <Box
             role="tabpanel"

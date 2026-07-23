@@ -48,17 +48,20 @@ inventory of persisted scenario properties, derived KPIs, formulas, and ownershi
 
 Optional cloud sync for multiple saved properties. Uses the **Firebase web client SDK** only — never the Admin / service-account private key in this app.
 
-1. Firebase project with **Cloud Firestore** (native) and published rules (see [`firestore.rules`](firestore.rules)).
-2. **Authentication → Sign-in method → Anonymous → Enable**.
+1. Firebase project with **Cloud Firestore** (native) and published rules/indexes (see [`firestore.rules`](firestore.rules), [`firestore.indexes.json`](firestore.indexes.json)).
+2. **Authentication → Sign-in method**: enable **Anonymous** and **Google**.
 3. **Authentication → Settings → Authorized domains**: add `dineshreddymeka.github.io` (and `localhost` for local).
 4. Register a **Web app** and copy the config into `.env.local` (see [`.env.example`](.env.example)).
-5. For GitHub Pages, set these repository secrets (same values):
+5. Deploy rules/indexes/functions — full steps in [`docs/deploy-checklist.md`](docs/deploy-checklist.md).
+6. For GitHub Pages, set these repository secrets (same values):
    - `VITE_FIREBASE_API_KEY`
    - `VITE_FIREBASE_AUTH_DOMAIN`
    - `VITE_FIREBASE_PROJECT_ID`
    - `VITE_FIREBASE_STORAGE_BUCKET`
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
+   - `VITE_ESTIMATE_API_BASE_URL` (optional estimate proxy; blank = offline stubs)
+   - `GOOGLE_MAPS_API_KEY` (optional Maps autocomplete)
 
 Without Firebase env vars, the app keeps working with local browser storage only.
 

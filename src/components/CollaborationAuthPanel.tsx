@@ -1,3 +1,4 @@
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import GoogleIcon from "@mui/icons-material/Google";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import Alert from "@mui/material/Alert";
@@ -122,9 +123,25 @@ export function CollaborationAuthPanel({
             </Typography>
             <Chip size="small" label={profile.isAnonymous ? "Anonymous" : "Google"} color={profile.isAnonymous ? "default" : "secondary"} />
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-            UID {profile.uid}{profile.email ? ` · ${profile.email}` : ""}
-          </Typography>
+          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+              UID {profile.uid}
+              {profile.email ? ` · ${profile.email}` : ""}
+            </Typography>
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<ContentCopyOutlinedIcon sx={{ fontSize: 14 }} />}
+              onClick={() =>
+                void navigator.clipboard.writeText(profile.uid).then(
+                  () => onNotify?.("UID copied — share with a house owner to be added.", "success"),
+                  () => onNotify?.("Could not copy UID.", "error")
+                )
+              }
+            >
+              Copy UID
+            </Button>
+          </Stack>
         </Box>
       ) : null}
       {error ? <Alert severity="error" variant="outlined">{error}</Alert> : null}

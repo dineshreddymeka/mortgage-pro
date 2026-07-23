@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "propertyInvites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "targetUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "propertyInvites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "emailHash", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "propertyInvites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyDocId", "order": "ASCENDING" },
+        { "fieldPath": "ownerUid", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

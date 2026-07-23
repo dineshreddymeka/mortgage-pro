@@ -87,7 +87,14 @@ service cloud.firestore {
   function canReadInvite() {
     return resource.data.ownerUid == request.auth.uid
       || resource.data.targetUid == request.auth.uid
-      || (resource.data.status == 'pending' && resource.data.emailHash is string);
+      // Email invites: only signed-in Google accounts may read pending hash invites
+      // (client still matches by emailHash; no anonymous enumeration).
+      || (
+        resource.data.status == 'pending'
+        && resource.data.emailHash is string
+        && request.auth.token.email != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
   }
 
   function ownerRevokesInvite() {

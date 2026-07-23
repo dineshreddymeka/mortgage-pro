@@ -27,6 +27,11 @@ describe("firestore.rules collaboration security", () => {
     expect(rules).toContain("inviteeAcceptsInvite()");
   });
 
+  it("limits pending email-invite reads to Google-linked accounts", () => {
+    expect(rules).toContain("canReadInvite()");
+    expect(rules).toContain("sign_in_provider == 'google.com'");
+  });
+
   it("keeps share snapshot read-only rules intact", () => {
     expect(rules).toContain("match /shareSnapshots/{shareToken}");
     expect(rules).toContain("allow read: if true;");

@@ -98,6 +98,7 @@ Canonical implementation:
 | `rentalIncome` | Simple, multifamily unit, or STR detail; synchronized into canonical rent fields |
 | `stressTestDeltas` | Rate, rent, vacancy, appreciation, expense and price stress assumptions |
 | `dealStrategy` | BRRRR and flip assumptions |
+| `research` | Diligence notes, bookmark links, manual comps, and document URL refs |
 
 ### Exit and tax
 

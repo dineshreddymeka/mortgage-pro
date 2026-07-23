@@ -79,9 +79,13 @@ describe("mortgageState serialization and migration", () => {
     assertKnownFieldsEqual(base, restored);
   });
 
-  it("preserves refi, DTI budget, growth, paymentPlan, rentalProFormaInclude, rentalIncome, and dealStrategy through serialize/parse", () => {
+  it("preserves refi, DTI budget, growth, paymentPlan, rentalProFormaInclude, rentalIncome, dealStrategy, and research through serialize/parse", () => {
     const withBlocks = {
       ...fixtureV2Full,
+      research: {
+        notes: "Check flood zone",
+        links: [{ id: "l1", url: "https://example.com", kind: "other" as const, addedAt: "2026-01-01T00:00:00.000Z" }],
+      },
       growth: { rentGrowthPercent: 2.5, expenseGrowthPercent: 1.5 },
       paymentPlan: { frequency: "biweekly" as const, lumpSums: [{ month: 24, amount: 5000 }] },
       rentalIncome: {
@@ -105,6 +109,7 @@ describe("mortgageState serialization and migration", () => {
     expect(restored.paymentPlan).toEqual(withBlocks.paymentPlan);
     expect(restored.rentalIncome).toEqual(withBlocks.rentalIncome);
     expect(restored.dealStrategy).toEqual(withBlocks.dealStrategy);
+    expect(restored.research).toEqual(withBlocks.research);
   });
 
   it("preserves enabled tax assumptions through serialize/parse", () => {

@@ -140,6 +140,36 @@ export const fixtureAllKnownFields: AppPersisted = {
       loanPayoffAtSale: 400_000,
     },
   },
+  research: {
+    notes: "Roof replaced 2022; HOA review pending.",
+    links: [
+      {
+        id: "link-listing",
+        url: "https://example.com/listing/123",
+        title: "Listing",
+        kind: "listing",
+        addedAt: "2026-01-15T12:00:00.000Z",
+      },
+    ],
+    comps: [
+      {
+        id: "comp-1",
+        label: "456 Oak Ave",
+        price: 540_000,
+        address: "456 Oak Ave",
+        addedAt: "2026-01-15T12:00:00.000Z",
+      },
+    ],
+    docs: [
+      {
+        id: "doc-1",
+        title: "Inspection report",
+        url: "https://drive.example.com/inspection",
+        note: "PDF",
+        addedAt: "2026-01-15T12:00:00.000Z",
+      },
+    ],
+  },
 };
 
 /** Legacy v1 mortgage-only blob (no rental fields in storage). */

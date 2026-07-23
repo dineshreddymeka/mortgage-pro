@@ -185,6 +185,18 @@ Object.assign(SCENARIO_FUTURE_SHAPE, {
       "loanPayoffAtSale",
     ]),
   },
+  research: {
+    notes: true,
+    links: [
+      futureShape(["id", "url", "title", "kind", "addedAt"]),
+    ],
+    comps: [
+      futureShape(["id", "label", "price", "address", "url", "notes", "addedAt"]),
+    ],
+    docs: [
+      futureShape(["id", "title", "url", "note", "addedAt"]),
+    ],
+  },
 });
 
 const REQUIRED_NUMBERS = [

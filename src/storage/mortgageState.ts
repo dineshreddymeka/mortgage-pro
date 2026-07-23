@@ -1,6 +1,9 @@
 import scenarioDefaultsJson from "../defaults/scenario-defaults.json";
 import { normalizePostal, normalizeStateCode } from "../lib/locationCostEstimator";
 import { impliedAnnualAppreciationPercent } from "../lib/mortgageMath";
+import { parseResearchNotes, type ResearchPersisted } from "./researchNotes";
+
+export type { ResearchPersisted } from "./researchNotes";
 
 export const STORAGE_KEY = "mortgage-pro:v1";
 export const SYNC_CHANNEL = "mortgage-pro-sync";
@@ -273,6 +276,8 @@ export type AppPersisted = {
   rentalIncome?: RentalIncomePersisted;
   /** Optional BRRRR / flip strategy inputs. Derived metrics are not persisted. */
   dealStrategy?: DealStrategyPersisted;
+  /** Optional diligence: notes, links, comps, and document refs for this house scenario. */
+  research?: ResearchPersisted;
 };
 
 /** @deprecated Use AppPersisted */
@@ -335,6 +340,7 @@ export const OPTIONAL_SCENARIO_KEYS = [
   "stressTestDeltas",
   "rentalIncome",
   "dealStrategy",
+  "research",
 ] as const satisfies readonly (keyof AppPersisted)[];
 
 /** Known persisted scenario keys — extras from newer clients are preserved on merge/parse. */
@@ -451,6 +457,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     stressTestDeltas: rawStressDeltas,
     rentalIncome: rawRentalIncome,
     dealStrategy: rawDealStrategy,
+    research: rawResearch,
     customHousingBudgetMonthly: rawBudget,
     ...mergedRest
   } = merged;
@@ -468,6 +475,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
   const stressTestDeltas = parseStressTestDeltas(rawStressDeltas);
   const rentalIncome = parseRentalIncome(rawRentalIncome);
   const dealStrategy = parseDealStrategy(rawDealStrategy);
+  const research = parseResearchNotes(rawResearch);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(rawBudget);
   const location = normalizePropertyLocation(merged, defaultAppState());
   const normalized: AppPersisted = {
@@ -491,6 +499,7 @@ export function mergeParsedWithSchemaDefaults(parsed: AppPersisted): AppPersiste
     ...(stressTestDeltas ? { stressTestDeltas } : {}),
     ...(rentalIncome ? { rentalIncome } : {}),
     ...(dealStrategy ? { dealStrategy } : {}),
+    ...(research ? { research } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
   };
   return preserveUnknownScenarioFields(parsed as Record<string, unknown>, normalized);
@@ -1095,6 +1104,7 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
   const stressTestDeltas = parseStressTestDeltas(data.stressTestDeltas);
   const rentalIncome = parseRentalIncome(data.rentalIncome);
   const dealStrategy = parseDealStrategy(data.dealStrategy);
+  const research = parseResearchNotes(data.research);
   const customHousingBudgetMonthly = parseOptionalNonNegInt(data.customHousingBudgetMonthly);
   const loc = normalizePropertyLocation(data, base);
   return {
@@ -1123,6 +1133,7 @@ function parseKnownScenarioFromData(data: Record<string, unknown>, base: AppPers
     ...(stressTestDeltas ? { stressTestDeltas } : {}),
     ...(rentalIncome ? { rentalIncome } : {}),
     ...(dealStrategy ? { dealStrategy } : {}),
+    ...(research ? { research } : {}),
     ...(customHousingBudgetMonthly !== undefined ? { customHousingBudgetMonthly } : {}),
     ...(buyingCostLineOverrides ? { buyingCostLineOverrides } : {}),
   };

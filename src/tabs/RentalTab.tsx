@@ -17,7 +17,8 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { CategoryJump } from "../components/CategoryJump";
+import { DollarPercentField } from "../components/DollarPercentField";
+import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { GrowthAssumptionsPanel } from "../components/GrowthAssumptionsPanel";
 import { StressTestPanel } from "../components/StressTestPanel";
 import { TaxAssumptionsPanel } from "../components/TaxAssumptionsPanel";
@@ -31,6 +32,11 @@ import {
   formatOnePercentRuleDisplay,
 } from "../components/RentalMetricCard";
 import { deriveScenario } from "../lib/deriveScenario";
+import {
+  parseNumericInput,
+  syncDownPaymentDollarPatch,
+  syncDownPaymentPercentPatch,
+} from "../lib/mortgageInputSync";
 import type { MonthlyBreakdown } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoardFromPanels, WidgetPanel } from "../widgets/WidgetBoardFromPanels";
@@ -180,12 +186,14 @@ function pfLineOn(toggles: Record<string, boolean>, id: string): boolean {
 export type RentalTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  /** @deprecated Inline editors replace tab jumps; kept for call-site compatibility. */
   onGoToFinancing?: () => void;
+  /** @deprecated Inline editors replace tab jumps; kept for call-site compatibility. */
   onGoToUpfront?: () => void;
 };
 
-/** Category: Rental — income, OpEx, pro forma. Financing/Upfront edited on their own tabs. */
-export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: RentalTabProps) {
+/** Category: Rental — income, OpEx, pro forma. Shared financing/upfront fields edit inline. */
+export function RentalTab({ state, patch }: RentalTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
   const incomeMode = derived.rentalIncome.mode;
   const incomeLocked = incomeMode !== "simple";
@@ -278,7 +286,7 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
       </Typography>
 
       <WidgetBoardFromPanels boardId="rental">
-      <WidgetPanel id="financing" title="Financing summary" description="Edit on Financing tab" h={8}>
+      <WidgetPanel id="financing" title="Financing summary" description="Shared loan inputs · same scenario" h={14}>
       <Accordion
         expanded={financingOpen}
         onChange={(_, expanded) => setFinancingOpen(expanded)}
@@ -325,16 +333,15 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
-          <CategoryJump
-            category="Financing"
-            detail="Purchase price, down payment, rate, term, tax, insurance, HOA, and PMI are edited on the Financing tab."
-            onJump={() => onGoToFinancing?.()}
-          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            Edits update the shared scenario (Financing / Upfront / Exit stay in sync).
+          </Typography>
+          <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
         </AccordionDetails>
       </Accordion>
       </WidgetPanel>
 
-      <WidgetPanel id="upfront-cash" title="Upfront cash" description="Cash invested · edit on Upfront" h={8}>
+      <WidgetPanel id="upfront-cash" title="Upfront cash" description="Cash invested · shared fields" h={12}>
       <Accordion defaultExpanded={false} disableGutters elevation={0} sx={rentalAccordionSx}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon sx={{ color: "text.secondary", fontSize: 20 }} />}
@@ -376,11 +383,59 @@ export function RentalTab({ state, patch, onGoToFinancing, onGoToUpfront }: Rent
           </Box>
         </AccordionSummary>
         <AccordionDetails sx={accordionDetailsSx}>
-          <CategoryJump
-            category="Upfront"
-            detail="Down payment, closing costs, and misc cash-in are edited on the Upfront tab."
-            onJump={() => onGoToUpfront?.()}
-          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            Down, closing, and misc cash-in are shared with the Upfront tab.
+          </Typography>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <DollarPercentField
+                label="Down payment"
+                size="small"
+                basis={state.homePrice}
+                dollarValue={state.downPayment}
+                percentValue={state.downPaymentPercent}
+                capDollarAtBasis
+                onDollarChange={(dp) => patch(syncDownPaymentDollarPatch(dp, state.homePrice))}
+                onPercentChange={(pct) =>
+                  patch(syncDownPaymentPercentPatch(pct, state.homePrice, state.downPayment))
+                }
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Closing costs"
+                size="small"
+                fullWidth
+                value={formatNumberField(state.closingCosts)}
+                onChange={(e) => {
+                  const n = parseNumericInput(e.target.value);
+                  if (n !== null) patch({ closingCosts: Math.max(0, n) });
+                }}
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Misc. one-time"
+                size="small"
+                fullWidth
+                value={formatNumberField(state.miscInitialCash)}
+                onChange={(e) => {
+                  const n = parseNumericInput(e.target.value);
+                  if (n !== null) patch({ miscInitialCash: Math.max(0, n) });
+                }}
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
         </AccordionDetails>
       </Accordion>
       </WidgetPanel>
