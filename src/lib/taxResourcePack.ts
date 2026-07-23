@@ -616,3 +616,141 @@ export function groupTaxResourcesByJurisdiction(
     county: resources.filter((r) => r.jurisdiction === "county"),
   };
 }
+
+export type TaxTopicGuide = {
+  topic: TaxIssueTopic;
+  title: string;
+  summary: string;
+  checklist: string[];
+  relatedIds: string[];
+};
+
+const TOPIC_GUIDES: TaxTopicGuide[] = [
+  {
+    topic: "property_tax",
+    title: "Property tax diligence",
+    summary: "Separate ad valorem (local) bills from federal income-tax treatment of SALT.",
+    checklist: [
+      "Confirm county assessor and appraisal district for this address",
+      "Check current assessed value vs your modeled propertyTaxAnnual",
+      "Note homestead, senior, or investor exemption rules",
+      "Track reassessment timing after purchase or rehab",
+    ],
+    relatedIds: ["irs-pub-530"],
+  },
+  {
+    topic: "rental_income",
+    title: "Rental income reporting",
+    summary: "Schedule E reports rent and operating expenses; keep records by property.",
+    checklist: [
+      "Document gross rent and other income",
+      "Separate repairs (expensed) from improvements (capitalized)",
+      "Track mileage and professional fees",
+      "Reconcile to your pro-forma NOI assumptions",
+    ],
+    relatedIds: ["irs-rental-hub", "irs-pub-527", "irs-schedule-e"],
+  },
+  {
+    topic: "depreciation",
+    title: "Depreciation & basis",
+    summary: "Residential rental is typically 27.5-year straight-line on building basis.",
+    checklist: [
+      "Split land vs building (land is not depreciable)",
+      "Include capitalized improvements in basis",
+      "Confirm placed-in-service date",
+      "Compare modeled annual depreciation to Pub 946 rules",
+    ],
+    relatedIds: ["irs-pub-946"],
+  },
+  {
+    topic: "qbi",
+    title: "QBI (§199A)",
+    summary: "Rental may qualify for QBI with safe-harbor or trade/business facts.",
+    checklist: [
+      "Document hours and rental activity level",
+      "Check SSTB and W-2/UBIA limitations",
+      "Compare simplified model QBI to CPA estimate",
+    ],
+    relatedIds: ["irs-qbi-faq"],
+  },
+  {
+    topic: "1031",
+    title: "1031 like-kind exchange",
+    summary: "Defer gain by exchanging into like-kind replacement property; boot is taxable.",
+    checklist: [
+      "Identify replacement within 45 days",
+      "Close replacement within 180 days",
+      "Use qualified intermediary — no direct receipt of proceeds",
+      "Model boot and replacement cost in Exit assumptions",
+    ],
+    relatedIds: ["irs-1031"],
+  },
+  {
+    topic: "capital_gains",
+    title: "Sale tax & recapture",
+    summary: "Exit gain may include recapture and capital gain at different rates.",
+    checklist: [
+      "Estimate adjusted basis and accumulated depreciation recapture",
+      "Confirm holding period (long- vs short-term)",
+      "Include selling costs in net proceeds",
+    ],
+    relatedIds: ["irs-pub-544"],
+  },
+  {
+    topic: "passive_loss",
+    title: "Passive activity losses",
+    summary: "Rental losses may be limited unless you qualify as real estate professional.",
+    checklist: [
+      "Track aggregate passive income and losses",
+      "Document material participation hours if claiming active status",
+      "Review suspended losses from prior years",
+    ],
+    relatedIds: ["irs-passive"],
+  },
+  {
+    topic: "state_local",
+    title: "State & local",
+    summary: "Many states tax rental income; property tax is almost always local.",
+    checklist: [
+      "Open your state revenue portal below",
+      "Find county assessor or appraisal district",
+      "Check local business personal property or rental registration",
+    ],
+    relatedIds: [],
+  },
+];
+
+export function getTopicGuide(topic: TaxIssueTopic): TaxTopicGuide | undefined {
+  return TOPIC_GUIDES.find((g) => g.topic === topic);
+}
+
+export function listTopicGuides(): TaxTopicGuide[] {
+  return TOPIC_GUIDES;
+}
+
+/** Topics emphasized on Rental vs Exit tax panels. */
+export function focusTopicsForVariant(variant: "rental" | "exit"): Set<TaxIssueTopic> {
+  if (variant === "exit") {
+    return new Set<TaxIssueTopic>(["property_tax", "1031", "capital_gains", "state_local"]);
+  }
+  return new Set<TaxIssueTopic>([
+    "property_tax",
+    "rental_income",
+    "depreciation",
+    "qbi",
+    "passive_loss",
+    "state_local",
+  ]);
+}
+
+export function resolveRelatedResources(
+  pack: TaxResourceEntry[],
+  guide: TaxTopicGuide
+): TaxResourceEntry[] {
+  if (guide.relatedIds.length === 0) {
+    return pack.filter((r) => r.topic === guide.topic).slice(0, 4);
+  }
+  const byId = new Map(pack.map((r) => [r.id, r]));
+  const picked = guide.relatedIds.map((id) => byId.get(id)).filter((r): r is TaxResourceEntry => r != null);
+  return picked.length > 0 ? picked : pack.filter((r) => r.topic === guide.topic).slice(0, 4);
+}

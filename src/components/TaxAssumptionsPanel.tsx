@@ -1,7 +1,10 @@
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Box,
-  Button,
   Checkbox,
   Chip,
   FormControlLabel,
@@ -12,7 +15,13 @@ import {
 } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import type { ReactNode } from "react";
+import { TaxReferencesPanel } from "./TaxReferencesPanel";
 import type { DerivedTaxExitSnapshot, DerivedTaxMetrics } from "../lib/deriveTaxMetrics";
+import {
+  parseResearchNotes,
+  researchOrEmpty,
+  type ResearchPersisted,
+} from "../storage/researchNotes";
 import type {
   AppPersisted,
   Tax1031AssumptionsPersisted,
@@ -222,23 +231,49 @@ export function TaxAssumptionsPanel({
   const replacementCost = state.tax?.exchange1031?.replacementPropertyCost ?? 0;
   const bootReceived = state.tax?.exchange1031?.bootReceived ?? 0;
 
+  const research = researchOrEmpty(state.research);
+  const onResearchChange = (next: ResearchPersisted) => {
+    patch({ research: parseResearchNotes(next) });
+  };
+
   return (
     <Stack spacing={0.85}>
       <TaxDisclaimer />
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-        {onGoToResearch ? (
-          <Button size="small" variant="outlined" onClick={onGoToResearch}>
-            Collect tax references
+      <Accordion
+        disableGutters
+        elevation={0}
+        defaultExpanded={taxIssueCount > 0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 1.5,
+          "&:before": { display: "none" },
+        }}
+      >
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 44, "& .MuiAccordionSummary-content": { my: 0.75 } }}>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Tax references & diligence
+            </Typography>
             {taxIssueCount > 0 ? (
-              <Chip size="small" label={taxIssueCount} color="secondary" sx={{ ml: 0.75 }} />
+              <Chip size="small" label={`${taxIssueCount} saved`} color="secondary" />
             ) : null}
-          </Button>
-        ) : null}
-        <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-          Federal, state, and county references: Research tab. Property tax amounts: External estimates
-          on Property (confirm before apply).
-        </Typography>
-      </Stack>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 0 }}>
+          <TaxReferencesPanel
+            state={state}
+            research={research}
+            onChange={onResearchChange}
+            compact
+            focus={variant}
+            onOpenFullResearch={onGoToResearch}
+          />
+        </AccordionDetails>
+      </Accordion>
+      <Typography variant="caption" color="text.secondary">
+        Property tax amounts: External estimates on Property (confirm before apply).
+      </Typography>
       <FormControlLabel
         control={
           <Switch

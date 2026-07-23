@@ -49,6 +49,8 @@ export type TaxIssuePersisted = {
   notes?: string;
   source?: string;
   jurisdiction?: TaxIssueJurisdiction;
+  /** Links back to a curated pack entry when saved from the library. */
+  curatedRefId?: string;
   addedAt: string;
 };
 
@@ -202,6 +204,7 @@ function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
   const title = asTrimmedString(raw.title, MAX_TEXT);
   if (!title) return null;
   const jurisdiction = parseTaxJurisdiction(raw.jurisdiction);
+  const curatedRefId = asTrimmedString(raw.curatedRefId, 80);
   return {
     id,
     topic: parseTaxTopic(raw.topic),
@@ -210,6 +213,7 @@ function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
     ...(asTrimmedString(raw.notes, MAX_NOTE) ? { notes: asTrimmedString(raw.notes, MAX_NOTE) } : {}),
     ...(asTrimmedString(raw.source, 80) ? { source: asTrimmedString(raw.source, 80) } : {}),
     ...(jurisdiction ? { jurisdiction } : {}),
+    ...(curatedRefId ? { curatedRefId } : {}),
     addedAt: asIsoDate(raw.addedAt),
   };
 }
@@ -270,6 +274,7 @@ export function researchOrEmpty(research: ResearchPersisted | undefined): Resear
 
 /** Convert a curated pack entry into a persisted tax issue row. */
 export function taxIssueFromCurated(entry: {
+  id?: string;
   topic: TaxIssueTopic;
   title: string;
   url: string;
@@ -284,7 +289,16 @@ export function taxIssueFromCurated(entry: {
     url: entry.url,
     source: entry.source,
     ...(entry.jurisdiction ? { jurisdiction: entry.jurisdiction } : {}),
+    ...(entry.id ? { curatedRefId: entry.id } : {}),
     ...(entry.blurb ? { notes: entry.blurb.slice(0, MAX_NOTE) } : {}),
     addedAt: new Date().toISOString(),
   };
+}
+
+export function isCuratedReferenceSaved(
+  taxIssues: TaxIssuePersisted[] | undefined,
+  entry: { id: string; url: string }
+): boolean {
+  const list = taxIssues ?? [];
+  return list.some((t) => t.curatedRefId === entry.id || (t.url === entry.url && t.title.length > 0));
 }

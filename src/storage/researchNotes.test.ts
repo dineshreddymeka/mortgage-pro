@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseResearchNotes } from "./researchNotes";
+import {
+  isCuratedReferenceSaved,
+  parseResearchNotes,
+  taxIssueFromCurated,
+} from "./researchNotes";
 
 describe("parseResearchNotes", () => {
   it("returns undefined for empty payloads", () => {
@@ -76,5 +80,61 @@ describe("parseResearchNotes", () => {
       taxIssues: [{ id: "t2", topic: "invalid-topic", title: "Custom note" }],
     });
     expect(parsed?.taxIssues?.[0]?.topic).toBe("other");
+  });
+
+  it("keeps curatedRefId on saved tax issues", () => {
+    const parsed = parseResearchNotes({
+      taxIssues: [
+        {
+          id: "t3",
+          topic: "qbi",
+          title: "QBI FAQ",
+          curatedRefId: "irs-qbi-faq",
+        },
+      ],
+    });
+    expect(parsed?.taxIssues?.[0]?.curatedRefId).toBe("irs-qbi-faq");
+  });
+});
+
+describe("tax issue helpers", () => {
+  it("taxIssueFromCurated stores curatedRefId and blurb as notes", () => {
+    const row = taxIssueFromCurated({
+      id: "irs-pub-527",
+      topic: "rental_income",
+      title: "Pub 527",
+      url: "https://www.irs.gov/publications/p527",
+      source: "IRS",
+      blurb: "Residential rental property",
+      jurisdiction: "federal",
+    });
+    expect(row.curatedRefId).toBe("irs-pub-527");
+    expect(row.notes).toBe("Residential rental property");
+    expect(row.jurisdiction).toBe("federal");
+  });
+
+  it("isCuratedReferenceSaved matches by curatedRefId or url", () => {
+    const saved = [
+      taxIssueFromCurated({
+        id: "irs-1031",
+        topic: "1031",
+        title: "1031 exchange",
+        url: "https://www.irs.gov/businesses/small-businesses-self-employed/like-kind-exchanges-real-estate-tax-tips",
+        source: "IRS",
+      }),
+    ];
+    expect(
+      isCuratedReferenceSaved(saved, {
+        id: "irs-1031",
+        url: "https://www.irs.gov/businesses/small-businesses-self-employed/like-kind-exchanges-real-estate-tax-tips",
+      })
+    ).toBe(true);
+    expect(
+      isCuratedReferenceSaved(saved, {
+        id: "other-id",
+        url: "https://www.irs.gov/businesses/small-businesses-self-employed/like-kind-exchanges-real-estate-tax-tips",
+      })
+    ).toBe(true);
+    expect(isCuratedReferenceSaved(saved, { id: "missing", url: "https://example.com" })).toBe(false);
   });
 });

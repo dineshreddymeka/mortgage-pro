@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildTaxResourcePack, filterTaxResources, filterTaxResourcesByJurisdiction, groupTaxResourcesByJurisdiction, relevantTaxTopics } from "./taxResourcePack";
+import {
+  buildTaxResourcePack,
+  filterTaxResources,
+  filterTaxResourcesByJurisdiction,
+  focusTopicsForVariant,
+  getTopicGuide,
+  groupTaxResourcesByJurisdiction,
+  listTopicGuides,
+  relevantTaxTopics,
+  resolveRelatedResources,
+} from "./taxResourcePack";
 import { fixtureV2Full } from "../__fixtures__/scenarioFixtures";
 
 describe("taxResourcePack", () => {
@@ -51,5 +61,28 @@ describe("taxResourcePack", () => {
     });
     expect(topics.has("depreciation")).toBe(true);
     expect(topics.has("1031")).toBe(true);
+  });
+
+  it("lists topic guides with checklists", () => {
+    const guides = listTopicGuides();
+    expect(guides.length).toBeGreaterThan(5);
+    const dep = getTopicGuide("depreciation");
+    expect(dep?.checklist.length).toBeGreaterThan(2);
+    expect(getTopicGuide("invalid" as never)).toBeUndefined();
+  });
+
+  it("focusTopicsForVariant emphasizes rental vs exit topics", () => {
+    expect(focusTopicsForVariant("rental").has("depreciation")).toBe(true);
+    expect(focusTopicsForVariant("rental").has("1031")).toBe(false);
+    expect(focusTopicsForVariant("exit").has("1031")).toBe(true);
+    expect(focusTopicsForVariant("exit").has("depreciation")).toBe(false);
+  });
+
+  it("resolveRelatedResources picks guide ids from pack", () => {
+    const pack = buildTaxResourcePack({ propertyState: "", propertyPostalCode: "", propertyAddress: "" });
+    const guide = getTopicGuide("1031");
+    expect(guide).toBeDefined();
+    const related = resolveRelatedResources(pack, guide!);
+    expect(related.some((r) => r.id === "irs-1031")).toBe(true);
   });
 });
