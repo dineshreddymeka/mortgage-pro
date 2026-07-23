@@ -8,9 +8,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { useId, useMemo, useRef, useState } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
 import { estimatePmiMonthly } from "../lib/mortgageMath";
 import {
   computeMonthlyCarryingCosts,
@@ -34,13 +34,10 @@ export type MortgageInputsFieldsProps = {
   /** Defaults to medium (Mortgage / Rental). */
   inputSize?: "small" | "medium";
   /**
-   * When true (Mortgage tab): up to 4 fields per row on `md+`, smaller gaps, collapsible carrying costs.
+   * When true (Mortgage tab): up to 4 fields per row in wide containers, smaller gaps, collapsible carrying costs.
    */
   compactGrid?: boolean;
 };
-
-/** 4 per row desktop; 2 on tablet; full width phone */
-const q4 = { xs: 12 as const, sm: 6 as const, md: 3 as const };
 
 const moneyDec = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -114,10 +111,12 @@ function TaxesCostsSection({
         sx={{
           px: 1,
           py: 0.75,
+          minHeight: { xs: 44, sm: 36 },
+          "@media (pointer: coarse)": { minHeight: 44 },
           cursor: "pointer",
           "&:focus-visible": {
             outline: "2px solid",
-            outlineColor: "primary.main",
+            outlineColor: "secondary.main",
             outlineOffset: -2,
           },
         }}
@@ -141,8 +140,8 @@ function TaxesCostsSection({
       </Stack>
       <Collapse in={expanded}>
         <Box id={panelId} role="region" aria-label="Taxes and monthly costs" sx={{ px: 1, pb: 1 }}>
-          <Grid container spacing={compactGrid ? { xs: 0.75, md: 0.5 } : 1}>
-            <Grid size={q4}>
+          <FormGrid maxColumns={4} compact={compactGrid}>
+            <FormField>
               <DollarPercentField
                 label="Property tax"
                 size={inputSize}
@@ -157,8 +156,8 @@ function TaxesCostsSection({
                   patch(syncPropertyTaxPercentPatch(pct, state.homePrice, state.propertyTaxAnnual))
                 }
               />
-            </Grid>
-            <Grid size={q4}>
+            </FormField>
+            <FormField>
               <TextField
                 label="Home insurance (annual)"
                 size={inputSize}
@@ -174,8 +173,8 @@ function TaxesCostsSection({
                   },
                 }}
               />
-            </Grid>
-            <Grid size={q4}>
+            </FormField>
+            <FormField>
               <TextField
                 label="HOA (monthly)"
                 size={inputSize}
@@ -191,10 +190,10 @@ function TaxesCostsSection({
                   },
                 }}
               />
-            </Grid>
+            </FormField>
             {showPmi ? (
               <>
-                <Grid size={q4}>
+                <FormField>
                   <TextField
                     label="PMI (monthly)"
                     size={inputSize}
@@ -211,14 +210,18 @@ function TaxesCostsSection({
                       },
                     }}
                   />
-                </Grid>
-                <Grid size={q4}>
+                </FormField>
+                <FormField>
                   <Button
                     variant="outlined"
                     color="secondary"
                     size={inputSize === "small" ? "small" : "medium"}
                     fullWidth
-                    sx={{ height: inputSize === "small" ? 40 : 56 }}
+                    sx={{
+                      height: "100%",
+                      minHeight: inputSize === "small" ? 36 : 44,
+                      "@media (pointer: coarse)": { minHeight: 44 },
+                    }}
                     aria-label="Estimate PMI at about 0.6 percent per year"
                     onClick={() => {
                       const loan = Math.max(0, state.homePrice - state.downPayment);
@@ -232,10 +235,10 @@ function TaxesCostsSection({
                   >
                     ~0.6%/yr
                   </Button>
-                </Grid>
+                </FormField>
               </>
             ) : null}
-          </Grid>
+          </FormGrid>
         </Box>
       </Collapse>
     </Box>
@@ -249,16 +252,15 @@ export function MortgageInputsFields({
   inputSize = "medium",
   compactGrid = false,
 }: MortgageInputsFieldsProps) {
-  const g = compactGrid ? q4 : { xs: 12 as const, sm: 6 as const };
-  const spacing = compactGrid ? { xs: 0.75, md: 0.5 } : 1;
+  const maxColumns = compactGrid ? 4 : 2;
   const [extraPrincipalRevealed, setExtraPrincipalRevealed] = useState(false);
   const showExtraPrincipalField =
     state.extraPrincipalMonthly > 0 || extraPrincipalRevealed || !compactGrid;
 
   return (
     <Stack spacing={compactGrid ? 0.75 : 1}>
-      <Grid container spacing={spacing}>
-        <Grid size={g}>
+      <FormGrid maxColumns={maxColumns} compact={compactGrid}>
+        <FormField>
           <TextField
             label="Purchase price"
             size={inputSize}
@@ -279,8 +281,8 @@ export function MortgageInputsFields({
               },
             }}
           />
-        </Grid>
-        <Grid size={g}>
+        </FormField>
+        <FormField>
           <DollarPercentField
             label="Down payment"
             size={inputSize}
@@ -293,8 +295,8 @@ export function MortgageInputsFields({
               patch(syncDownPaymentPercentPatch(pct, state.homePrice, state.downPayment))
             }
           />
-        </Grid>
-        <Grid size={g}>
+        </FormField>
+        <FormField>
           <TextField
             label="Interest rate (APR)"
             size={inputSize}
@@ -310,8 +312,8 @@ export function MortgageInputsFields({
               },
             }}
           />
-        </Grid>
-        <Grid size={g}>
+        </FormField>
+        <FormField>
           <TextField
             label="Loan term"
             size={inputSize}
@@ -327,8 +329,8 @@ export function MortgageInputsFields({
               </option>
             ))}
           </TextField>
-        </Grid>
-      </Grid>
+        </FormField>
+      </FormGrid>
 
       {compactGrid ? (
         <TaxesCostsSection

@@ -29,6 +29,7 @@ import { DataVerificationDialog } from "./components/DataVerificationDialog";
 import { RevisionConflictDialog } from "./components/RevisionConflictDialog";
 import { WorkspaceKpiStrip } from "./components/WorkspaceKpiStrip";
 import { useMortgageSyncedState } from "./hooks/useMortgageSyncedState";
+import { workspaceMaxWidth } from "./layout/formLayout";
 import { buildHouseComparisonRow } from "./lib/houseComparison";
 import { downloadScenarioExcel } from "./lib/scenarioExcelExport";
 import { deriveScenario } from "./lib/deriveScenario";
@@ -232,7 +233,7 @@ export default function App() {
           WebkitBackdropFilter: "saturate(160%) blur(18px)",
         }}
       >
-        <Box sx={{ px: { xs: 1.25, sm: 2 }, py: { xs: 0.65, sm: 0.75 }, maxWidth: 1400, mx: "auto", width: "100%" }}>
+        <Box sx={{ px: { xs: 1.25, sm: 2 }, py: { xs: 0.65, sm: 0.75 }, maxWidth: workspaceMaxWidth, mx: "auto", width: "100%" }}>
           <Stack
             direction="row"
             spacing={1}
@@ -400,7 +401,7 @@ export default function App() {
           flex: 1,
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          maxWidth: 1400,
+          maxWidth: workspaceMaxWidth,
           width: "100%",
           mx: "auto",
           minHeight: 0,
