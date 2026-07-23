@@ -51,6 +51,7 @@ describe("parseResearchNotes", () => {
         {
           id: "t1",
           topic: "depreciation",
+          jurisdiction: "federal",
           title: " Pub 946 ",
           url: "https://www.irs.gov/publications/p946",
           source: " IRS ",
@@ -63,6 +64,7 @@ describe("parseResearchNotes", () => {
     expect(parsed?.taxIssues?.[0]).toMatchObject({
       id: "t1",
       topic: "depreciation",
+      jurisdiction: "federal",
       title: "Pub 946",
       source: "IRS",
       notes: "reference",

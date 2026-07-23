@@ -13,6 +13,8 @@ export type TaxIssueTopic =
   | "state_local"
   | "other";
 
+export type TaxIssueJurisdiction = "federal" | "state" | "county";
+
 export type ResearchLinkPersisted = {
   id: string;
   url: string;
@@ -46,6 +48,7 @@ export type TaxIssuePersisted = {
   url?: string;
   notes?: string;
   source?: string;
+  jurisdiction?: TaxIssueJurisdiction;
   addedAt: string;
 };
 
@@ -78,6 +81,8 @@ export const TAX_ISSUE_TOPICS = [
 ] as const satisfies readonly TaxIssueTopic[];
 
 const TAX_TOPIC_SET = new Set<TaxIssueTopic>(TAX_ISSUE_TOPICS);
+
+const TAX_JURISDICTIONS = new Set<TaxIssueJurisdiction>(["federal", "state", "county"]);
 
 export function taxIssueTopicLabel(topic: TaxIssueTopic): string {
   const labels: Record<TaxIssueTopic, string> = {
@@ -185,11 +190,18 @@ function parseTaxTopic(raw: unknown): TaxIssueTopic {
   return "other";
 }
 
+function parseTaxJurisdiction(raw: unknown): TaxIssueJurisdiction | undefined {
+  const t = asTrimmedString(raw, 20);
+  if (t && TAX_JURISDICTIONS.has(t as TaxIssueJurisdiction)) return t as TaxIssueJurisdiction;
+  return undefined;
+}
+
 function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
   if (!isPlainObject(raw)) return null;
   const id = asTrimmedString(raw.id, 80) ?? newResearchId();
   const title = asTrimmedString(raw.title, MAX_TEXT);
   if (!title) return null;
+  const jurisdiction = parseTaxJurisdiction(raw.jurisdiction);
   return {
     id,
     topic: parseTaxTopic(raw.topic),
@@ -197,6 +209,7 @@ function parseTaxIssue(raw: unknown): TaxIssuePersisted | null {
     ...(asTrimmedString(raw.url, MAX_URL) ? { url: asTrimmedString(raw.url, MAX_URL) } : {}),
     ...(asTrimmedString(raw.notes, MAX_NOTE) ? { notes: asTrimmedString(raw.notes, MAX_NOTE) } : {}),
     ...(asTrimmedString(raw.source, 80) ? { source: asTrimmedString(raw.source, 80) } : {}),
+    ...(jurisdiction ? { jurisdiction } : {}),
     addedAt: asIsoDate(raw.addedAt),
   };
 }
@@ -262,6 +275,7 @@ export function taxIssueFromCurated(entry: {
   url: string;
   source: string;
   blurb?: string;
+  jurisdiction?: TaxIssueJurisdiction;
 }): TaxIssuePersisted {
   return {
     id: newResearchId(),
@@ -269,6 +283,7 @@ export function taxIssueFromCurated(entry: {
     title: entry.title,
     url: entry.url,
     source: entry.source,
+    ...(entry.jurisdiction ? { jurisdiction: entry.jurisdiction } : {}),
     ...(entry.blurb ? { notes: entry.blurb.slice(0, MAX_NOTE) } : {}),
     addedAt: new Date().toISOString(),
   };

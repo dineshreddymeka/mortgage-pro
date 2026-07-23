@@ -18,7 +18,11 @@ import { useMemo, useState } from "react";
 import {
   buildTaxResourcePack,
   filterTaxResources,
+  filterTaxResourcesByJurisdiction,
   relevantTaxTopics,
+  TAX_JURISDICTIONS,
+  taxJurisdictionLabel,
+  type TaxJurisdiction,
   type TaxResourceEntry,
 } from "../lib/taxResourcePack";
 import {
@@ -34,6 +38,7 @@ import {
   type ResearchLinkPersisted,
   type ResearchPersisted,
   type TaxIssuePersisted,
+  type TaxIssueJurisdiction,
   type TaxIssueTopic,
 } from "../storage/researchNotes";
 import type { AppPersisted } from "../storage/mortgageState";
@@ -103,23 +108,32 @@ function TaxIssuesPanel({
   onChange: (next: ResearchPersisted) => void;
 }) {
   const taxIssues = research.taxIssues ?? [];
+  const [jurisdictionFilter, setJurisdictionFilter] = useState<TaxJurisdiction | "all">("all");
   const [topicFilter, setTopicFilter] = useState<TaxIssueTopic | "all">("all");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [source, setSource] = useState("");
   const [manualTopic, setManualTopic] = useState<TaxIssueTopic>("other");
+  const [manualJurisdiction, setManualJurisdiction] = useState<TaxIssueJurisdiction>("county");
 
-  const curatedPack = useMemo(() => buildTaxResourcePack(state), [state.propertyState]);
+  const curatedPack = useMemo(() => buildTaxResourcePack(state), [state]);
   const highlighted = useMemo(() => relevantTaxTopics(state), [state]);
-  const filteredCurated = useMemo(
-    () => filterTaxResources(curatedPack, topicFilter),
-    [curatedPack, topicFilter]
-  );
-  const filteredSaved = useMemo(
-    () => (topicFilter === "all" ? taxIssues : taxIssues.filter((t) => t.topic === topicFilter)),
-    [taxIssues, topicFilter]
-  );
+  const filteredCurated = useMemo(() => {
+    let rows = filterTaxResourcesByJurisdiction(curatedPack, jurisdictionFilter);
+    rows = filterTaxResources(rows, topicFilter);
+    return rows;
+  }, [curatedPack, jurisdictionFilter, topicFilter]);
+  const filteredSaved = useMemo(() => {
+    let rows = taxIssues;
+    if (jurisdictionFilter !== "all") {
+      rows = rows.filter((t) => t.jurisdiction === jurisdictionFilter);
+    }
+    if (topicFilter !== "all") {
+      rows = rows.filter((t) => t.topic === topicFilter);
+    }
+    return rows;
+  }, [taxIssues, jurisdictionFilter, topicFilter]);
 
   function addCurated(entry: TaxResourceEntry) {
     const exists = taxIssues.some((t) => t.url === entry.url && t.title === entry.title);
@@ -139,6 +153,7 @@ function TaxIssuesPanel({
       topic: manualTopic,
       title: trimmed.slice(0, 200),
       addedAt: new Date().toISOString(),
+      jurisdiction: manualJurisdiction,
       ...(href ? { url: href } : {}),
       ...(notes.trim() ? { notes: notes.trim().slice(0, 2000) } : {}),
       ...(source.trim() ? { source: source.trim().slice(0, 80) } : {}),
@@ -154,11 +169,31 @@ function TaxIssuesPanel({
     <Stack spacing={1.5}>
       <Alert severity="info" variant="outlined" sx={{ py: 0.35 }}>
         <Typography variant="caption" sx={{ lineHeight: 1.4, display: "block" }}>
-          Collect tax references from IRS, state, and county sites — research only, not tax advice.
-          Property tax <strong>amounts</strong> use External estimates on the Property tab (confirm
-          before apply).
+          Federal (IRS), state revenue, and county/local assessor references — research only, not tax
+          advice. Property tax <strong>amounts</strong> use External estimates on Property (confirm before
+          apply). Set state and ZIP on Property for localized county links.
         </Typography>
       </Alert>
+
+      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+        <Chip
+          size="small"
+          label="All levels"
+          color={jurisdictionFilter === "all" ? "secondary" : "default"}
+          variant={jurisdictionFilter === "all" ? "filled" : "outlined"}
+          onClick={() => setJurisdictionFilter("all")}
+        />
+        {TAX_JURISDICTIONS.map((j) => (
+          <Chip
+            key={j}
+            size="small"
+            label={taxJurisdictionLabel(j)}
+            color={jurisdictionFilter === j ? "secondary" : "default"}
+            variant={jurisdictionFilter === j ? "filled" : "outlined"}
+            onClick={() => setJurisdictionFilter(j)}
+          />
+        ))}
+      </Stack>
 
       <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
         <Chip
@@ -200,6 +235,7 @@ function TaxIssuesPanel({
                     <Typography variant="body2" fontWeight={600}>
                       {entry.title}
                     </Typography>
+                    <Chip size="small" label={taxJurisdictionLabel(entry.jurisdiction)} variant="outlined" />
                     <Chip size="small" label={taxIssueTopicLabel(entry.topic)} variant="outlined" />
                     {highlighted.has(entry.topic) ? (
                       <Chip size="small" label="Relevant" color="primary" variant="outlined" />
@@ -247,6 +283,20 @@ function TaxIssuesPanel({
             onChange={(e) => setTitle(e.target.value)}
             sx={{ flex: 1.2, minWidth: 140 }}
           />
+          <TextField
+            size="small"
+            select
+            label="Level"
+            value={manualJurisdiction}
+            onChange={(e) => setManualJurisdiction(e.target.value as TaxIssueJurisdiction)}
+            sx={{ minWidth: 130 }}
+          >
+            {TAX_JURISDICTIONS.map((j) => (
+              <MenuItem key={j} value={j}>
+                {taxJurisdictionLabel(j)}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             size="small"
             select
@@ -313,6 +363,7 @@ function TaxIssuesPanel({
                     {issue.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
+                    {issue.jurisdiction ? `${taxJurisdictionLabel(issue.jurisdiction)} · ` : ""}
                     {taxIssueTopicLabel(issue.topic)}
                     {issue.source ? ` · ${issue.source}` : ""}
                     {issue.notes ? ` · ${issue.notes}` : ""}

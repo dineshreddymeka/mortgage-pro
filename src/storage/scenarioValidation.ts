@@ -197,7 +197,7 @@ Object.assign(SCENARIO_FUTURE_SHAPE, {
       futureShape(["id", "title", "url", "note", "addedAt"]),
     ],
     taxIssues: [
-      futureShape(["id", "topic", "title", "url", "notes", "source", "addedAt"]),
+      futureShape(["id", "topic", "title", "url", "notes", "source", "jurisdiction", "addedAt"]),
     ],
   },
 });

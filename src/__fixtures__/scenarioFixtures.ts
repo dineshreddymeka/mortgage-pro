@@ -173,6 +173,7 @@ export const fixtureAllKnownFields: AppPersisted = {
       {
         id: "tax-1",
         topic: "depreciation",
+        jurisdiction: "federal",
         title: "IRS Pub 946",
         url: "https://www.irs.gov/publications/p946",
         source: "IRS",

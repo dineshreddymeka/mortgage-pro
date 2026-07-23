@@ -235,7 +235,8 @@ export function TaxAssumptionsPanel({
           </Button>
         ) : null}
         <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-          Property tax amounts: use External estimates on Property (confirm before apply).
+          Federal, state, and county references: Research tab. Property tax amounts: External estimates
+          on Property (confirm before apply).
         </Typography>
       </Stack>
       <FormControlLabel
