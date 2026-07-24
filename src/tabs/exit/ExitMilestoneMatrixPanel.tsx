@@ -351,7 +351,7 @@ export function ExitMilestoneMatrixPanel({
         sx={{
           display: "grid",
           gap: 0.85,
-          alignItems: "start",
+          alignItems: "stretch",
           minHeight: 0,
           flex: 1,
           gridTemplateColumns: "minmax(0, 1fr)",
@@ -366,8 +366,10 @@ export function ExitMilestoneMatrixPanel({
             borderColor: "divider",
             borderRadius: 1.5,
             overflowX: "auto",
+            overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             maxHeight: "100%",
+            minHeight: 0,
             minWidth: 0,
           }}
         >
@@ -411,11 +413,9 @@ export function ExitMilestoneMatrixPanel({
                     id={rowId}
                     hover
                     selected={selected}
-                    role="button"
                     tabIndex={0}
                     aria-selected={selected}
                     aria-current={selected ? "true" : undefined}
-                    aria-pressed={selected}
                     aria-label={`Select exit year ${row.year}, ${outcomeChipLabel(row.outcome)}`}
                     onClick={() => selectYear(row.year)}
                     onKeyDown={(e) => onRowKeyDown(row.year, e)}

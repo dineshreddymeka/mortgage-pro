@@ -2,6 +2,9 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
+import { minOperationalFontPx } from "../layout/formLayout";
+
+const opFont = `${minOperationalFontPx}px`;
 
 export function MetricNoDataPlaceholder(props: { hint?: string; compact?: boolean }) {
   return (
@@ -56,7 +59,7 @@ export function RentalMetricCard(props: RentalMetricCardProps) {
         variant="caption"
         color="text.secondary"
         sx={{
-          fontSize: "0.65rem",
+          fontSize: opFont,
           lineHeight: 1.2,
           letterSpacing: "0.04em",
           textTransform: "uppercase",
@@ -100,7 +103,7 @@ export function RentalMetricCard(props: RentalMetricCardProps) {
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.65rem", lineHeight: 1.2 }}
+                sx={{ fontVariantNumeric: "tabular-nums", fontSize: opFont, lineHeight: 1.2 }}
               >
                 {props.detail}
               </Typography>
@@ -111,7 +114,7 @@ export function RentalMetricCard(props: RentalMetricCardProps) {
                 color="text.secondary"
                 sx={{
                   fontVariantNumeric: "tabular-nums",
-                  fontSize: "0.6rem",
+                  fontSize: opFont,
                   lineHeight: 1.2,
                   opacity: 0.92,
                 }}
@@ -125,7 +128,7 @@ export function RentalMetricCard(props: RentalMetricCardProps) {
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ fontSize: "0.65rem", lineHeight: 1.25, display: "block", mt: 0.25 }}
+        sx={{ fontSize: opFont, lineHeight: 1.25, display: "block", mt: 0.25 }}
       >
         {props.hint}
       </Typography>
@@ -135,7 +138,7 @@ export function RentalMetricCard(props: RentalMetricCardProps) {
           sx={{
             display: "block",
             mt: 0.45,
-            fontSize: "0.65rem",
+            fontSize: opFont,
             lineHeight: 1.35,
             color: "success.main",
           }}

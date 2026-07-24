@@ -623,6 +623,8 @@ export function ResearchTab({ state, patch, activePropertyId }: ResearchTabProps
       description: panelById[id].description,
       defaultLayout: researchWidgetLgLayout(id),
       defaultLayouts: researchWidgetLayouts(id),
+      // Height-aware tax list owns scrolling inside the fixed desktop cell.
+      ...(id === "tax-issues" ? { scrollBody: true as const } : {}),
       content: panelById[id].content,
     }));
   }, [activePropertyId, onChange, research, state]);

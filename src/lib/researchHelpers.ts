@@ -1,13 +1,32 @@
 /** Debounce before committing buffered freeform notes to persisted research. */
 export const RESEARCH_NOTES_DEBOUNCE_MS = 400;
 
+/**
+ * True when `beforeColon` + `afterColon` look like host:port (optionally with
+ * path/query/hash), not a URI scheme such as `javascript:` or `ftp://…`.
+ */
+function isHostPortWithoutScheme(beforeColon: string, afterColon: string): boolean {
+  if (!/^\d{1,5}(?:[/?#]|$)/.test(afterColon)) return false;
+  if (/^localhost$/i.test(beforeColon)) return true;
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(beforeColon)) return true;
+  // Hostname with a dot (example.com) — schemes never contain ".".
+  return /\./.test(beforeColon);
+}
+
 /** Normalize a user-entered URL to an http(s) href, or null when invalid. */
 export function researchSafeHref(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
-  // Reject explicit non-http(s) schemes before https-prepending (e.g. ftp:, javascript:).
-  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:\/\//i.test(trimmed)) {
-    return null;
+  // Reject explicit non-http(s) schemes before https-prepending (e.g. ftp:, javascript:),
+  // but accept host:port without a scheme (example.com:8080, localhost:3000).
+  if (!/^https?:\/\//i.test(trimmed)) {
+    const schemeLike = /^([a-z][a-z0-9+.-]*):(.*)$/i.exec(trimmed);
+    if (schemeLike) {
+      const [, beforeColon, afterColon] = schemeLike;
+      const isHostPort =
+        !afterColon.startsWith("//") && isHostPortWithoutScheme(beforeColon, afterColon);
+      if (!isHostPort) return null;
+    }
   }
   try {
     const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;

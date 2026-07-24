@@ -352,7 +352,7 @@ export default function App() {
             variant="caption"
             color="text.secondary"
             display="block"
-            sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.68rem", opacity: 0.85 }}
+            sx={{ lineHeight: 1.35, pt: 1, pb: 0.25, fontSize: "0.75rem", opacity: 0.85 }}
           >
             Estimates only. {activeHouseLabel}: one category per tab
             {cloudStatus === "ready" ? " · synced to Firestore." : " · saved in this browser."}

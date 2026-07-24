@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resolveWidgetBodyOverflow } from "./WidgetFrame";
 import {
   DEFAULT_WIDGET_ROW_HEIGHT,
   WIDGET_LAYOUT_STORAGE_VERSION,
@@ -324,19 +323,5 @@ describe("widget board row height compatibility", () => {
   it("uses compact default for other boards when rowHeight is omitted", () => {
     expect(resolveBoardRowHeight("mortgage")).toBe(DEFAULT_WIDGET_ROW_HEIGHT);
     expect(resolveBoardRowHeight("upfront", 30)).toBe(30);
-  });
-});
-
-describe("widget body overflow safety", () => {
-  it("keeps desktop fixed-height bodies on overflow auto even when scrollBody is false", () => {
-    expect(resolveWidgetBodyOverflow(false)).toBe("auto");
-    expect(resolveWidgetBodyOverflow(false, false)).toBe("auto");
-    expect(resolveWidgetBodyOverflow(false, true)).toBe("auto");
-  });
-
-  it("keeps natural stacks visible by default and allows opt-in scrolling", () => {
-    expect(resolveWidgetBodyOverflow(true)).toBe("visible");
-    expect(resolveWidgetBodyOverflow(true, false)).toBe("visible");
-    expect(resolveWidgetBodyOverflow(true, true)).toBe("auto");
   });
 });

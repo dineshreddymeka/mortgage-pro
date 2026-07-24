@@ -4,6 +4,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import { useId, type ReactNode } from "react";
+import { resolveWidgetBodyOverflow } from "./widgetFrameLayout";
 
 export type WidgetFrameProps = {
   title: string;
@@ -12,24 +13,14 @@ export type WidgetFrameProps = {
   /** Natural-height stack: no drag/resize chrome. */
   mobileStack?: boolean;
   /**
-   * Explicit scroll control for natural-height stacks (tall tables/lists).
-   * Desktop fixed-height cells always keep overflow:auto so content cannot overlap
-   * neighbors; `scrollBody={false}` cannot disable that safe default.
+   * Desktop: hide frame-body overflow so a height-aware child table/list owns scrolling.
+   * Natural mobile stacks stay visible regardless (no nested frame scroll).
+   * When unset/false on desktop, the frame keeps overflow:auto as a safe default.
    */
   scrollBody?: boolean;
   /** When false, hide drag affordances (coarse pointer / non-interactive). */
   dragEnabled?: boolean;
 };
-
-/** Resolve body overflow: stacks stay visible unless opted in; desktop stays auto. */
-export function resolveWidgetBodyOverflow(
-  mobileStack: boolean,
-  scrollBody?: boolean
-): "auto" | "visible" {
-  if (mobileStack) return scrollBody ? "auto" : "visible";
-  // Fixed-height desktop cells: always clip/scroll safely inside the frame.
-  return "auto";
-}
 
 /** Chrome around a grid item: optional drag handle + title. */
 export function WidgetFrame({

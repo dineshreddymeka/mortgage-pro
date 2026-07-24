@@ -329,7 +329,6 @@ export function RentalTab({
         description: `Where EGI goes · total ${moneyDec.format(totalOpexMo + piMonthly + pmiMo)}/mo`,
         defaultLayout: rentalWidgetLgLayout("composition"),
         defaultLayouts: rentalWidgetLayouts("composition"),
-        scrollBody: true,
         content: <RentalExpenseComposition slices={r.composition} />,
       },
       {
@@ -386,7 +385,6 @@ export function RentalTab({
         description: "Delta what-if via deriveScenario",
         defaultLayout: rentalWidgetLgLayout("stress"),
         defaultLayouts: rentalWidgetLayouts("stress"),
-        scrollBody: true,
         content: <StressTestPanel state={state} patch={patch} />,
       },
     ],

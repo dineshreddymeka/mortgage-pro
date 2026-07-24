@@ -23,9 +23,15 @@ import { useEffect, useState } from "react";
 import type { CloudSyncStatus } from "../hooks/useMortgageSyncedState";
 import type { HouseComparisonRow } from "../lib/houseComparison";
 import { houseLabel, type PropertyMeta } from "../storage/firestoreProperties";
-import { APP_HEADER_HEIGHT_PX } from "./workspaceShell";
+import { minOperationalFontPx } from "../layout/formLayout";
+import {
+  APP_HEADER_HEIGHT_PX,
+  shellActionTargetSx,
+  shellIconActionTargetSx,
+} from "./workspaceShell";
 
 const NAV_COLLAPSED_KEY = "mortgage-pro:house-nav-collapsed";
+const opFont = `${minOperationalFontPx}px`;
 
 export type HouseNavBarProps = {
   cloudStatus: CloudSyncStatus;
@@ -150,15 +156,15 @@ export function HouseNavBar({
             <Typography
               sx={{
                 fontWeight: 700,
-                fontSize: "0.68rem",
-                letterSpacing: "0.09em",
+                fontSize: opFont,
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
                 color: "text.secondary",
               }}
             >
               Portfolio
             </Typography>
-            <Typography sx={{ fontWeight: 700, fontSize: "0.92rem", letterSpacing: "-0.03em" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", letterSpacing: "-0.03em" }}>
               Houses
             </Typography>
           </Box>
@@ -187,12 +193,11 @@ export function HouseNavBar({
               aria-label={collapsed ? "Expand portfolio navigation" : "Collapse portfolio navigation"}
               aria-expanded={!collapsed}
               sx={{
+                ...shellIconActionTargetSx,
                 color: "text.secondary",
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: "8px",
-                width: 32,
-                height: 32,
               }}
             >
               {/* Desktop: chevrons; mobile collapsed uses expand-more metaphor via same icons */}
@@ -243,10 +248,10 @@ export function HouseNavBar({
               onClick={toggleCollapsed}
               aria-label={`Expand portfolio — ${active.name || houseLabel(active.houseId)}`}
               sx={{
-                minHeight: 30,
+                ...shellActionTargetSx,
                 px: 0.5,
                 fontWeight: 700,
-                fontSize: "0.78rem",
+                fontSize: opFont,
                 letterSpacing: "-0.02em",
                 flexShrink: 1,
                 minWidth: 0,
@@ -259,14 +264,18 @@ export function HouseNavBar({
               </Box>
             </Button>
           ) : (
-            <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ flexShrink: 0, fontSize: opFont }}
+            >
               Portfolio hidden
             </Typography>
           )}
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ flexShrink: 0, fontSize: "0.68rem", fontWeight: 650 }}
+            sx={{ flexShrink: 0, fontSize: opFont, fontWeight: 650 }}
           >
             {sorted.length} active
             {sortedArchived.length > 0 ? ` · ${sortedArchived.length} archived` : ""}
@@ -312,12 +321,12 @@ export function HouseNavBar({
                   aria-label={label}
                   aria-current={selected ? "page" : undefined}
                   sx={{
+                    ...shellIconActionTargetSx,
                     width: 40,
-                    height: 36,
                     borderRadius: "10px",
                     fontFamily: "var(--pp-font-mono)",
                     fontWeight: 700,
-                    fontSize: "0.7rem",
+                    fontSize: opFont,
                     border: "1px solid",
                     borderColor: selected ? "secondary.main" : "divider",
                     bgcolor: selected
@@ -339,9 +348,9 @@ export function HouseNavBar({
                 onClick={onCreate}
                 aria-label="Add house"
                 sx={{
+                  ...shellIconActionTargetSx,
                   mt: "auto",
                   width: 40,
-                  height: 36,
                   borderRadius: "10px",
                   border: "1px dashed",
                   borderColor: "divider",
@@ -424,7 +433,7 @@ export function HouseNavBar({
                             display: "grid",
                             placeItems: "center",
                             fontWeight: 700,
-                            fontSize: "0.72rem",
+                            fontSize: opFont,
                             fontFamily: "var(--pp-font-mono)",
                             bgcolor: selected ? "secondary.main" : alpha("#0b1f33", 0.08),
                             color: selected ? "secondary.contrastText" : "text.primary",
@@ -435,7 +444,7 @@ export function HouseNavBar({
                         <Typography
                           sx={{
                             fontWeight: 700,
-                            fontSize: "0.88rem",
+                            fontSize: "0.8125rem",
                             letterSpacing: "-0.03em",
                             flex: 1,
                             minWidth: 0,
@@ -456,6 +465,7 @@ export function HouseNavBar({
                             onArchive(p.id);
                           }}
                             sx={{
+                              ...shellIconActionTargetSx,
                               mt: -0.25,
                               color: "text.secondary",
                               "&:hover": { color: "warning.main" },
@@ -469,14 +479,14 @@ export function HouseNavBar({
                       <Stack direction="row" justifyContent="space-between" spacing={1}>
                         <Typography
                           className="pp-mono"
-                          sx={{ fontSize: "0.68rem", color: "text.secondary" }}
+                          sx={{ fontSize: opFont, color: "text.secondary" }}
                         >
                           {money0.format(metrics?.paymentMonthly ?? 0)}/mo
                         </Typography>
                         <Typography
                           className="pp-mono"
                           sx={{
-                            fontSize: "0.68rem",
+                            fontSize: opFont,
                             fontWeight: 650,
                             color:
                               cf > 0 ? "success.main" : cf < 0 ? "error.main" : "text.secondary",
@@ -514,11 +524,11 @@ export function HouseNavBar({
                 aria-expanded={archivedOpen}
                 aria-controls="archived-houses-list"
                 sx={{
+                  ...shellActionTargetSx,
                   justifyContent: "space-between",
-                  minHeight: 34,
                   px: 0.75,
                   color: "text.secondary",
-                  fontSize: "0.72rem",
+                  fontSize: opFont,
                   fontWeight: 700,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
@@ -555,7 +565,7 @@ export function HouseNavBar({
                           display: "grid",
                           placeItems: "center",
                           fontWeight: 700,
-                          fontSize: "0.66rem",
+                          fontSize: opFont,
                           fontFamily: "var(--pp-font-mono)",
                           bgcolor: alpha("#0b1f33", 0.06),
                           color: "text.secondary",
@@ -568,7 +578,7 @@ export function HouseNavBar({
                           flex: 1,
                           minWidth: 0,
                           fontWeight: 650,
-                          fontSize: "0.8rem",
+                          fontSize: opFont,
                           color: "text.secondary",
                         }}
                         noWrap
@@ -580,7 +590,7 @@ export function HouseNavBar({
                         size="small"
                         aria-label={`Restore ${p.name || houseLabel(p.houseId)}`}
                         onClick={() => onRestore(p.id)}
-                        sx={{ color: "secondary.main" }}
+                        sx={{ ...shellIconActionTargetSx, color: "secondary.main" }}
                       >
                           <UnarchiveOutlinedIcon sx={{ fontSize: 16 }} />
                         </IconButton>
@@ -601,13 +611,13 @@ export function HouseNavBar({
               onClick={onCreate}
               aria-label="Add house"
               sx={{
+                ...shellActionTargetSx,
                 mt: { md: "auto" },
-                minHeight: 38,
                 flexShrink: 0,
                 minWidth: { xs: 140, md: "auto" },
                 justifyContent: "flex-start",
                 borderStyle: "dashed",
-                fontSize: "0.8rem",
+                fontSize: opFont,
                 fontWeight: 700,
               }}
             >

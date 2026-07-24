@@ -11,7 +11,11 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useMemo } from "react";
 import { applyBuyerCostLineOverrides, estimateHomeBuyingOneTimeCosts } from "../lib/buyingCostsMath";
 import { FormField, FormGrid } from "../layout/FormGrid";
-import { minOperationalFontPx } from "../layout/formLayout";
+import {
+  minOperationalFontPx,
+  touchTargetCoarsePx,
+  touchTargetFinePx,
+} from "../layout/formLayout";
 import type { AppPersisted } from "../storage/mortgageState";
 
 const money = new Intl.NumberFormat(undefined, {
@@ -21,6 +25,28 @@ const money = new Intl.NumberFormat(undefined, {
 });
 
 const operationalFont = `${minOperationalFontPx}px`;
+
+/** Keep fee inputs at 36/44 even when table row padding stays compact. */
+const feeInputSx = {
+  "& .MuiOutlinedInput-root": {
+    minHeight: touchTargetFinePx,
+    "@media (pointer: coarse)": {
+      minHeight: touchTargetCoarsePx,
+    },
+  },
+  "& .MuiOutlinedInput-input": {
+    px: 0.5,
+    py: 0,
+    fontSize: operationalFont,
+    textAlign: "right" as const,
+    fontVariantNumeric: "tabular-nums",
+    boxSizing: "border-box" as const,
+    minHeight: touchTargetFinePx - 2,
+    "@media (pointer: coarse)": {
+      minHeight: touchTargetCoarsePx - 2,
+    },
+  },
+};
 
 function formatNumberField(value: number): string {
   if (!Number.isFinite(value)) return "";
@@ -207,15 +233,7 @@ export function UpfrontCashScenarioPanel({
                         inputMode: "numeric",
                         "aria-label": `${l.label} amount in dollars`,
                       }}
-                      sx={{
-                        "& .MuiOutlinedInput-input": {
-                          py: 0.25,
-                          px: 0.5,
-                          fontSize: operationalFont,
-                          textAlign: "right",
-                          fontVariantNumeric: "tabular-nums",
-                        },
-                      }}
+                      sx={feeInputSx}
                     />
                   </TableCell>
                 </TableRow>
@@ -263,7 +281,13 @@ export function UpfrontCashScenarioPanel({
           size="small"
           variant="outlined"
           color="secondary"
-          sx={{ textTransform: "none", fontWeight: 700, fontSize: operationalFont }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: operationalFont,
+            minHeight: touchTargetFinePx,
+            "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
+          }}
           onClick={() => patch({ closingCosts: Math.max(0, Math.round(est.suggestedClosingTotal)) })}
         >
           Set closing to model (fees + prepaids)
@@ -272,7 +296,13 @@ export function UpfrontCashScenarioPanel({
           size="small"
           variant="text"
           color="inherit"
-          sx={{ textTransform: "none", fontWeight: 600, fontSize: operationalFont }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: operationalFont,
+            minHeight: touchTargetFinePx,
+            "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
+          }}
           onClick={() => patch({ closingCosts: Math.max(0, Math.round(est.feesSubtotal)) })}
         >
           Fees only
@@ -281,7 +311,13 @@ export function UpfrontCashScenarioPanel({
           size="small"
           variant="text"
           color="inherit"
-          sx={{ textTransform: "none", fontWeight: 600, fontSize: operationalFont }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: operationalFont,
+            minHeight: touchTargetFinePx,
+            "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
+          }}
           onClick={() => patch({ buyingCostLineOverrides: undefined })}
         >
           Reset lines to formula

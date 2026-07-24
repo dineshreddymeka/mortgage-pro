@@ -15,6 +15,7 @@ import {
 } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import {
   applyRecommendedLayouts,
   buildDefaultLayouts,
@@ -32,6 +33,16 @@ export const WIDGET_STACK_MAX_WIDTH_PX = 800;
 
 /** Operational chrome text — keep at least 12px for readability. */
 const OPERATIONAL_FONT_SIZE = "0.75rem";
+
+const toolbarActionSx = {
+  minHeight: touchTargetFinePx,
+  minWidth: touchTargetFinePx,
+  fontSize: OPERATIONAL_FONT_SIZE,
+  "@media (pointer: coarse)": {
+    minHeight: touchTargetCoarsePx,
+    minWidth: touchTargetCoarsePx,
+  },
+} as const;
 
 export type WidgetBoardItem = WidgetDef & {
   content: ReactNode;
@@ -165,7 +176,7 @@ export function WidgetBoard({
               ? "Use recommended layout (updated preset available)"
               : "Use recommended layout"
           }
-          sx={{ minHeight: 36, minWidth: 44, fontSize: OPERATIONAL_FONT_SIZE }}
+          sx={toolbarActionSx}
         >
           Use recommended layout
         </Button>
@@ -174,7 +185,7 @@ export function WidgetBoard({
           variant="text"
           startIcon={<RestartAltIcon sx={{ fontSize: 15 }} />}
           onClick={resetLayout}
-          sx={{ minHeight: 36, minWidth: 44, fontSize: OPERATIONAL_FONT_SIZE }}
+          sx={toolbarActionSx}
         >
           Reset layout
         </Button>

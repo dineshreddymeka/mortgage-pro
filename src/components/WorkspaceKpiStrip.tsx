@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import type { HouseComparisonRow } from "../lib/houseComparison";
+import { minOperationalFontPx } from "../layout/formLayout";
 
 const money0 = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -14,6 +15,8 @@ const pct1 = new Intl.NumberFormat(undefined, {
   style: "percent",
   maximumFractionDigits: 1,
 });
+
+const opFont = `${minOperationalFontPx}px`;
 
 export type WorkspaceKpiStripProps = {
   houseLabel: string;
@@ -46,8 +49,8 @@ function Kpi({
       sx={{
         flex: "0 0 auto",
         minWidth: { xs: 72, sm: 96 },
-        px: { xs: 0.7, sm: 0.9 },
-        py: 0.35,
+        px: { xs: 0.55, sm: 0.75 },
+        py: 0.25,
         borderRadius: "8px",
         border: "1px solid",
         borderColor: "divider",
@@ -57,13 +60,13 @@ function Kpi({
     >
       <Typography
         sx={{
-          fontSize: "0.58rem",
+          fontSize: opFont,
           fontWeight: 700,
-          letterSpacing: "0.07em",
+          letterSpacing: "0.06em",
           textTransform: "uppercase",
           color: "text.secondary",
-          lineHeight: 1.1,
-          mb: 0.1,
+          lineHeight: 1.15,
+          mb: 0.05,
           whiteSpace: "nowrap",
         }}
       >
@@ -72,7 +75,7 @@ function Kpi({
       <Typography
         className="pp-mono"
         sx={{
-          fontSize: { xs: "0.8rem", sm: "0.88rem" },
+          fontSize: { xs: "0.8125rem", sm: "0.875rem" },
           fontWeight: 650,
           letterSpacing: "-0.03em",
           color,
@@ -94,29 +97,29 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
   return (
     <Stack
       direction="row"
-      spacing={0.55}
+      spacing={0.45}
       alignItems="center"
       className="pp-rise"
       sx={{
-        mb: 0.85,
+        mb: 0.75,
         flexWrap: "nowrap",
         overflowX: "auto",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "thin",
-        pb: 0.15,
+        pb: 0.1,
         mx: { xs: -0.25, sm: 0 },
         px: { xs: 0.25, sm: 0 },
       }}
     >
-      <Box sx={{ flex: "0 0 auto", minWidth: 0, pr: 0.35, maxWidth: { xs: 120, sm: 160 } }}>
+      <Box sx={{ flex: "0 0 auto", minWidth: 0, pr: 0.3, maxWidth: { xs: 120, sm: 160 } }}>
         <Typography
           sx={{
-            fontSize: "0.58rem",
+            fontSize: opFont,
             fontWeight: 700,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.07em",
             textTransform: "uppercase",
             color: "text.secondary",
-            lineHeight: 1.1,
+            lineHeight: 1.15,
           }}
         >
           Live model
@@ -124,7 +127,7 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
         <Typography
           sx={{
             fontWeight: 700,
-            fontSize: { xs: "0.82rem", sm: "0.9rem" },
+            fontSize: { xs: "0.8125rem", sm: "0.875rem" },
             letterSpacing: "-0.03em",
             lineHeight: 1.15,
           }}

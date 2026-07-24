@@ -216,6 +216,7 @@ export function ExitYearlyProjectionPanel({
             borderColor: "divider",
             borderRadius: 1.5,
             overflowX: "auto",
+            overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             flex: 1,
             minHeight: 0,

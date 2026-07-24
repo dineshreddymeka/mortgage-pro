@@ -152,7 +152,6 @@ export function WhenToSellTab({
         description: `What counts in gain · CF ${Math.round(yieldCf30Annual / 12).toLocaleString()}/mo (30)`,
         defaultLayout: exitWidgetLgLayout("rental-yield"),
         defaultLayouts: exitWidgetLayouts("rental-yield"),
-        scrollBody: true,
         content: (
           <ExitRentalYieldPolicyPanel
             state={state}
@@ -188,7 +187,6 @@ export function WhenToSellTab({
         description: "Optional sale tax · 1031 · not tax advice",
         defaultLayout: exitWidgetLgLayout("tax"),
         defaultLayouts: exitWidgetLayouts("tax"),
-        scrollBody: true,
         content: (
           <TaxAssumptionsPanel
             state={state}

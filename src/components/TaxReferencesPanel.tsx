@@ -1284,6 +1284,8 @@ export function TaxReferencesPanel({
         display: "flex",
         flexDirection: "column",
         gap: 1,
+        // Desktop fill: clip at the panel root; the results region owns scrolling.
+        overflow: fillHeight ? "hidden" : "visible",
         containerType: "inline-size",
         containerName: "pp-tax-refs",
         // Narrow / md-width workbench: drop secondary chips + blurbs for denser rows.
@@ -1298,6 +1300,7 @@ export function TaxReferencesPanel({
           flex: fillHeight ? 1 : "none",
           minHeight: fillHeight ? 0 : undefined,
           overflow: fillHeight ? "auto" : "visible",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {results}

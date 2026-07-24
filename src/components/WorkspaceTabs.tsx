@@ -3,6 +3,11 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { alpha } from "@mui/material/styles";
 import {
+  minOperationalFontPx,
+  touchTargetCoarsePx,
+  touchTargetFinePx,
+} from "../layout/formLayout";
+import {
   WORKSPACE_TABS,
   clampWorkspaceTabIndex,
   workspaceTabIndexFromKey,
@@ -56,7 +61,10 @@ export function WorkspaceTabs({ value, onChange }: WorkspaceTabsProps) {
           }
         }}
         sx={{
-          minHeight: { xs: 36, sm: 34 },
+          minHeight: touchTargetFinePx,
+          "@media (pointer: coarse)": {
+            minHeight: touchTargetCoarsePx,
+          },
           "& .MuiTabs-flexContainer": { gap: 0.25 },
           "& .MuiTabs-indicator": {
             height: 2,
@@ -64,16 +72,19 @@ export function WorkspaceTabs({ value, onChange }: WorkspaceTabsProps) {
             bgcolor: "secondary.main",
           },
           "& .MuiTab-root": {
-            minHeight: { xs: 34, sm: 30 },
+            minHeight: touchTargetFinePx,
             minWidth: "auto",
             py: 0.5,
             px: { xs: 1.1, sm: 1.4 },
             borderRadius: "8px",
             textTransform: "none",
             fontWeight: 600,
-            fontSize: { xs: "0.78rem", sm: "0.8125rem" },
+            fontSize: `${minOperationalFontPx}px`,
             letterSpacing: "-0.015em",
             color: "text.secondary",
+            "@media (pointer: coarse)": {
+              minHeight: touchTargetCoarsePx,
+            },
             "&.Mui-selected": {
               fontWeight: 700,
               color: "secondary.main",

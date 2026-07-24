@@ -1,3 +1,4 @@
+import ButtonBase from "@mui/material/ButtonBase";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
@@ -8,7 +9,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
 import {
   minOperationalFontPx,
@@ -69,48 +70,48 @@ function ProFormaNavCell(props: {
   onGo: () => void;
   ariaLabel: string;
   children: ReactNode;
-  sx?: object;
+  buttonSx?: object;
 }) {
-  const activate = () => props.onGo();
-
-  const onClick = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    activate();
-  };
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-      activate();
-    }
-  };
-
   return (
-    <TableCell
-      role="button"
-      tabIndex={0}
-      aria-label={props.ariaLabel}
-      title={props.ariaLabel}
-      onClick={onClick}
-      onKeyDown={onKeyDown}
-      sx={{
-        cursor: "pointer",
-        userSelect: "none",
-        fontSize: opFont,
-        ...stickyItemSx,
-        "&:hover": { color: "primary.main" },
-        "&:focus-visible": {
-          outline: "2px solid",
-          outlineColor: "primary.main",
-          outlineOffset: 2,
-          borderRadius: 0.5,
-        },
-        ...(props.sx ?? {}),
-      }}
-    >
-      {props.children}
+    <TableCell sx={{ ...stickyItemSx, p: 0, fontSize: opFont }}>
+      <ButtonBase
+        focusRipple
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          props.onGo();
+        }}
+        aria-label={props.ariaLabel}
+        title={props.ariaLabel}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          width: "100%",
+          textAlign: "left",
+          px: 1,
+          py: 0.5,
+          fontSize: opFont,
+          fontWeight: "inherit",
+          color: "inherit",
+          borderRadius: 0,
+          userSelect: "none",
+          minHeight: touchTargetFinePx,
+          "@media (pointer: coarse)": {
+            minHeight: touchTargetCoarsePx,
+          },
+          "&:hover": { color: "primary.main" },
+          "&:focus-visible": {
+            outline: "2px solid",
+            outlineColor: "primary.main",
+            outlineOffset: -2,
+          },
+          ...(props.buttonSx ?? {}),
+        }}
+      >
+        {props.children}
+      </ButtonBase>
     </TableCell>
   );
 }
@@ -239,13 +240,13 @@ export function RentalProFormaLedgerPanel({
   } as const;
 
   return (
-    <Stack spacing={0.75}>
+    <Stack spacing={0.75} sx={{ height: "100%", minHeight: 0 }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={0.75}
         alignItems={{ sm: "flex-end" }}
         justifyContent="space-between"
-        sx={{ width: "100%", gap: 0.75 }}
+        sx={{ width: "100%", gap: 0.75, flexShrink: 0 }}
       >
         <Stack spacing={0.15} sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "0.9375rem" }}>
@@ -261,7 +262,14 @@ export function RentalProFormaLedgerPanel({
         </Stack>
       </Stack>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={0.5}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        flexWrap="wrap"
+        gap={0.5}
+        sx={{ flexShrink: 0 }}
+      >
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: opFont }}>
           Income → EGI → OpEx → NOI → debt → cash flow (% of EGI uses Pro forma inclusion)
         </Typography>
@@ -293,9 +301,18 @@ export function RentalProFormaLedgerPanel({
         </Stack>
       </Stack>
 
-      <TableContainer sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+      <TableContainer
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowX: "auto",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         <Table
           size="small"
+          stickyHeader
           aria-label="Monthly pro-forma ledger with pro forma and exit yield inclusion"
           sx={{ minWidth: 560, "& .MuiTableCell-root": { fontSize: opFont } }}
         >
@@ -411,7 +428,7 @@ export function RentalProFormaLedgerPanel({
                   <ProFormaNavCell
                     onGo={() => goTo(row.navTarget, row.opexAnchorId)}
                     ariaLabel={navAriaLabel(row)}
-                    sx={{
+                    buttonSx={{
                       pl:
                         row.kind === "opex" ||
                         row.kind === "vacancy" ||

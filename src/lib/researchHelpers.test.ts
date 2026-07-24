@@ -24,11 +24,22 @@ describe("researchHelpers", () => {
       expect(researchSafeHref("example.com/listing")).toBe("https://example.com/listing");
     });
 
+    it("accepts hostname:port without a scheme", () => {
+      expect(researchSafeHref("example.com:8080")).toBe("https://example.com:8080/");
+      expect(researchSafeHref("localhost:3000")).toBe("https://localhost:3000/");
+      expect(researchSafeHref("127.0.0.1:5173/path")).toBe("https://127.0.0.1:5173/path");
+      expect(researchSafeHref("example.com:8080/listing?q=1")).toBe(
+        "https://example.com:8080/listing?q=1"
+      );
+    });
+
     it("rejects empty and non-http schemes", () => {
       expect(researchSafeHref("")).toBeNull();
       expect(researchSafeHref("   ")).toBeNull();
       expect(researchSafeHref("javascript:alert(1)")).toBeNull();
       expect(researchSafeHref("ftp://files.example")).toBeNull();
+      expect(researchSafeHref("data:text/html,hi")).toBeNull();
+      expect(researchSafeHref("mailto:a@example.com")).toBeNull();
       expect(researchSafeHref("not a url")).toBeNull();
     });
   });

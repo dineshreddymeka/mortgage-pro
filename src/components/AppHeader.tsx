@@ -21,7 +21,12 @@ import {
 import { alpha, useColorScheme, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useId, useState, type MouseEvent, type ReactNode } from "react";
-import { workspaceMaxWidth } from "../layout/formLayout";
+import {
+  minOperationalFontPx,
+  touchTargetCoarsePx,
+  touchTargetFinePx,
+  workspaceMaxWidth,
+} from "../layout/formLayout";
 import {
   APP_HEADER_HEIGHT_PX,
   HEADER_ACTIONS_INLINE_BREAKPOINT,
@@ -33,6 +38,8 @@ import {
   type HeaderSecondaryActionHandlers,
   type HeaderSecondaryActionId,
 } from "./workspaceShell";
+
+const opFont = `${minOperationalFontPx}px`;
 
 const moneyDec = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -194,7 +201,7 @@ export function AppHeader({
                 component="span"
                 variant="caption"
                 color="text.secondary"
-                sx={{ ml: 0.35, fontWeight: 600, fontSize: "0.68rem" }}
+                sx={{ ml: 0.35, fontWeight: 600, fontSize: opFont }}
               >
                 /mo
               </Typography>
@@ -303,6 +310,15 @@ export function AppHeader({
                   MenuListProps={{
                     "aria-label": "Secondary workspace actions",
                     dense: true,
+                    sx: {
+                      "& .MuiMenuItem-root": {
+                        minHeight: touchTargetFinePx,
+                        fontSize: opFont,
+                        "@media (pointer: coarse)": {
+                          minHeight: touchTargetCoarsePx,
+                        },
+                      },
+                    },
                   }}
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   transformOrigin={{ vertical: "top", horizontal: "right" }}
