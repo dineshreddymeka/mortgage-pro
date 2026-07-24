@@ -2,10 +2,8 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import {
-  CommonInputsSummaryPanel,
-  upfrontCommonSummaryItems,
-} from "../components/CommonInputsSummaryPanel";
+import { CommonInputsSummaryPanel } from "../components/CommonInputsSummaryPanel";
+import { upfrontCommonSummaryItems } from "../components/commonInputsSummary";
 import { UpfrontCashScenarioPanel } from "../components/UpfrontCashScenarioPanel";
 import { UpfrontCreditsPanel } from "../components/UpfrontCreditsPanel";
 import { FormField, FormGrid } from "../layout/FormGrid";

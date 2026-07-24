@@ -3,10 +3,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import {
-  carryingCommonSummaryItems,
-  CommonInputsSummaryPanel,
-} from "../../components/CommonInputsSummaryPanel";
+import { CommonInputsSummaryPanel } from "../../components/CommonInputsSummaryPanel";
+import { carryingCommonSummaryItems } from "../../components/commonInputsSummary";
 import { minOperationalFontPx, touchTargetFinePx } from "../../layout/formLayout";
 import type { AppPersisted } from "../../storage/mortgageState";
 import { monthlyCarryingTotal } from "./rentalProFormaLedger";
