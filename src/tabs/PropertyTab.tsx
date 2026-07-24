@@ -10,6 +10,12 @@ import { ShareSnapshotPanel } from "../components/ShareSnapshotPanel";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 import type { HouseAccessRole } from "../collaboration/types";
 import type { AppPersisted } from "../storage/mortgageState";
+import {
+  PROPERTY_BOARD_LAYOUT_REVISION,
+  PROPERTY_BOARD_PRESET,
+  propertyWidgetLayouts,
+  propertyWidgetLgLayout,
+} from "./propertyTabLayout";
 
 export type PropertyTabProps = {
   state: AppPersisted;
@@ -47,28 +53,15 @@ export function PropertyTab({
   onReplaceScenario,
   onCreateImportedHouse,
 }: PropertyTabProps) {
+  // DOM order is stack order below tablet width — essentials before administration.
   const widgets = useMemo(
     () => [
-      {
-        id: "account",
-        title: "Account & sign-in",
-        description: "Anonymous default · link Google to keep UID",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 0, w: 12, h: 8, minW: 4, minH: 5 },
-        content: (
-          <CollaborationAuthPanel
-            cloudReady={cloudReady}
-            onReloadPortfolio={onReloadPortfolio}
-            onNotify={onNotify}
-          />
-        ),
-      },
       {
         id: "identity",
         title: "Property name",
         description: "Label used across the portfolio",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 8, w: 12, h: 5, minW: 4, minH: 2 },
+        defaultLayout: propertyWidgetLgLayout("identity"),
+        defaultLayouts: propertyWidgetLayouts("identity"),
         content: (
           <PropertyNameCard
             houseId={houseId}
@@ -79,11 +72,57 @@ export function PropertyTab({
         ),
       },
       {
+        id: "location",
+        title: "Property location",
+        description: "Address + map for this house",
+        defaultLayout: propertyWidgetLgLayout("location"),
+        defaultLayouts: propertyWidgetLayouts("location"),
+        content: <PropertyLocationCard state={state} patch={patch} />,
+      },
+      {
+        id: "location-costs",
+        title: "Location cost hints",
+        description: "State / postal benchmarks",
+        defaultLayout: propertyWidgetLgLayout("location-costs"),
+        defaultLayouts: propertyWidgetLayouts("location-costs"),
+        content: <LocationCostPanel state={state} patch={patch} />,
+      },
+      {
+        id: "external-estimates",
+        title: "External estimates",
+        description: "Tax, insurance, rent, value comps — explicit apply only",
+        defaultLayout: propertyWidgetLgLayout("external-estimates"),
+        defaultLayouts: propertyWidgetLayouts("external-estimates"),
+        content: (
+          <ExternalEstimateSuggestionsPanel
+            state={state}
+            patch={patch}
+            categories={["tax", "insurance", "rent", "comps"]}
+            hideTitle
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
+        id: "account",
+        title: "Account & sign-in",
+        description: "Anonymous default · link Google to keep UID",
+        defaultLayout: propertyWidgetLgLayout("account"),
+        defaultLayouts: propertyWidgetLayouts("account"),
+        content: (
+          <CollaborationAuthPanel
+            cloudReady={cloudReady}
+            onReloadPortfolio={onReloadPortfolio}
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
         id: "scenario-import",
         title: "Scenario import",
         description: "Validate, preview, then explicitly apply JSON",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 13, w: 12, h: 7, minW: 4, minH: 4 },
+        defaultLayout: propertyWidgetLgLayout("scenario-import"),
+        defaultLayouts: propertyWidgetLayouts("scenario-import"),
         content: (
           <ScenarioImportPanel
             state={state}
@@ -100,8 +139,8 @@ export function PropertyTab({
         id: "collaboration",
         title: "Collaborators",
         description: "Invite by UID or email hash · member edits only",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 20, w: 12, h: 12, minW: 4, minH: 6 },
+        defaultLayout: propertyWidgetLgLayout("collaboration"),
+        defaultLayouts: propertyWidgetLayouts("collaboration"),
         content: (
           <HouseCollaborationPanel
             propertyDocId={propertyDocId}
@@ -114,42 +153,11 @@ export function PropertyTab({
         ),
       },
       {
-        id: "location",
-        title: "Property location",
-        description: "Address + map for this house",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 32, w: 12, h: 12, minW: 4, minH: 2 },
-        content: <PropertyLocationCard state={state} patch={patch} />,
-      },
-      {
-        id: "location-costs",
-        title: "Location cost hints",
-        description: "State / postal benchmarks",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 44, w: 12, h: 8, minW: 4, minH: 5 },
-        content: <LocationCostPanel state={state} patch={patch} />,
-      },
-      {
-        id: "external-estimates",
-        title: "External estimates",
-        description: "Tax, insurance, rent, value comps — explicit apply only",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 52, w: 12, h: 12, minW: 4, minH: 6 },
-        content: (
-          <ExternalEstimateSuggestionsPanel
-            state={state}
-            patch={patch}
-            categories={["tax", "insurance", "rent", "comps"]}
-            onNotify={onNotify}
-          />
-        ),
-      },
-      {
         id: "share-snapshots",
         title: "Share snapshots",
         description: "Immutable read-only links for this house",
-        collapsible: true,
-        defaultLayout: { x: 0, y: 64, w: 12, h: 12, minW: 4, minH: 6 },
+        defaultLayout: propertyWidgetLgLayout("share-snapshots"),
+        defaultLayouts: propertyWidgetLayouts("share-snapshots"),
         content: (
           <ShareSnapshotPanel
             state={state}
@@ -181,5 +189,13 @@ export function PropertyTab({
     ]
   );
 
-  return <WidgetBoard boardId="property" widgets={widgets} rowHeight={28} />;
+  return (
+    <WidgetBoard
+      boardId="property"
+      widgets={widgets}
+      rowHeight={28}
+      layoutRevision={PROPERTY_BOARD_LAYOUT_REVISION}
+      preset={PROPERTY_BOARD_PRESET}
+    />
+  );
 }

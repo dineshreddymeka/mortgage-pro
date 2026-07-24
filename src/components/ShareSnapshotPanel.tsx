@@ -16,13 +16,27 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AppPersisted } from "../storage/mortgageState";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { FORM_CONTAINER_NAME, formContainerBreakpoints } from "../layout/formLayout";
 import { buildShareSnapshotInputFromScenario } from "../share/buildShareSnapshot";
 import { buildShareViewerUrl, copyTextToClipboard } from "../share/buildShareUrl";
 import { isShareSnapshotActive } from "../share/buildShareSnapshot";
 import type { ShareSnapshotRecord } from "../share/shareSnapshotTypes";
 import { getShareSnapshotStore } from "../storage/shareSnapshotStore";
 
+/** Bound only the snapshot list — not the create form. */
+const SHARE_LIST_MAX_HEIGHT_PX = 260;
+
 const LOCAL_OWNER_KEY = "mortgage-pro:local-owner-id";
+
+const snapshotRowSx = {
+  flexDirection: "column",
+  alignItems: "flex-start",
+  [`@container ${FORM_CONTAINER_NAME} (min-width: ${formContainerBreakpoints.twoCol}px)`]: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+} as const;
 
 function resolveOwnerUid(userId: string | null): string {
   if (userId) return userId;
@@ -154,36 +168,44 @@ export function ShareSnapshotPanel({
   const empty = !loading && rows.length === 0 && !error;
 
   return (
-    <Stack spacing={1.25}>
+    <Stack
+      spacing={1.25}
+      sx={{ containerType: "inline-size", containerName: FORM_CONTAINER_NAME }}
+    >
       <Typography variant="body2" color="text.secondary">
         Publish an immutable, read-only snapshot of every tab. Viewers cannot edit — only revoke or expiry changes access.
       </Typography>
 
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-        <TextField
-          select
-          size="small"
-          label="Expiry"
-          value={expiryDays}
-          onChange={(e) => setExpiryDays(Number(e.target.value))}
-          sx={{ minWidth: { sm: 160 }, width: { xs: "100%", sm: "auto" } }}
-        >
-          <MenuItem value={0}>Never</MenuItem>
-          <MenuItem value={7}>7 days</MenuItem>
-          <MenuItem value={30}>30 days</MenuItem>
-          <MenuItem value={90}>90 days</MenuItem>
-        </TextField>
-        <Button
-          variant="contained"
-          color="secondary"
-          size="small"
-          startIcon={busy ? <CircularProgress size={14} color="inherit" /> : <ShareOutlinedIcon />}
-          disabled={busy}
-          onClick={() => void createSnapshot()}
-        >
-          Create share snapshot
-        </Button>
-      </Stack>
+      <FormGrid maxColumns={2} compact>
+        <FormField>
+          <TextField
+            select
+            size="small"
+            label="Expiry"
+            value={expiryDays}
+            onChange={(e) => setExpiryDays(Number(e.target.value))}
+            fullWidth
+          >
+            <MenuItem value={0}>Never</MenuItem>
+            <MenuItem value={7}>7 days</MenuItem>
+            <MenuItem value={30}>30 days</MenuItem>
+            <MenuItem value={90}>90 days</MenuItem>
+          </TextField>
+        </FormField>
+        <FormField>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            fullWidth
+            startIcon={busy ? <CircularProgress size={14} color="inherit" /> : <ShareOutlinedIcon />}
+            disabled={busy}
+            onClick={() => void createSnapshot()}
+          >
+            Create share snapshot
+          </Button>
+        </FormField>
+      </FormGrid>
 
       {!cloudReady ? (
         <Alert severity="info" variant="outlined" sx={{ py: 0.25 }}>
@@ -215,12 +237,18 @@ export function ShareSnapshotPanel({
       ) : null}
 
       {!loading && rows.length > 0 ? (
-        <Stack spacing={1}>
+        <Stack
+          spacing={1}
+          role="list"
+          aria-label="Share snapshots"
+          sx={{ maxHeight: SHARE_LIST_MAX_HEIGHT_PX, overflow: "auto", pr: 0.25 }}
+        >
           {rows.map((row) => {
             const active = isShareSnapshotActive(row);
             return (
               <Box
                 key={row.shareToken}
+                role="listitem"
                 sx={{
                   p: 1.25,
                   borderRadius: 1.5,
@@ -230,10 +258,9 @@ export function ShareSnapshotPanel({
                 }}
               >
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
                   spacing={1}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
                   justifyContent="space-between"
+                  sx={snapshotRowSx}
                 >
                   <Stack spacing={0.35} minWidth={0}>
                     <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>

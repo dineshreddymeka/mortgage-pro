@@ -20,7 +20,18 @@ import { applyExternalEstimates } from "../estimates/applyExternalEstimate";
 import { fetchExternalEstimates, flattenEstimateSuggestions } from "../estimates/estimateClient";
 import { isEstimateProxyConfigured } from "../estimates/providers/index";
 import type { EstimateCategory, ExternalEstimateSuggestion } from "../estimates/types";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { FORM_CONTAINER_NAME, formContainerBreakpoints } from "../layout/formLayout";
 import type { AppPersisted } from "../storage/mortgageState";
+
+/** Bound only the suggestion list — not the whole panel form. */
+const SUGGESTION_LIST_MAX_HEIGHT_PX = 280;
+
+const selectionControlSx = {
+  minWidth: 36,
+  minHeight: 36,
+  "@media (pointer: coarse)": { minWidth: 44, minHeight: 44 },
+} as const;
 
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const pct = (n: number) => `${n.toFixed(3)}%`;
@@ -43,6 +54,8 @@ export type ExternalEstimateSuggestionsPanelProps = {
   /** Limit which suggestion categories appear in this panel. */
   categories: EstimateCategory[];
   title?: string;
+  /** The containing widget already supplies the section heading. */
+  hideTitle?: boolean;
   onNotify?: (message: string, severity?: "success" | "error") => void;
 };
 
@@ -51,6 +64,7 @@ export function ExternalEstimateSuggestionsPanel({
   patch,
   categories,
   title = "External estimate suggestions",
+  hideTitle = false,
   onNotify,
 }: ExternalEstimateSuggestionsPanelProps) {
   const categorySet = useMemo(() => new Set(categories), [categories]);
@@ -117,21 +131,31 @@ export function ExternalEstimateSuggestionsPanel({
   const lowConfidenceOnly = visible.length > 0 && visible.every((s) => s.confidence === "low");
 
   return (
-    <Stack spacing={1.25}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} justifyContent="space-between">
-        <Typography variant="subtitle2" fontWeight={700}>
-          {title}
-        </Typography>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={loading ? <CircularProgress size={14} /> : <RefreshOutlinedIcon sx={{ fontSize: 16 }} />}
-          disabled={loading || state.homePrice <= 0}
-          onClick={() => void load()}
-        >
-          {loaded ? "Refresh suggestions" : "Fetch suggestions"}
-        </Button>
-      </Stack>
+    <Stack
+      spacing={1.25}
+      sx={{ containerType: "inline-size", containerName: FORM_CONTAINER_NAME }}
+    >
+      <FormGrid maxColumns={2} compact>
+        {!hideTitle ? (
+          <FormField>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ pt: 0.5 }}>
+              {title}
+            </Typography>
+          </FormField>
+        ) : null}
+        <FormField span={hideTitle ? 2 : 1}>
+          <Button
+            size="small"
+            variant="outlined"
+            fullWidth
+            startIcon={loading ? <CircularProgress size={14} /> : <RefreshOutlinedIcon sx={{ fontSize: 16 }} />}
+            disabled={loading || state.homePrice <= 0}
+            onClick={() => void load()}
+          >
+            {loaded ? "Refresh suggestions" : "Fetch suggestions"}
+          </Button>
+        </FormField>
+      </FormGrid>
 
       {state.homePrice <= 0 ? (
         <Alert severity="info" variant="outlined">
@@ -188,10 +212,20 @@ export function ExternalEstimateSuggestionsPanel({
       ) : null}
 
       {visible.length > 0 ? (
-        <Stack spacing={0.75}>
+        <Stack
+          spacing={0.75}
+          role="list"
+          aria-label="External estimate suggestions"
+          sx={{
+            maxHeight: SUGGESTION_LIST_MAX_HEIGHT_PX,
+            overflow: "auto",
+            pr: 0.25,
+          }}
+        >
           {visible.map((s) => (
             <Box
               key={s.id}
+              role="listitem"
               sx={{
                 px: 1,
                 py: 0.75,
@@ -212,7 +246,7 @@ export function ExternalEstimateSuggestionsPanel({
                   checked={selected.has(s.id)}
                   onChange={() => toggle(s.id)}
                   inputProps={{ "aria-label": `Select ${s.label}` }}
-                  sx={{ mt: -0.25 }}
+                  sx={{ ...selectionControlSx, mt: -0.25 }}
                 />
                 <Stack spacing={0.35} flex={1} minWidth={0}>
                   <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -240,7 +274,17 @@ export function ExternalEstimateSuggestionsPanel({
       ) : null}
 
       {visible.length > 0 ? (
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+        <Stack
+          spacing={1}
+          sx={{
+            flexDirection: "column",
+            alignItems: "stretch",
+            [`@container ${FORM_CONTAINER_NAME} (min-width: ${formContainerBreakpoints.twoCol}px)`]: {
+              flexDirection: "row",
+              alignItems: "center",
+            },
+          }}
+        >
           <FormControlLabel
             control={
               <Checkbox
@@ -248,6 +292,7 @@ export function ExternalEstimateSuggestionsPanel({
                 checked={selected.size === visible.length && visible.length > 0}
                 indeterminate={selected.size > 0 && selected.size < visible.length}
                 onChange={(e) => setSelected(e.target.checked ? new Set(visible.map((s) => s.id)) : new Set())}
+                sx={selectionControlSx}
               />
             }
             label={`Select all (${selected.size}/${visible.length})`}

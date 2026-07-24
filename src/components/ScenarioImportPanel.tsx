@@ -30,6 +30,7 @@ import {
   type ScenarioImportResult,
 } from "../lib/scenarioImport";
 import { downloadScenarioJson } from "../lib/scenarioExport";
+import { FormField, FormGrid } from "../layout/FormGrid";
 import type { AppPersisted } from "../storage/mortgageState";
 
 const money = new Intl.NumberFormat(undefined, {
@@ -37,6 +38,12 @@ const money = new Intl.NumberFormat(undefined, {
   currency: "USD",
   maximumFractionDigits: 0,
 });
+
+const selectionControlSx = {
+  minWidth: 36,
+  minHeight: 36,
+  "@media (pointer: coarse)": { minWidth: 44, minHeight: 44 },
+} as const;
 
 export type ScenarioImportPanelProps = {
   state: AppPersisted;
@@ -167,37 +174,43 @@ export function ScenarioImportPanel({
           Restore a full export, raw scenario, or older house/category JSON. Nothing changes until
           validation passes and you confirm the preview.
         </Typography>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            size="small"
-            startIcon={<UploadFileOutlinedIcon />}
-            onClick={() => {
-              resetDialog();
-              setOpen(true);
-            }}
-          >
-            Import scenario
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DownloadOutlinedIcon />}
-            onClick={() =>
-              downloadScenarioJson(state, `house-${houseId}.json`, {
-                id: houseId,
-                houseId,
-                name: houseName,
-              })
-            }
-          >
-            Download JSON backup
-          </Button>
-          <Typography variant="caption" color="text.secondary">
-            Current target: {houseName} ({houseId})
-          </Typography>
-        </Stack>
+        <FormGrid maxColumns={2} compact>
+          <FormField>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="small"
+              fullWidth
+              startIcon={<UploadFileOutlinedIcon />}
+              onClick={() => {
+                resetDialog();
+                setOpen(true);
+              }}
+            >
+              Import scenario
+            </Button>
+          </FormField>
+          <FormField>
+            <Button
+              variant="outlined"
+              size="small"
+              fullWidth
+              startIcon={<DownloadOutlinedIcon />}
+              onClick={() =>
+                downloadScenarioJson(state, `house-${houseId}.json`, {
+                  id: houseId,
+                  houseId,
+                  name: houseName,
+                })
+              }
+            >
+              Download JSON backup
+            </Button>
+          </FormField>
+        </FormGrid>
+        <Typography variant="caption" color="text.secondary">
+          Current target: {houseName} ({houseId})
+        </Typography>
       </Stack>
 
       <Dialog
@@ -439,13 +452,13 @@ export function ScenarioImportPanel({
                     >
                       <FormControlLabel
                         value="current"
-                        control={<Radio />}
+                        control={<Radio sx={selectionControlSx} />}
                         label={`Replace scenario in ${houseName} (${houseId}); preserve its ID and metadata`}
                       />
                       <FormControlLabel
                         value="new"
                         disabled={!cloudReady}
-                        control={<Radio />}
+                        control={<Radio sx={selectionControlSx} />}
                         label={
                           cloudReady
                             ? "Create a new cloud house; assign a new ID and use the imported name"
