@@ -1,0 +1,29 @@
+{
+  "result": {
+    "input": {
+      "address": {
+        "address": "123 Main St, San Francisco, CA 94107"
+      }
+    },
+    "addressMatches": [
+      {
+        "matchedAddress": "123 MAIN ST, SAN FRANCISCO, CA, 94107",
+        "geographies": {
+          "States": [
+            {
+              "STATE": "06",
+              "STUSAB": "CA"
+            }
+          ],
+          "Counties": [
+            {
+              "NAME": "San Francisco",
+              "STATE": "06",
+              "COUNTY": "075"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

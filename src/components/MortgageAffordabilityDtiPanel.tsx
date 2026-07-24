@@ -4,12 +4,13 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid2";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import { AccordionSummaryMetric } from "./AccordionSummaryMetric";
 import { dtiRatios, maxHomePriceForHousingBudget } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
@@ -57,6 +58,7 @@ type Props = {
 
 export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaymentMonthly }: Props) {
   const [budgetDraft, setBudgetDraft] = useState<string | null>(null);
+  const storedBudget = Math.max(0, Math.round(Number(state.customHousingBudgetMonthly) || 0));
 
   const baseParams = useMemo(
     () => ({
@@ -92,9 +94,11 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
   }, [state.annualGrossIncome, baseParams]);
 
   const customBudget =
-    budgetDraft !== null && budgetDraft !== ""
-      ? Math.max(0, Number(budgetDraft.replace(/[^0-9.]/g, "")) || 0)
-      : 0;
+    budgetDraft !== null
+      ? budgetDraft === ""
+        ? 0
+        : Math.max(0, Number(budgetDraft.replace(/[^0-9.]/g, "")) || 0)
+      : storedBudget;
   const maxFromCustom = useMemo(() => {
     if (customBudget <= 0) return 0;
     return maxHomePriceForHousingBudget(customBudget, baseParams);
@@ -119,10 +123,21 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
         expandIcon={<ExpandMore />}
         sx={{
           px: 1.25,
-          minHeight: 44,
+          minHeight: touchTargetFinePx,
           alignItems: "flex-start",
+          "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
           "&:hover": { bgcolor: "action.hover" },
           "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
+          "& .MuiAccordionSummary-expandIconWrapper": {
+            minWidth: touchTargetFinePx,
+            minHeight: touchTargetFinePx,
+            alignItems: "center",
+            justifyContent: "center",
+            "@media (pointer: coarse)": {
+              minWidth: touchTargetCoarsePx,
+              minHeight: touchTargetCoarsePx,
+            },
+          },
         }}
       >
         <Stack
@@ -162,8 +177,8 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
           Estimates only. Uses rate, term, down %, tax %, insurance, HOA, PMI from above.
         </Typography>
 
-        <Grid container spacing={1}>
-          <Grid size={{ xs: 12, sm: 6 }}>
+        <FormGrid maxColumns={2} compact>
+          <FormField>
             <TextField
               label="Annual gross income (pre-tax)"
               size="small"
@@ -181,8 +196,8 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
                 },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          </FormField>
+          <FormField>
             <TextField
               label="Monthly non-housing debt"
               size="small"
@@ -200,8 +215,8 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
                 },
               }}
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         {state.annualGrossIncome > 0 ? (
           <Stack spacing={0.65} sx={{ mt: 1 }}>
@@ -234,24 +249,37 @@ export function MortgageAffordabilityDtiPanel({ state, patch, currentHousingPaym
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Max price for a monthly budget
           </Typography>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "flex-end" }}>
-            <TextField
-              label="Max housing payment / mo"
-              size="small"
-              sx={{ minWidth: { sm: 220 } }}
-              value={budgetDraft !== null ? budgetDraft : ""}
-              onChange={(e) => setBudgetDraft(e.target.value.replace(/[^0-9]/g, ""))}
-              onBlur={() => setBudgetDraft(null)}
-              placeholder="e.g. 3200"
-              helperText="PITI + HOA + PMI total you’re comfortable with"
-              slotProps={{
-                input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  inputMode: "numeric",
-                },
-              }}
-            />
-          </Stack>
+          <FormGrid maxColumns={2} compact>
+            <FormField span={2}>
+              <TextField
+                label="Max housing payment / mo"
+                size="small"
+                fullWidth
+                value={budgetDraft !== null ? budgetDraft : storedBudget > 0 ? formatIntField(storedBudget) : ""}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  setBudgetDraft(raw);
+                  if (raw === "") {
+                    patch({ customHousingBudgetMonthly: undefined });
+                    return;
+                  }
+                  const n = Number(raw);
+                  if (Number.isFinite(n)) {
+                    patch({ customHousingBudgetMonthly: Math.min(500_000, Math.max(0, n)) || undefined });
+                  }
+                }}
+                onBlur={() => setBudgetDraft(null)}
+                placeholder="e.g. 3200"
+                helperText="PITI + HOA + PMI total you’re comfortable with (saved with this house)"
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    inputMode: "numeric",
+                  },
+                }}
+              />
+            </FormField>
+          </FormGrid>
           {maxFromCustom > 0 ? (
             <Typography variant="body2">
               At ≤ <strong>{moneyDec.format(customBudget)}</strong>/mo housing: estimated max price about{" "}

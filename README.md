@@ -27,21 +27,42 @@ The Mortgage tab can autocomplete a property address and show a compact map prev
 
 Without a key, you can still type an address manually; autocomplete and the map stay off.
 
+## Data model
+
+**One structure as the point of truth** — house root by business `id`, all inputs in a single `scenario` object (reuse those fields; don’t fork copies per tab):
+
+```
+id: "001"                 ← root identity
+  name, archived, …
+  scenario: {             ← every tab / panel input (no field loss)
+    homePrice, downPayment, …, monthlyRent, …, refi?, …
+  }
+```
+
+Category tabs (Property · Financing · Upfront · Rental · Exit) are UI only — they read/write the same `scenario` properties. Firestore keeps an internal doc path for multi-user uniqueness; `id` / `houseId` is the stable `001` / `002` users navigate.
+
+See [`docs/kpi-data-inventory.md`](docs/kpi-data-inventory.md) for the maintained
+inventory of persisted scenario properties, derived KPIs, formulas, and ownership rules.
+
 ## Firestore (multi-property sync)
 
 Optional cloud sync for multiple saved properties. Uses the **Firebase web client SDK** only — never the Admin / service-account private key in this app.
 
-1. Firebase project with **Cloud Firestore** (native) and published rules (see [`firestore.rules`](firestore.rules)).
-2. **Authentication → Sign-in method → Anonymous → Enable**.
+1. Firebase project with **Cloud Firestore** (native) and published rules/indexes (see [`firestore.rules`](firestore.rules), [`firestore.indexes.json`](firestore.indexes.json)).
+2. **Authentication → Sign-in method**: enable **Anonymous** and **Google**.
 3. **Authentication → Settings → Authorized domains**: add `dineshreddymeka.github.io` (and `localhost` for local).
 4. Register a **Web app** and copy the config into `.env.local` (see [`.env.example`](.env.example)).
-5. For GitHub Pages, set these repository secrets (same values):
+5. Deploy rules/indexes/functions — full steps in [`docs/deploy-checklist.md`](docs/deploy-checklist.md).
+6. For GitHub Pages, set these repository secrets (same values):
    - `VITE_FIREBASE_API_KEY`
    - `VITE_FIREBASE_AUTH_DOMAIN`
    - `VITE_FIREBASE_PROJECT_ID`
    - `VITE_FIREBASE_STORAGE_BUCKET`
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
+   - `VITE_ESTIMATE_API_BASE_URL` (optional estimate proxy; blank = offline stubs)
+   - `VITE_TAX_RESEARCH_API_BASE_URL` (optional tax research proxy; falls back to estimate URL)
+   - `GOOGLE_MAPS_API_KEY` (optional Maps autocomplete)
 
 Without Firebase env vars, the app keeps working with local browser storage only.
 
@@ -68,6 +89,19 @@ CI sets `VITE_BASE_PATH` to `/mortgage-pro/`. Locally the base is `/`.
 | `npm run build` | Typecheck + production build |
 | `npm run preview` | Preview `dist/` |
 | `npm run lint` | ESLint |
+| `npm run test` | Vitest unit tests |
+| `npm run functions:test` | Firebase Functions unit tests |
+| `npm run tax-research:live-smoke` | Opt-in live adapter smoke (requires `--network` + `--address`; not CI) |
+
+## External estimate proxy (Phase 8)
+
+Optional server-side proxy for mortgage rates, property tax, insurance, rent, and comps. See [`docs/external-estimates-api.md`](docs/external-estimates-api.md) for deploy notes, env vars, and provider limitations.
+
+Set `VITE_ESTIMATE_API_BASE_URL` in `.env.local` (or GitHub Actions secret) to your Firebase Functions base URL. Without it, estimate panels use offline heuristic stubs with explicit apply-only confirmation.
+
+## Per-house tax research
+
+Research tab can collect **official** federal/state/county tax reference links for the active saved house via `collectHouseTaxResearch`. Configure `VITE_TAX_RESEARCH_API_BASE_URL` (or reuse `VITE_ESTIMATE_API_BASE_URL`). See [`docs/per-house-tax-research.md`](docs/per-house-tax-research.md) for endpoint contract, cache, persistence, and security controls.
 
 ## License
 

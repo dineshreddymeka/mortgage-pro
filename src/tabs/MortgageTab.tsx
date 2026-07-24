@@ -6,24 +6,36 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Grid from "@mui/material/Grid2";
 import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
+import { AmortizationScheduleSection } from "../components/AmortizationScheduleSection";
+import { MaxOfferPanel } from "../components/MaxOfferPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
 import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";
 import { MortgageLoanCompareCards } from "../components/MortgageLoanCompareCards";
 import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCard";
+import { PaymentPlanPanel } from "../components/PaymentPlanPanel";
+import { LoanProductPanel } from "../components/LoanProductPanel";
 import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown";
+import { ExternalEstimateSuggestionsPanel } from "../components/ExternalEstimateSuggestionsPanel";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import { WidgetBoard } from "../widgets/WidgetBoard";
+import { deriveScenario } from "../lib/deriveScenario";
 import {
   aggregateYearlyPaydownDetailed,
   buildAmortizationSchedule,
   buildAmortizationScheduleWithExtraPrincipal,
-  computeMonthlyPayment,
   scheduleTotals,
   type AmortizationRow,
 } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
+import {
+  FINANCING_BOARD_LAYOUT_REVISION,
+  FINANCING_BOARD_PRESET,
+  financingWidgetLayouts,
+  financingWidgetLgLayout,
+} from "./financingTabLayout";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -40,53 +52,39 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 
 const summarySx = {
   px: 1.25,
-  minHeight: 42,
+  minHeight: touchTargetFinePx,
   alignItems: "flex-start",
+  "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
   "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
+  "& .MuiAccordionSummary-expandIconWrapper": {
+    minWidth: touchTargetFinePx,
+    minHeight: touchTargetFinePx,
+    alignItems: "center",
+    justifyContent: "center",
+    "@media (pointer: coarse)": {
+      minWidth: touchTargetCoarsePx,
+      minHeight: touchTargetCoarsePx,
+    },
+  },
 } as const;
 
 export type FinancingTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  onNotify?: (message: string, severity?: "success" | "error") => void;
 };
 
 /** @deprecated Use FinancingTab — category rename. */
 export type MortgageTabProps = FinancingTabProps;
 
 /** Category: Financing — loan inputs, payment, DTI, term/paydown/refi. */
-export function FinancingTab({ state, patch }: FinancingTabProps) {
+export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
   const extraPrincipalMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
 
-  const breakdown = useMemo(
-    () =>
-      computeMonthlyPayment(
-        state.homePrice,
-        state.downPayment,
-        state.interestRateApr,
-        state.termYears,
-        state.propertyTaxAnnual,
-        state.insuranceAnnual,
-        state.hoaMonthly,
-        state.pmiMonthly
-      ),
-    [
-      state.downPayment,
-      state.downPaymentPercent,
-      state.homePrice,
-      state.hoaMonthly,
-      state.insuranceAnnual,
-      state.interestRateApr,
-      state.propertyTaxAnnual,
-      state.propertyTaxPercent,
-      state.termYears,
-      state.pmiMonthly,
-    ]
-  );
+  const derived = useMemo(() => deriveScenario(state), [state]);
+  const breakdown = derived.monthlyPayment;
 
-  const baselineSchedule: AmortizationRow[] = useMemo(
-    () => buildAmortizationSchedule(breakdown.loanAmount, state.interestRateApr, state.termYears),
-    [breakdown.loanAmount, state.interestRateApr, state.termYears]
-  );
+  const baselineSchedule: AmortizationRow[] = derived.amortization;
 
   const baselineSchedule15: AmortizationRow[] = useMemo(
     () => buildAmortizationSchedule(breakdown.loanAmount, state.interestRateApr, 15),
@@ -116,22 +114,9 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
   );
 
   const schedule: AmortizationRow[] = useMemo(() => {
-    if (extraPrincipalMonthly > 0) {
-      return buildAmortizationScheduleWithExtraPrincipal(
-        breakdown.loanAmount,
-        state.interestRateApr,
-        state.termYears,
-        extraPrincipalMonthly
-      );
-    }
+    if (derived.amortizationWithExtraPrincipal) return derived.amortizationWithExtraPrincipal;
     return baselineSchedule;
-  }, [
-    baselineSchedule,
-    breakdown.loanAmount,
-    extraPrincipalMonthly,
-    state.interestRateApr,
-    state.termYears,
-  ]);
+  }, [baselineSchedule, derived.amortizationWithExtraPrincipal]);
 
   const baselineTotals = useMemo(() => scheduleTotals(baselineSchedule), [baselineSchedule]);
 
@@ -165,7 +150,7 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
   ]);
 
   const ltvPct = state.homePrice > 0 ? (breakdown.loanAmount / state.homePrice) * 100 : 0;
-  const cashToClose = state.downPayment + state.closingCosts + state.miscInitialCash;
+  const cashToClose = derived.netCashToClose;
 
   const widgets = useMemo(
     () => [
@@ -173,14 +158,15 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         id: "loan",
         title: "Loan & payment",
         description: `${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}%`,
-        defaultLayout: { x: 0, y: 0, w: 12, h: 16, minW: 6, minH: 10 },
+        defaultLayout: financingWidgetLgLayout("loan"),
+        defaultLayouts: financingWidgetLayouts("loan"),
         content: (
-          <Grid container spacing={1.25} alignItems="flex-start">
-            <Grid size={{ xs: 12, md: 6 }}>
+          <Grid container spacing={1} alignItems="flex-start">
+            <Grid size={{ xs: 12, lg: 7 }}>
               <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Stack spacing={1}>
+            <Grid size={{ xs: 12, lg: 5 }}>
+              <Stack spacing={0.85}>
                 <MortgagePaymentBreakdown breakdown={breakdown} />
                 <MortgageLoanSummaryCard
                   state={state}
@@ -198,23 +184,58 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
         ),
       },
       {
+        id: "loan-product",
+        title: "Loan product",
+        description: `${derived.loanProduct.productType} · ${derived.loanProduct.miLabel}`,
+        defaultLayout: financingWidgetLgLayout("loan-product"),
+        defaultLayouts: financingWidgetLayouts("loan-product"),
+        content: <LoanProductPanel state={state} patch={patch} />,
+      },
+      {
+        id: "external-rate-estimates",
+        title: "Rate suggestions",
+        description: "External benchmarks — explicit apply only",
+        defaultLayout: financingWidgetLgLayout("external-rate-estimates"),
+        defaultLayouts: financingWidgetLayouts("external-rate-estimates"),
+        content: (
+          <ExternalEstimateSuggestionsPanel
+            state={state}
+            patch={patch}
+            categories={["rate"]}
+            title="External rate suggestions"
+            hideTitle
+            onNotify={onNotify}
+          />
+        ),
+      },
+      {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 0, y: 16, w: 12, h: 12, minW: 4, minH: 8 },
+        defaultLayout: financingWidgetLgLayout("affordability"),
+        defaultLayouts: financingWidgetLayouts("affordability"),
         content: (
-          <MortgageAffordabilityDtiPanel
-            state={state}
-            patch={patch}
-            currentHousingPaymentMonthly={breakdown.total}
-          />
+          <Stack spacing={0.75}>
+            <MortgageAffordabilityDtiPanel
+              state={state}
+              patch={patch}
+              currentHousingPaymentMonthly={breakdown.total}
+            />
+            <MaxOfferPanel
+              state={state}
+              patch={patch}
+              maxOffer={derived.maxOffer}
+              currentHomePrice={state.homePrice}
+            />
+          </Stack>
         ),
       },
       {
         id: "term-tools",
         title: "Term tools",
         description: "15 vs 30 · paydown · refi",
-        defaultLayout: { x: 0, y: 28, w: 12, h: 14, minW: 6, minH: 8 },
+        defaultLayout: financingWidgetLgLayout("term-tools"),
+        defaultLayouts: financingWidgetLayouts("term-tools"),
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -245,6 +266,41 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                 <MortgageLoanCompareCards state={state} />
               </AccordionDetails>
             </Accordion>
+
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Full amortization schedule</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Monthly P&I · CSV export
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric label="Months" value={String(schedule.length)} />
+                      <AccordionSummaryMetric label="Life int" value={money.format(lifeInterest)} />
+                    </Stack>
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <AmortizationScheduleSection
+                    schedule={schedule}
+                    baselineSchedule={extraPrincipalMonthly > 0 ? baselineSchedule : null}
+                    totalInterest={lifeInterest}
+                    totalPrincipal={lifePrincipal}
+                    homePrice={state.homePrice}
+                    extraPrincipalMonthly={extraPrincipalMonthly}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
 
             {breakdown.loanAmount > 0 ? (
               <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -297,6 +353,44 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                     sx={{ width: "100%", gap: 0.75 }}
                   >
                     <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2">Payment plan</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Biweekly equivalent · lump sums
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.1} sx={{ flexShrink: 0 }}>
+                      <AccordionSummaryMetric
+                        label="Frequency"
+                        value={state.paymentPlan?.frequency === "biweekly" ? "Biweekly" : "Monthly"}
+                      />
+                      <AccordionSummaryMetric
+                        label="Lumps"
+                        value={String(state.paymentPlan?.lumpSums?.length ?? 0)}
+                      />
+                    </Stack>
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <PaymentPlanPanel
+                    state={state}
+                    patch={patch}
+                    scheduledPiMonthly={breakdown.principalAndInterest}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            ) : null}
+
+            {breakdown.loanAmount > 0 ? (
+              <Accordion defaultExpanded={false} disableGutters elevation={0}>
+                <AccordionSummary expandIcon={<ExpandMore />} sx={summarySx}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={0.75}
+                    alignItems={{ sm: "flex-end" }}
+                    justifyContent="space-between"
+                    sx={{ width: "100%", gap: 0.75 }}
+                  >
+                    <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
                       <Typography variant="subtitle2">Refi breakeven</Typography>
                       <Typography variant="caption" color="text.secondary">
                         New rate vs costs
@@ -318,6 +412,8 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
                     scenarioAprPercent={state.interestRateApr}
                     defaultRefiClosingCosts={state.closingCosts}
                     schedule={schedule}
+                    value={state.refi}
+                    onChange={(refi) => patch({ refi })}
                   />
                 </AccordionDetails>
               </Accordion>
@@ -337,14 +433,25 @@ export function FinancingTab({ state, patch }: FinancingTabProps) {
       ltvPct,
       patch,
       prepaySummary,
+      baselineSchedule,
       schedule,
+      derived,
+      onNotify,
       state,
       yearlyDetailed,
       yearlyDetailed15,
     ]
   );
 
-  return <WidgetBoard boardId="financing" widgets={widgets} rowHeight={28} />;
+  return (
+    <WidgetBoard
+      boardId="financing"
+      widgets={widgets}
+      rowHeight={28}
+      layoutRevision={FINANCING_BOARD_LAYOUT_REVISION}
+      preset={FINANCING_BOARD_PRESET}
+    />
+  );
 }
 
 /** @deprecated Prefer FinancingTab. */

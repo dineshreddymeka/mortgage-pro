@@ -11,6 +11,11 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_STORAGE_BUCKET?: string;
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
+  /** Dedicated tax research proxy base URL; falls back to VITE_ESTIMATE_API_BASE_URL. */
+  readonly VITE_TAX_RESEARCH_API_BASE_URL?: string;
+  readonly VITE_ESTIMATE_API_BASE_URL?: string;
+  readonly VITE_ESTIMATE_API_TIMEOUT_MS?: string;
+  readonly VITE_TAX_RESEARCH_API_TIMEOUT_MS?: string;
 }
 
 interface ImportMeta {

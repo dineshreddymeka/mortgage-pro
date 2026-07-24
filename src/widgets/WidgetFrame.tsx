@@ -3,20 +3,44 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { resolveWidgetBodyOverflow } from "./widgetFrameLayout";
 
 export type WidgetFrameProps = {
   title: string;
   description?: string;
   children: ReactNode;
+  /** Natural-height stack: no drag/resize chrome. */
+  mobileStack?: boolean;
+  /**
+   * Desktop: hide frame-body overflow so a height-aware child table/list owns scrolling.
+   * Natural mobile stacks stay visible regardless (no nested frame scroll).
+   * When unset/false on desktop, the frame keeps overflow:auto as a safe default.
+   */
+  scrollBody?: boolean;
+  /** When false, hide drag affordances (coarse pointer / non-interactive). */
+  dragEnabled?: boolean;
 };
 
-/** Chrome around a grid item: drag handle + title. */
-export function WidgetFrame({ title, description, children }: WidgetFrameProps) {
+/** Chrome around a grid item: optional drag handle + title. */
+export function WidgetFrame({
+  title,
+  description,
+  children,
+  mobileStack = false,
+  scrollBody,
+  dragEnabled = true,
+}: WidgetFrameProps) {
+  const showDrag = !mobileStack && dragEnabled;
+  const titleId = useId();
+  const bodyOverflow = resolveWidgetBodyOverflow(mobileStack, scrollBody);
+
   return (
     <Box
+      component="section"
+      aria-labelledby={titleId}
       sx={{
-        height: "100%",
+        height: mobileStack ? "auto" : "100%",
         width: "100%",
         display: "flex",
         flexDirection: "column",
@@ -27,37 +51,45 @@ export function WidgetFrame({ title, description, children }: WidgetFrameProps) 
         bgcolor: (t) =>
           t.palette.mode === "light" ? alpha("#f7fafc", 0.96) : alpha("#101a24", 0.96),
         boxShadow: "var(--pp-shadow)",
-        // Do not clip the grid item's resize handles (siblings of this frame).
-        overflow: "visible",
+        overflow: "hidden",
         position: "relative",
-        // Leave room so the SE resize grip isn't covered by content chrome.
-        pb: "2px",
-        pr: "2px",
+        pb: showDrag ? "2px" : 0,
+        pr: showDrag ? "2px" : 0,
       }}
     >
       <Stack
         direction="row"
         alignItems="center"
         spacing={0.5}
-        className="widget-drag-handle"
+        className={showDrag ? "widget-drag-handle" : undefined}
+        // Decorative drag cue only — not a focusable control; avoid aria-label noise.
+        title={showDrag ? "Drag title bar to rearrange" : undefined}
         sx={{
-          cursor: "grab",
+          cursor: showDrag ? "grab" : "default",
           px: 1,
           py: 0.55,
           borderBottom: "1px solid",
           borderColor: "divider",
           bgcolor: (t) =>
             t.palette.mode === "light" ? alpha("#0b1f33", 0.03) : alpha("#e8eef4", 0.04),
-          "&:active": { cursor: "grabbing" },
+          "&:active": showDrag ? { cursor: "grabbing" } : undefined,
           userSelect: "none",
+          minHeight: showDrag ? 36 : 32,
         }}
       >
-        <DragIndicatorIcon sx={{ fontSize: 16, color: "text.secondary", opacity: 0.75 }} />
+        {showDrag ? (
+          <DragIndicatorIcon
+            aria-hidden
+            sx={{ fontSize: 16, color: "text.secondary", opacity: 0.75 }}
+          />
+        ) : null}
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
+            id={titleId}
+            component="h3"
             sx={{
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.8125rem",
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
             }}
@@ -69,53 +101,59 @@ export function WidgetFrame({ title, description, children }: WidgetFrameProps) 
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ fontSize: "0.62rem", display: { xs: "none", sm: "block" } }}
+              sx={{ fontSize: "0.75rem", display: { xs: "none", sm: "block" } }}
               noWrap
             >
               {description}
             </Typography>
           ) : null}
         </Box>
-        <Typography
-          sx={{
-            fontSize: "0.58rem",
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "text.secondary",
-            opacity: 0.7,
-          }}
-        >
-          Drag
-        </Typography>
+        {showDrag ? (
+          <Typography
+            aria-hidden
+            component="span"
+            sx={{
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "text.secondary",
+              opacity: 0.7,
+            }}
+          >
+            Drag
+          </Typography>
+        ) : null}
       </Stack>
       <Box
         sx={{
-          flex: 1,
+          flex: mobileStack && bodyOverflow === "visible" ? "none" : 1,
           minHeight: 0,
-          overflow: "auto",
-          px: 1.1,
-          py: 0.9,
+          overflow: bodyOverflow,
+          px: { xs: 0.85, sm: 0.95 },
+          py: { xs: 0.6, sm: 0.65 },
           borderRadius: "0 0 12px 12px",
         }}
       >
         {children}
       </Box>
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          right: 4,
-          bottom: 4,
-          width: 14,
-          height: 14,
-          pointerEvents: "none",
-          opacity: 0.45,
-          background:
-            "linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), linear-gradient(135deg, transparent 65%, currentColor 66%, currentColor 74%, transparent 75%)",
-          color: "secondary.main",
-        }}
-      />
+      {showDrag ? (
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            right: 4,
+            bottom: 4,
+            width: 14,
+            height: 14,
+            pointerEvents: "none",
+            opacity: 0.45,
+            background:
+              "linear-gradient(135deg, transparent 45%, currentColor 46%, currentColor 54%, transparent 55%), linear-gradient(135deg, transparent 65%, currentColor 66%, currentColor 74%, transparent 75%)",
+            color: "secondary.main",
+          }}
+        />
+      ) : null}
     </Box>
   );
 }

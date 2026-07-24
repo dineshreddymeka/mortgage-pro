@@ -8,8 +8,11 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
+import { minOperationalFontPx } from "../layout/formLayout";
 import type { MonthlyBreakdown } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
+
+const opFont = `${minOperationalFontPx}px`;
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -79,7 +82,7 @@ function StatTile({
           fontWeight: 700,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
-          fontSize: "0.6rem",
+          fontSize: opFont,
           color: "text.secondary",
           display: "block",
           mb: 0.15,
@@ -105,7 +108,7 @@ function StatTile({
         <Typography
           variant="caption"
           color="text.secondary"
-          sx={{ display: "block", mt: 0.15, lineHeight: 1.2, fontSize: "0.65rem" }}
+          sx={{ display: "block", mt: 0.15, lineHeight: 1.2, fontSize: opFont }}
         >
           {hint}
         </Typography>
@@ -125,7 +128,7 @@ function SectionTitle({ children, tightTop }: { children: ReactNode; tightTop?: 
         color: "text.secondary",
         mt: tightTop ? 0.25 : 0.75,
         mb: 0.25,
-        fontSize: "0.6rem",
+        fontSize: opFont,
       }}
     >
       {children}

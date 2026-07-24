@@ -1,7 +1,6 @@
 import type { AppPersisted } from "../storage/mortgageState";
 import { formatHouseId, houseLabel } from "../storage/firestoreProperties";
-import { computeMonthlyPayment } from "./mortgageMath";
-import { computeRentalAnalysis } from "./rentalMath";
+import { deriveScenario } from "./deriveScenario";
 
 export type HouseComparisonRow = {
   id: string;
@@ -16,6 +15,13 @@ export type HouseComparisonRow = {
   rentMonthly: number;
   cashFlowMonthly: number;
   cashOnCash: number;
+  dscr: number | null;
+  grossRentMultiplier: number | null;
+  onePercentRuleRatio: number | null;
+  /** Present when tax modeling is enabled on the scenario. */
+  afterTaxCashFlowAnnual: number | null;
+  /** After-tax total gain at 5-yr exit milestone when tax modeling enabled. */
+  afterTaxRealWealthYear5: number | null;
 };
 
 export function buildHouseComparisonRow(
@@ -25,20 +31,13 @@ export function buildHouseComparisonRow(
   houseId?: string,
   name?: string
 ): HouseComparisonRow {
-  const payment = computeMonthlyPayment(
-    scenario.homePrice,
-    scenario.downPayment,
-    scenario.interestRateApr,
-    scenario.termYears,
-    scenario.propertyTaxAnnual,
-    scenario.insuranceAnnual,
-    scenario.hoaMonthly,
-    scenario.pmiMonthly
-  );
-  const rental = computeRentalAnalysis(scenario, payment);
+  const derived = deriveScenario(scenario);
+  const payment = derived.monthlyPayment;
+  const rental = derived.rental;
   const resolvedId = houseId ?? formatHouseId(houseNumber);
   const label =
     typeof name === "string" && name.trim() ? name.trim().slice(0, 80) : houseLabel(resolvedId);
+  const taxExit5 = derived.tax?.exitSnapshots.find((s) => s.year === 5);
 
   return {
     id,
@@ -53,6 +52,11 @@ export function buildHouseComparisonRow(
     rentMonthly: Math.max(0, scenario.monthlyRent),
     cashFlowMonthly: rental.cashFlowMonthly,
     cashOnCash: rental.cashOnCash,
+    dscr: rental.dscr,
+    grossRentMultiplier: rental.grossRentMultiplier,
+    onePercentRuleRatio: rental.onePercentRuleRatio,
+    afterTaxCashFlowAnnual: derived.tax?.operating.afterTaxCashFlowAnnual ?? null,
+    afterTaxRealWealthYear5: taxExit5?.afterTaxRealWealthMade ?? null,
   };
 }
 
@@ -62,7 +66,12 @@ export type ComparisonMetricKey =
   | "cashInvested"
   | "rentMonthly"
   | "cashFlowMonthly"
-  | "cashOnCash";
+  | "cashOnCash"
+  | "dscr"
+  | "grossRentMultiplier"
+  | "onePercentRuleRatio"
+  | "afterTaxCashFlowAnnual"
+  | "afterTaxRealWealthYear5";
 
 /** Lower is better for cost metrics; higher is better for income/yield. */
 export function isBetterMetric(
@@ -72,7 +81,12 @@ export function isBetterMetric(
 ): boolean {
   if (!Number.isFinite(value) || !Number.isFinite(other)) return false;
   if (Math.abs(value - other) < 1e-9) return false;
-  if (key === "paymentMonthly" || key === "cashInvested" || key === "homePrice") {
+  if (
+    key === "paymentMonthly" ||
+    key === "cashInvested" ||
+    key === "homePrice" ||
+    key === "grossRentMultiplier"
+  ) {
     return value < other;
   }
   return value > other;
@@ -82,12 +96,24 @@ export function bestHouseIdForMetric(
   rows: HouseComparisonRow[],
   key: ComparisonMetricKey
 ): string | null {
-  if (rows.length < 2) return null;
-  let best = rows[0];
-  for (const row of rows.slice(1)) {
-    if (isBetterMetric(key, row[key], best[key])) best = row;
+  const eligible = rows.filter((r) => {
+    const v = r[key];
+    return typeof v === "number" && Number.isFinite(v);
+  });
+  if (eligible.length < 2) return null;
+  let best = eligible[0]!;
+  for (const row of eligible.slice(1)) {
+    const value = row[key] as number;
+    const bestValue = best[key] as number;
+    if (isBetterMetric(key, value, bestValue)) best = row;
   }
-  // Only highlight if not a complete tie across all
-  const allSame = rows.every((r) => Math.abs(r[key] - best[key]) < 1e-9);
+  const bestValue = best[key] as number;
+  const allSame = eligible.every((r) => Math.abs((r[key] as number) - bestValue) < 1e-9);
   return allSame ? null : best.id;
+}
+
+export function comparisonMetricValue(row: HouseComparisonRow, key: ComparisonMetricKey): number | null {
+  const v = row[key];
+  if (typeof v !== "number" || !Number.isFinite(v)) return null;
+  return v;
 }

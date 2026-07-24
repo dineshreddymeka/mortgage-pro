@@ -1,7 +1,24 @@
 import { alpha, createTheme, type Theme } from "@mui/material/styles";
+import {
+  minOperationalFontPx,
+  touchTargetCoarsePx,
+  touchTargetFinePx,
+} from "./layout/formLayout";
 
 /** Property Pro — analytical desk: slate ink, teal accent, tabular mono metrics. */
 const sansStack = '"IBM Plex Sans", "Segoe UI", sans-serif';
+
+const touchTargetSx = {
+  minHeight: touchTargetFinePx,
+  "@media (pointer: coarse)": {
+    minHeight: touchTargetCoarsePx,
+  },
+} as const;
+
+const focusVisibleOutline = (theme: Theme) => ({
+  outline: `2px solid ${theme.palette.secondary.main}`,
+  outlineOffset: 2,
+});
 
 const label = "#0b1f33";
 const labelSecondary = "#3d556c";
@@ -175,23 +192,34 @@ export const appTheme = createTheme({
     subtitle2: { fontWeight: 600, letterSpacing: "-0.01em" },
     body1: { letterSpacing: "-0.01em", lineHeight: 1.45 },
     body2: { letterSpacing: "-0.01em", lineHeight: 1.4 },
-    caption: { letterSpacing: "-0.005em", lineHeight: 1.35 },
+    caption: {
+      letterSpacing: "-0.005em",
+      lineHeight: 1.35,
+      fontSize: `${minOperationalFontPx}px`,
+    },
     overline: {
       fontFamily: sansStack,
       letterSpacing: "0.08em",
       fontWeight: 600,
-      fontSize: "0.65rem",
+      fontSize: `${minOperationalFontPx}px`,
     },
     button: {
       textTransform: "none",
       fontWeight: 600,
       letterSpacing: "-0.01em",
       fontFamily: sansStack,
+      fontSize: "0.8125rem",
     },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        // Density tokens — single source is src/layout/formLayout.ts.
+        ":root": {
+          "--pp-touch-fine": `${touchTargetFinePx}px`,
+          "--pp-touch-coarse": `${touchTargetCoarsePx}px`,
+          "--pp-min-text": `${minOperationalFontPx}px`,
+        },
         body: ({ theme }: { theme: Theme }) =>
           theme.palette.mode === "dark"
             ? {
@@ -200,6 +228,13 @@ export const appTheme = createTheme({
                 backgroundAttachment: "fixed",
               }
             : {},
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          "&.Mui-focusVisible": focusVisibleOutline(theme),
+        }),
       },
     },
     MuiButton: {
@@ -212,7 +247,7 @@ export const appTheme = createTheme({
         root: {
           borderRadius: 10,
           paddingInline: 14,
-          minHeight: 32,
+          ...touchTargetSx,
           fontSize: "0.8125rem",
           transition: "background 0.18s var(--pp-ease, ease), border-color 0.18s ease, opacity 0.15s ease",
           "&:active": {
@@ -264,6 +299,12 @@ export const appTheme = createTheme({
           borderRadius: 10,
           border: `1px solid ${alpha(theme.palette.text.primary, 0.1)}`,
           padding: 6,
+          ...touchTargetSx,
+          minWidth: touchTargetFinePx,
+          "@media (pointer: coarse)": {
+            minHeight: touchTargetCoarsePx,
+            minWidth: touchTargetCoarsePx,
+          },
           backgroundColor:
             theme.palette.mode === "light" ? alpha(paper, 0.65) : alpha(surfaceDark, 0.55),
           transition: "border-color 0.18s ease, background 0.18s ease",
@@ -272,6 +313,7 @@ export const appTheme = createTheme({
             borderColor: alpha(theme.palette.secondary.main, 0.35),
             color: theme.palette.secondary.main,
           },
+          "&.Mui-focusVisible": focusVisibleOutline(theme),
         }),
       },
     },
@@ -322,7 +364,7 @@ export const appTheme = createTheme({
         root: {
           marginTop: 2,
           lineHeight: 1.25,
-          fontSize: "0.7rem",
+          fontSize: `${minOperationalFontPx}px`,
         },
       },
     },
@@ -360,17 +402,24 @@ export const appTheme = createTheme({
     },
     MuiAccordionSummary: {
       styleOverrides: {
-        root: {
-          minHeight: 40,
-          paddingLeft: 12,
-          paddingRight: 12,
-        },
-        content: { marginTop: 6, marginBottom: 6 },
+        root: ({ theme }) => ({
+          minHeight: touchTargetFinePx,
+          paddingLeft: 10,
+          paddingRight: 10,
+          "@media (pointer: coarse)": {
+            minHeight: touchTargetCoarsePx,
+          },
+          "&.Mui-focusVisible": {
+            backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+            ...focusVisibleOutline(theme),
+          },
+        }),
+        content: { marginTop: 4, marginBottom: 4 },
       },
     },
     MuiAccordionDetails: {
       styleOverrides: {
-        root: { padding: 12, paddingTop: 0 },
+        root: { padding: 10, paddingTop: 0 },
       },
     },
     MuiOutlinedInput: {
@@ -379,23 +428,36 @@ export const appTheme = createTheme({
           borderRadius: 10,
           backgroundColor:
             theme.palette.mode === "light" ? alpha("#787880", 0.08) : alpha("#787880", 0.24),
+          ...touchTargetSx,
           "& fieldset": {
             borderColor: "transparent",
           },
           "&:hover fieldset": {
             borderColor: alpha(theme.palette.secondary.main, 0.35),
           },
+          "&.Mui-focused": {
+            boxShadow: `0 0 0 2px ${alpha(theme.palette.secondary.main, 0.28)}`,
+          },
           "&.Mui-focused fieldset": {
             borderWidth: 1.5,
             borderColor: theme.palette.secondary.main,
           },
+          "& .MuiInputBase-input": {
+            fontSize: "0.875rem",
+            fontVariantNumeric: "tabular-nums",
+          },
           "& .MuiInputBase-input.MuiInputBase-inputSizeSmall": {
-            paddingTop: 8,
-            paddingBottom: 8,
+            paddingTop: 7,
+            paddingBottom: 7,
             paddingLeft: 11,
             paddingRight: 11,
             fontSize: "0.875rem",
             fontVariantNumeric: "tabular-nums",
+            minHeight: touchTargetFinePx - 2,
+            boxSizing: "border-box",
+            "@media (pointer: coarse)": {
+              minHeight: touchTargetCoarsePx - 2,
+            },
           },
         }),
       },
@@ -408,10 +470,11 @@ export const appTheme = createTheme({
           paddingLeft: 10,
           paddingRight: 10,
           fontVariantNumeric: "tabular-nums",
+          fontSize: `${minOperationalFontPx}px`,
         },
         head: ({ theme }) => ({
           fontWeight: 600,
-          fontSize: "0.68rem",
+          fontSize: `${minOperationalFontPx}px`,
           letterSpacing: "0.04em",
           textTransform: "uppercase",
           color: theme.palette.text.secondary,
@@ -456,7 +519,7 @@ export const appTheme = createTheme({
           borderRadius: 8,
           fontWeight: 560,
           height: 24,
-          fontSize: "0.75rem",
+          fontSize: `${minOperationalFontPx}px`,
         },
         colorPrimary: ({ theme }) => ({
           backgroundColor: alpha(theme.palette.secondary.main, 0.12),

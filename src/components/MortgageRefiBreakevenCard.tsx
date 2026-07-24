@@ -1,17 +1,18 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid2";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
 import {
   balanceAfterCompletedLoanYears,
   monthlyPiForRefi,
   refiBreakevenMonthsFromSavings,
   type AmortizationRow,
 } from "../lib/mortgageMath";
+import type { RefiScenarioPersisted } from "../storage/mortgageState";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -30,7 +31,7 @@ export type MortgageRefiBreakevenCardProps = {
   scenarioLoanAmount: number;
   /** Current scenario P&amp;I (defaults “your payment before refi”). */
   scenarioPrincipalAndInterest: number;
-  /** Scenario note rate — seeds “new rate” when it changes. */
+  /** Scenario note rate — seeds “new rate” when unset. */
   scenarioAprPercent: number;
   /** Suggested refi closing costs default (e.g. scenario closingCosts). */
   defaultRefiClosingCosts: number;
@@ -39,6 +40,9 @@ export type MortgageRefiBreakevenCardProps = {
    * to snap “balance to refinance” to the modeled remaining balance.
    */
   schedule?: AmortizationRow[] | null;
+  /** Persisted what-if inputs; omitted fields fall back to scenario defaults. */
+  value?: Partial<RefiScenarioPersisted> | null;
+  onChange: (next: RefiScenarioPersisted) => void;
 };
 
 export function MortgageRefiBreakevenCard({
@@ -47,43 +51,45 @@ export function MortgageRefiBreakevenCard({
   scenarioAprPercent,
   defaultRefiClosingCosts,
   schedule = null,
+  value = null,
+  onChange,
 }: MortgageRefiBreakevenCardProps) {
-  const [balance, setBalance] = useState(scenarioLoanAmount);
-  const [currentPi, setCurrentPi] = useState(scenarioPrincipalAndInterest);
-  const [newRate, setNewRate] = useState(scenarioAprPercent);
-  const [newTerm, setNewTerm] = useState(30);
-  const [refiCosts, setRefiCosts] = useState(defaultRefiClosingCosts);
-  const [loanYearEndPick, setLoanYearEndPick] = useState(0);
-
   const scheduleLen = schedule?.length ?? 0;
   const maxLoanYearEnd = useMemo(
     () => (scheduleLen > 0 ? Math.max(1, Math.ceil(scheduleLen / 12)) : 0),
     [scheduleLen]
   );
 
-  useEffect(() => {
-    setCurrentPi(scenarioPrincipalAndInterest);
-  }, [scenarioPrincipalAndInterest]);
+  const defaults = useMemo((): RefiScenarioPersisted => {
+    const pick = 0;
+    return {
+      balance: balanceAfterCompletedLoanYears(schedule ?? [], pick, scenarioLoanAmount),
+      currentPi: scenarioPrincipalAndInterest,
+      newRateApr: scenarioAprPercent,
+      newTermYears: 30,
+      closingCosts: defaultRefiClosingCosts,
+      loanYearEndPick: pick,
+    };
+  }, [defaultRefiClosingCosts, scenarioAprPercent, scenarioLoanAmount, scenarioPrincipalAndInterest, schedule]);
 
-  useEffect(() => {
-    setRefiCosts(defaultRefiClosingCosts);
-  }, [defaultRefiClosingCosts]);
+  const refi: RefiScenarioPersisted = {
+    ...defaults,
+    ...(value ?? {}),
+  };
 
-  /** Reset timepoint when the modeled loan changes; snap balance from pick (usually year 0). */
-  useEffect(() => {
-    setLoanYearEndPick(0);
-    setBalance(balanceAfterCompletedLoanYears(schedule ?? [], 0, scenarioLoanAmount));
-  }, [scenarioLoanAmount, schedule]);
+  const commit = (partial: Partial<RefiScenarioPersisted>) => {
+    onChange({ ...refi, ...partial });
+  };
 
   const newPi = useMemo(
-    () => monthlyPiForRefi(balance, newRate, newTerm),
-    [balance, newRate, newTerm]
+    () => monthlyPiForRefi(refi.balance, refi.newRateApr, refi.newTermYears),
+    [refi.balance, refi.newRateApr, refi.newTermYears]
   );
 
-  const monthlySavings = currentPi - newPi;
+  const monthlySavings = refi.currentPi - newPi;
   const breakevenMo = useMemo(
-    () => refiBreakevenMonthsFromSavings(refiCosts, currentPi, newPi),
-    [refiCosts, currentPi, newPi]
+    () => refiBreakevenMonthsFromSavings(refi.closingCosts, refi.currentPi, newPi),
+    [refi.closingCosts, refi.currentPi, newPi]
   );
 
   return (
@@ -97,22 +103,22 @@ export function MortgageRefiBreakevenCard({
           (level each month on a fixed loan). Pick how far you are into the <strong>current</strong> loan to snap the
           balance from the amortization model, then edit if needed. Ignores taxes, insurance, and PMI.
         </Typography>
-        <Grid container spacing={1.5}>
+        <FormGrid maxColumns={4} compact>
           {scheduleLen > 0 ? (
-            <Grid size={12}>
+            <FormField span={4}>
               <TextField
                 label="Where you are on the current loan (snap balance)"
                 size="small"
                 fullWidth
                 select
                 SelectProps={{ native: true }}
-                value={loanYearEndPick}
+                value={Math.min(refi.loanYearEndPick, maxLoanYearEnd)}
                 onChange={(e) => {
                   const y = Number(e.target.value);
-                  setLoanYearEndPick(y);
-                  if (schedule?.length) {
-                    setBalance(balanceAfterCompletedLoanYears(schedule, y, scenarioLoanAmount));
-                  }
+                  const balance = schedule?.length
+                    ? balanceAfterCompletedLoanYears(schedule, y, scenarioLoanAmount)
+                    : refi.balance;
+                  commit({ loanYearEndPick: y, balance });
                 }}
                 helperText="End of loan year = after 12× that many payments on this tab’s schedule (incl. extra principal if modeled)."
               >
@@ -126,62 +132,62 @@ export function MortgageRefiBreakevenCard({
                   );
                 })}
               </TextField>
-            </Grid>
+            </FormField>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <FormField span={2}>
             <TextField
               label="Loan balance to refinance"
               size="small"
               fullWidth
-              value={formatNumberField(balance)}
+              value={formatNumberField(refi.balance)}
               onChange={(e) => {
                 const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                if (Number.isFinite(n)) setBalance(Math.max(0, n));
+                if (Number.isFinite(n)) commit({ balance: Math.max(0, n) });
               }}
               slotProps={{
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          </FormField>
+          <FormField span={2}>
             <TextField
               label="Your current P&amp;I (before refi)"
               size="small"
               fullWidth
-              value={formatNumberField(Math.round(currentPi * 100) / 100)}
+              value={formatNumberField(Math.round(refi.currentPi * 100) / 100)}
               onChange={(e) => {
                 const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                if (Number.isFinite(n)) setCurrentPi(Math.max(0, n));
+                if (Number.isFinite(n)) commit({ currentPi: Math.max(0, n) });
               }}
               slotProps={{
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField>
             <TextField
               label="New rate (APR)"
               size="small"
               fullWidth
-              value={formatNumberField(newRate)}
+              value={formatNumberField(refi.newRateApr)}
               onChange={(e) => {
                 const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                if (Number.isFinite(n)) setNewRate(Math.max(0, n));
+                if (Number.isFinite(n)) commit({ newRateApr: Math.max(0, n) });
               }}
               slotProps={{
                 input: { endAdornment: <InputAdornment position="end">%</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField>
             <TextField
               label="New term"
               size="small"
               fullWidth
               select
               SelectProps={{ native: true }}
-              value={newTerm}
-              onChange={(e) => setNewTerm(Number(e.target.value))}
+              value={refi.newTermYears}
+              onChange={(e) => commit({ newTermYears: Number(e.target.value) })}
             >
               {[10, 15, 20, 25, 30].map((y) => (
                 <option key={y} value={y}>
@@ -189,23 +195,23 @@ export function MortgageRefiBreakevenCard({
                 </option>
               ))}
             </TextField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField span={2}>
             <TextField
               label="Refi closing costs"
               size="small"
               fullWidth
-              value={formatNumberField(refiCosts)}
+              value={formatNumberField(refi.closingCosts)}
               onChange={(e) => {
                 const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                if (Number.isFinite(n)) setRefiCosts(Math.max(0, n));
+                if (Number.isFinite(n)) commit({ closingCosts: Math.max(0, n) });
               }}
               slotProps={{
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Stack spacing={0.75} sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">

@@ -18,7 +18,7 @@ function append(wb: XLSX.WorkBook, name: string, rows: Cell[][]) {
   XLSX.utils.book_append_sheet(wb, aoaSheet(rows), safeSheetName(name));
 }
 
-function flattenScenario(state: AppPersisted): Cell[][] {
+function flattenRecord(state: Record<string, unknown>): Cell[][] {
   const header: Cell[][] = [["Key", "Value"]];
   const rows: Cell[][] = [];
   for (const [k, v] of Object.entries(state)) {
@@ -111,6 +111,14 @@ function rentalCompareSheet(
       r15.initialCashInvested,
     ],
     ["Cash_on_cash", scenario.cashOnCash, r30.cashOnCash, r15.cashOnCash],
+    ["DSCR", scenario.dscr, r30.dscr, r15.dscr],
+    ["GRM", scenario.grossRentMultiplier, r30.grossRentMultiplier, r15.grossRentMultiplier],
+    [
+      "One_percent_rule_ratio",
+      scenario.onePercentRuleRatio,
+      r30.onePercentRuleRatio,
+      r15.onePercentRuleRatio,
+    ],
     ["Yield_adj_annual_CF_WTS", "", yield30, yield15],
   ];
 }
@@ -135,8 +143,11 @@ function amortRowSheet(title: string, row: Record<string, unknown> | null): Cell
 }
 
 /** Build .xlsx workbook: inputs, formulas, and calculated tables (multi-sheet). */
-export function buildScenarioExcelBlob(state: AppPersisted): Blob {
-  const ex = buildFullScenarioExport(state);
+export function buildScenarioExcelBlob(
+  state: AppPersisted,
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+): Blob {
+  const ex = buildFullScenarioExport(state, houseMeta);
   const wb = XLSX.utils.book_new();
 
   append(wb, "Info", [
@@ -150,7 +161,14 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
     ],
   ]);
 
-  append(wb, "Scenario_inputs", flattenScenario(ex.scenario));
+  append(wb, "House", [
+    ["Key", "Value"],
+    ["id", ex.house.id],
+    ["v", ex.house.v],
+    ...(ex.house.houseNumber !== undefined ? [["houseNumber", ex.house.houseNumber] as Cell[]] : []),
+    ...(ex.house.name ? [["name", ex.house.name] as Cell[]] : []),
+  ]);
+  append(wb, "Scenario_inputs", flattenRecord(ex.scenario as unknown as Record<string, unknown>));
 
   append(
     wb,
@@ -203,6 +221,19 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
       "yieldAdjAnnualCF_15",
       c.rental.whenToSell_yieldAdjustedAnnualCashFlow_15yrPath,
     ],
+    ["rental", "dscr", c.rental.dscr],
+    ["rental", "grm", c.rental.grossRentMultiplier],
+    ["rental", "onePercentRuleRatio", c.rental.onePercentRuleRatio],
+    ["maxOffer", "fromDti28Pct", c.maxOffer.fromDti28Pct],
+    ["maxOffer", "fromCustomBudget", c.maxOffer.fromCustomHousingBudget],
+    ["maxOffer", "fromTargetDscr", c.maxOffer.fromTargetDscr],
+    ["maxOffer", "fromTargetCashFlow", c.maxOffer.fromTargetCashFlow],
+    ["maxOffer", "fromTargetCashOnCash", c.maxOffer.fromTargetCashOnCash],
+    ["maxOffer", "fromTargetPayment", c.maxOffer.fromTargetPayment],
+    ["maxOffer", "bindingCap", c.maxOffer.bindingCap],
+    ["maxOffer", "targets", c.maxOffer.targets ? JSON.stringify(c.maxOffer.targets) : null],
+    ["decisionTools", "rentVsBuy", c.decisionTools.rentVsBuy ? JSON.stringify(c.decisionTools.rentVsBuy) : null],
+    ["decisionTools", "stressTestDeltas", c.decisionTools.stressTestDeltas ? JSON.stringify(c.decisionTools.stressTestDeltas) : null],
   ]);
 
   const mp = c.mortgage;
@@ -250,6 +281,16 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
     "Real_wealth_milestones",
     tableFromObjects(c.whenToSell.realWealthMilestoneSnapshots, "milestones")
   );
+  append(
+    wb,
+    "Exit_investment",
+    tableFromObjects(c.whenToSell.exitInvestmentMetrics, "exit_investment")
+  );
+  append(
+    wb,
+    "Monthly_projection",
+    tableFromObjects(c.projection.fullMonthlyRows.slice(0, 120), "projection_first_120")
+  );
 
   const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   return new Blob([buf], {
@@ -257,8 +298,12 @@ export function buildScenarioExcelBlob(state: AppPersisted): Blob {
   });
 }
 
-export function downloadScenarioExcel(state: AppPersisted, filename = "property-pro-scenario.xlsx") {
-  const blob = buildScenarioExcelBlob(state);
+export function downloadScenarioExcel(
+  state: AppPersisted,
+  filename = "property-pro-scenario.xlsx",
+  houseMeta?: { id?: string; houseId?: string; houseNumber?: number; name?: string }
+) {
+  const blob = buildScenarioExcelBlob(state, houseMeta);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

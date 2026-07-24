@@ -1,5 +1,6 @@
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { minOperationalFontPx } from "../layout/formLayout";
 
 /**
  * Bold numeric readout for collapsed accordion headers (stays visible before expand).
@@ -12,7 +13,7 @@ export function AccordionSummaryMetric({ label, value }: { label: string; value:
         variant="caption"
         color="text.secondary"
         sx={{
-          fontSize: "0.6rem",
+          fontSize: `${minOperationalFontPx}px`,
           fontWeight: 700,
           letterSpacing: "0.06em",
           textTransform: "uppercase",

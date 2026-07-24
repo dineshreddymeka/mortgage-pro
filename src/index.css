@@ -20,6 +20,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 *,
@@ -41,6 +42,14 @@ body {
     linear-gradient(90deg, rgba(11, 31, 51, 0.035) 1px, transparent 1px);
   background-size: auto, 28px 28px, 28px 28px;
   background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+@media (max-width: 599.95px) {
+  body {
+    /* Fixed backgrounds jank on iOS Safari while scrolling. */
+    background-attachment: scroll;
+  }
 }
 
 ::selection {
@@ -98,6 +107,35 @@ body {
 .pp-mono {
   font-family: var(--pp-font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* FormGrid layout rules live in FormGrid.tsx (TS breakpoint source of truth). */
+.pp-form-field {
+  min-width: 0;
+}
+
+/* Strong keyboard focus without fighting mouse clicks. */
+:where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: 2px;
+}
+
+.dark :where(a, button, [role="button"], input, select, textarea, summary):focus-visible,
+[data-mui-color-scheme="dark"]
+  :where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline-color: #22d3ee;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --pp-touch-target: var(--pp-touch-coarse);
+  }
+}
+
+@media (pointer: fine) {
+  :root {
+    --pp-touch-target: var(--pp-touch-fine);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

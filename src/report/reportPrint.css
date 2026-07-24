@@ -1,0 +1,138 @@
+.pp-report-root {
+  --pp-report-ink: #0b1f33;
+  --pp-report-muted: #4a6075;
+  --pp-report-line: rgba(11, 31, 51, 0.14);
+  color: var(--pp-report-ink);
+  background: #fff;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.pp-report-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--pp-report-line);
+  background: #f7fafc;
+}
+
+.pp-report-toolbar button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--pp-report-line);
+  background: #fff;
+  cursor: pointer;
+}
+
+.pp-report-toolbar button.primary {
+  background: #0e7490;
+  border-color: #0e7490;
+  color: #fff;
+}
+
+.pp-report-page {
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: 0.55in 0.6in 0.65in;
+}
+
+.pp-report-header {
+  border-bottom: 2px solid var(--pp-report-ink);
+  padding-bottom: 0.35in;
+  margin-bottom: 0.35in;
+}
+
+.pp-report-title {
+  font-size: 22pt;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.15in;
+}
+
+.pp-report-subtitle {
+  margin: 0;
+  color: var(--pp-report-muted);
+  font-size: 10pt;
+}
+
+.pp-report-section {
+  break-inside: avoid-page;
+  margin-bottom: 0.3in;
+}
+
+.pp-report-section h2 {
+  font-size: 12pt;
+  font-weight: 700;
+  margin: 0 0 0.12in;
+}
+
+.pp-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.pp-report-table th,
+.pp-report-table td {
+  text-align: left;
+  padding: 0.18rem 0.35rem;
+  border-bottom: 1px solid var(--pp-report-line);
+  vertical-align: top;
+}
+
+.pp-report-table th {
+  width: 52%;
+  font-weight: 600;
+  color: var(--pp-report-muted);
+}
+
+.pp-report-table td.value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.pp-report-hint {
+  display: block;
+  font-size: 8.5pt;
+  color: var(--pp-report-muted);
+  font-weight: 400;
+  margin-top: 0.1rem;
+}
+
+.pp-report-footer {
+  margin-top: 0.4in;
+  padding-top: 0.15in;
+  border-top: 1px solid var(--pp-report-line);
+  font-size: 8.5pt;
+  color: var(--pp-report-muted);
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0.45in;
+  }
+
+  body {
+    background: #fff !important;
+    background-image: none !important;
+  }
+
+  .pp-report-toolbar {
+    display: none !important;
+  }
+
+  .pp-report-page {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .pp-report-section {
+    page-break-inside: avoid;
+  }
+}

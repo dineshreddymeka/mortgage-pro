@@ -1,4 +1,6 @@
 import type { MonthlyBreakdown } from "./mortgageMath";
+import { computeNetCashToClose } from "./buyingCostsMath";
+import { resolveLoanProduct, resolveUpfrontAdjustments } from "./resolveLoanScenario";
 import type { AppPersisted } from "../storage/mortgageState";
 
 /** P&amp;I row id for `sellRentalYieldInclude` (matches pro-forma). */
@@ -25,9 +27,48 @@ export type RentalAnalysis = {
   cashFlowAnnual: number;
   initialCashInvested: number;
   cashOnCash: number;
+  /** NOI ÷ annual debt service (P&I + PMI). Null for all-cash / no debt service. */
+  dscr: number | null;
+  /** Purchase price ÷ annual gross scheduled income. Null when price or rent is zero. */
+  grossRentMultiplier: number | null;
+  /** Base monthly rent ÷ purchase price (1% rule ratio). Null when price or rent is zero. */
+  onePercentRuleRatio: number | null;
   /** Where monthly EGI goes: debt service, OpEx line items, remainder = cash flow */
   composition: RentalPieSlice[];
 };
+
+/** NOI ÷ annual debt service. Null when there is no debt service (all-cash). */
+export function computeDscr(
+  noiAnnual: number,
+  principalAndInterestMonthly: number,
+  pmiMonthly: number
+): number | null {
+  const debtServiceAnnual = (Math.max(0, principalAndInterestMonthly) + Math.max(0, pmiMonthly)) * 12;
+  if (debtServiceAnnual <= 0) return null;
+  const ratio = noiAnnual / debtServiceAnnual;
+  return Number.isFinite(ratio) ? ratio : null;
+}
+
+/** Purchase price ÷ annual gross scheduled income. Null when price or GSI is zero. */
+export function computeGrossRentMultiplier(
+  purchasePrice: number,
+  grossScheduledIncomeMonthly: number
+): number | null {
+  const hp = Math.max(0, purchasePrice);
+  const annualGross = Math.max(0, grossScheduledIncomeMonthly) * 12;
+  if (hp <= 0 || annualGross <= 0) return null;
+  const grm = hp / annualGross;
+  return Number.isFinite(grm) ? grm : null;
+}
+
+/** Base monthly rent ÷ purchase price (decimal; 0.01 = 1% rule). Null when price or rent is zero. */
+export function computeOnePercentRuleRatio(purchasePrice: number, monthlyRent: number): number | null {
+  const hp = Math.max(0, purchasePrice);
+  const rent = Math.max(0, monthlyRent);
+  if (hp <= 0 || rent <= 0) return null;
+  const ratio = rent / hp;
+  return Number.isFinite(ratio) ? ratio : null;
+}
 
 /**
  * Pro-forma rental analysis. NOI excludes P&I. Cash flow = EGI − operating expenses − P&I.
@@ -72,10 +113,13 @@ export function computeRentalAnalysis(
   const cashFlowMonthly = noiMonthly - pi - pmi;
   const cashFlowAnnual = cashFlowMonthly * 12;
 
-  const initialCashInvested =
-    Math.max(0, s.downPayment) + Math.max(0, s.closingCosts) + Math.max(0, s.miscInitialCash);
+  const initialCashInvested = computeInitialCashInvested(s);
   const cashOnCash =
     initialCashInvested > 0 ? cashFlowAnnual / initialCashInvested : 0;
+
+  const dscr = computeDscr(noiAnnual, pi, pmi);
+  const grossRentMultiplier = computeGrossRentMultiplier(purchasePrice, gsi);
+  const onePercentRuleRatio = computeOnePercentRuleRatio(purchasePrice, rent);
 
   /** Monthly debt service + operating costs (visual “where money goes” before cash flow). */
   const composition: RentalPieSlice[] = [
@@ -98,6 +142,9 @@ export function computeRentalAnalysis(
     cashFlowAnnual,
     initialCashInvested,
     cashOnCash,
+    dscr,
+    grossRentMultiplier,
+    onePercentRuleRatio,
     composition,
   };
 }
@@ -105,6 +152,12 @@ export function computeRentalAnalysis(
 function clamp(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, n));
+}
+
+export function computeInitialCashInvested(state: AppPersisted): number {
+  const lp = resolveLoanProduct(state);
+  const net = computeNetCashToClose(state.downPayment, state.closingCosts, state.miscInitialCash, resolveUpfrontAdjustments(state, lp.pointsUpfrontCost));
+  return net.grossCashRequired - net.sellerCredit - net.lenderCredit;
 }
 
 /**

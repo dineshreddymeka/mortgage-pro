@@ -1,12 +1,11 @@
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import Stack from "@mui/material/Stack";
@@ -14,6 +13,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import { useEffect, useRef, useState } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { FORM_CONTAINER_NAME, formContainerBreakpoints } from "../layout/formLayout";
+import { buildGoogleMapsUrl } from "../lib/googleMapsLink";
 import type { AppPersisted } from "../storage/mortgageState";
 
 export type PropertyLocationCardProps = {
@@ -94,6 +96,12 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
   const coords = toLatLng(lat, lng);
   const showMap = hasKey && coords !== null;
   const showManualField = !hasKey || mapsStatus === "error";
+  const googleMapsUrl = buildGoogleMapsUrl({
+    address,
+    placeId: state.propertyPlaceId,
+    latitude: lat,
+    longitude: lng,
+  });
 
   useEffect(() => {
     writeMapCollapsed(mapCollapsed);
@@ -123,6 +131,7 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
 
     let cancelled = false;
     let placeAutocomplete: google.maps.places.PlaceAutocompleteElement | null = null;
+    const widgetHost = widgetHostRef.current;
 
     const onSelect = async (event: Event) => {
       const selectEvent = event as google.maps.places.PlacePredictionSelectEvent;
@@ -234,8 +243,7 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
         placeAutocomplete = null;
       }
       placeAutocompleteRef.current = null;
-      const host = widgetHostRef.current;
-      if (host) host.replaceChildren();
+      if (widgetHost) widgetHost.replaceChildren();
     };
   }, [apiKey, hasKey]);
 
@@ -266,15 +274,20 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
     }
   }, [address, mapsStatus]);
 
+  const cq = FORM_CONTAINER_NAME;
+  const twoCol = formContainerBreakpoints.twoCol;
+
   return (
-    <Card
-      variant="outlined"
+    <Stack
+      spacing={1}
       sx={{
-        borderRadius: 1.75,
-        bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#fff", 0.88) : alpha(t.palette.background.paper, 0.88),
+        containerType: "inline-size",
+        containerName: cq,
+        width: "100%",
         "& gmp-place-autocomplete": {
           width: "100%",
+          minHeight: 36,
+          "@media (pointer: coarse)": { minHeight: 44 },
           colorScheme: (t) => (t.palette.mode === "dark" ? "dark" : "light"),
           "--gmp-mat-color-surface": (t) =>
             t.palette.mode === "light" ? alpha("#787880", 0.08) : alpha("#787880", 0.24),
@@ -286,22 +299,17 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
         },
       }}
     >
-      <CardContent sx={{ py: 1.25, px: 1.5, "&:last-child": { pb: 1.25 } }}>
-        <Stack spacing={1}>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between" spacing={1}>
-            <Typography variant="subtitle2" sx={{ fontSize: "0.8125rem", letterSpacing: "-0.015em" }}>
-              Property location
-            </Typography>
-            {hasKey && mapsStatus === "loading" ? (
-              <Stack direction="row" spacing={0.75} alignItems="center">
-                <CircularProgress size={14} thickness={5} color="secondary" />
-                <Typography variant="caption" color="text.secondary">
-                  Loading Maps…
-                </Typography>
-              </Stack>
-            ) : null}
-          </Stack>
+      {hasKey && mapsStatus === "loading" ? (
+        <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end">
+          <CircularProgress size={14} thickness={5} color="secondary" />
+          <Typography variant="caption" color="text.secondary">
+            Loading Maps…
+          </Typography>
+        </Stack>
+      ) : null}
 
+      <FormGrid maxColumns={2} compact>
+        <FormField span={googleMapsUrl ? 1 : 2}>
           {showManualField ? (
             <TextField
               label="Address"
@@ -336,7 +344,8 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
               <Box
                 ref={widgetHostRef}
                 sx={{
-                  minHeight: 40,
+                  minHeight: 36,
+                  "@media (pointer: coarse)": { minHeight: 44 },
                   width: "100%",
                   "&:empty": {
                     borderRadius: "10px",
@@ -352,97 +361,111 @@ export function PropertyLocationCard({ state, patch }: PropertyLocationCardProps
               ) : null}
             </Box>
           )}
+        </FormField>
+        {googleMapsUrl ? (
+          <FormField>
+            <Button
+              component="a"
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              variant="outlined"
+              fullWidth
+              endIcon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
+              aria-label="Open property location in Google Maps in a new tab"
+            >
+              Open in Google Maps
+            </Button>
+          </FormField>
+        ) : null}
+      </FormGrid>
 
-          {!hasKey ? (
-            <Alert severity="info" variant="outlined" sx={{ py: 0.25, px: 1 }}>
-              <Typography variant="caption" component="div" sx={{ lineHeight: 1.35 }}>
-                Set <code>VITE_GOOGLE_MAPS_API_KEY</code> for address autocomplete and map preview.
-                You can still type an address manually.
-              </Typography>
-            </Alert>
-          ) : null}
+      {!hasKey ? (
+        <Alert severity="info" variant="outlined" sx={{ py: 0.25, px: 1 }}>
+          <Typography variant="caption" component="div" sx={{ lineHeight: 1.35 }}>
+            Set <code>VITE_GOOGLE_MAPS_API_KEY</code> for address autocomplete and map preview.
+            You can still type an address manually.
+          </Typography>
+        </Alert>
+      ) : null}
 
-          {hasKey && mapsStatus === "error" && mapsError ? (
-            <Alert severity="warning" variant="outlined" sx={{ py: 0.25, px: 1 }}>
-              <Typography variant="caption" component="div" sx={{ lineHeight: 1.35 }}>
-                Maps unavailable: {mapsError}. Address can still be entered manually.
-              </Typography>
-            </Alert>
-          ) : null}
+      {hasKey && mapsStatus === "error" && mapsError ? (
+        <Alert severity="warning" variant="outlined" sx={{ py: 0.25, px: 1 }}>
+          <Typography variant="caption" component="div" sx={{ lineHeight: 1.35 }}>
+            Maps unavailable: {mapsError}. Address can still be entered manually.
+          </Typography>
+        </Alert>
+      ) : null}
 
-          {hasKey ? (
-            <Box>
-              <Button
-                size="small"
-                fullWidth
-                onClick={() => setMapCollapsed((c) => !c)}
-                startIcon={<MapOutlinedIcon sx={{ fontSize: 16 }} />}
-                endIcon={mapCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                aria-expanded={!mapCollapsed}
-                aria-controls="property-map-panel"
-                sx={{
-                  justifyContent: "space-between",
-                  minHeight: 34,
-                  px: 0.85,
-                  color: "text.secondary",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: "10px",
-                }}
-              >
-                {mapCollapsed
-                  ? showMap
-                    ? "Show map"
-                    : "Map preview"
-                  : "Hide map"}
-              </Button>
+      {hasKey ? (
+        <Box>
+          <Button
+            size="small"
+            fullWidth
+            onClick={() => setMapCollapsed((c) => !c)}
+            startIcon={<MapOutlinedIcon sx={{ fontSize: 16 }} />}
+            endIcon={mapCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+            aria-expanded={!mapCollapsed}
+            aria-controls="property-map-panel"
+            sx={{
+              justifyContent: "space-between",
+              px: 0.85,
+              color: "text.secondary",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: "10px",
+            }}
+          >
+            {mapCollapsed ? (showMap ? "Show map" : "Map preview") : "Hide map"}
+          </Button>
 
-              <Collapse in={!mapCollapsed} timeout={200} id="property-map-panel">
+          {/* Keep map mounted while collapsed so reveal/recenter still works. */}
+          <Collapse in={!mapCollapsed} timeout={200} id="property-map-panel">
+            <Box
+              ref={mapContainerRef}
+              sx={{
+                mt: 0.85,
+                height: 180,
+                [`@container ${cq} (min-width: ${twoCol}px)`]: {
+                  height: 220,
+                },
+                width: "100%",
+                borderRadius: 1.25,
+                overflow: "hidden",
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.04),
+                display:
+                  showMap || mapsStatus === "ready" || mapsStatus === "loading" ? "block" : "none",
+                position: "relative",
+              }}
+              aria-hidden={!showMap}
+            >
+              {mapsStatus === "ready" && !showMap ? (
                 <Box
-                  ref={mapContainerRef}
                   sx={{
-                    mt: 0.85,
-                    height: { xs: 180, md: 200 },
-                    width: "100%",
-                    borderRadius: 1.25,
-                    overflow: "hidden",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    bgcolor: (t) => alpha(t.palette.text.primary, 0.04),
-                    display:
-                      showMap || mapsStatus === "ready" || mapsStatus === "loading"
-                        ? "block"
-                        : "none",
-                    position: "relative",
+                    position: "absolute",
+                    inset: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    px: 2,
+                    pointerEvents: "none",
                   }}
-                  aria-hidden={!showMap}
                 >
-                  {mapsStatus === "ready" && !showMap ? (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "grid",
-                        placeItems: "center",
-                        px: 2,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <Typography variant="caption" color="text.secondary" align="center">
-                        Select an address to preview the map
-                      </Typography>
-                    </Box>
-                  ) : null}
+                  <Typography variant="caption" color="text.secondary" align="center">
+                    Select an address to preview the map
+                  </Typography>
                 </Box>
-              </Collapse>
+              ) : null}
             </Box>
-          ) : null}
-        </Stack>
-      </CardContent>
-    </Card>
+          </Collapse>
+        </Box>
+      ) : null}
+    </Stack>
   );
 }
