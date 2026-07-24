@@ -27,7 +27,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useCallback, useMemo, useState } from "react";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   buildTaxResourcePack,
   filterTaxResources,
@@ -43,6 +44,14 @@ import {
   type TaxResourceEntry,
   type TaxTopicGuide,
 } from "../lib/taxResourcePack";
+import { researchSafeHref, researchUrlFieldError } from "../lib/researchHelpers";
+import { useResearchNotesBuffer } from "../lib/useResearchNotesBuffer";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import {
+  minOperationalFontPx,
+  touchTargetCoarsePx,
+  touchTargetFinePx,
+} from "../layout/formLayout";
 import type { AppPersisted } from "../storage/mortgageState";
 import {
   isCuratedReferenceSaved,
@@ -71,19 +80,31 @@ import {
   taxIssueFromMergedRow,
 } from "../taxResearch/mergeReferences";
 import type { MergedTaxReferenceRow } from "../taxResearch/types";
+import { WIDGET_STACK_MAX_WIDTH_PX } from "../widgets/WidgetBoard";
 
-function safeHref(url: string): string | null {
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-  try {
-    const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    const u = new URL(withProto);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
+const chromeFontSx = { fontSize: `${minOperationalFontPx}px` } as const;
+
+const touchTargetSx = {
+  minHeight: touchTargetFinePx,
+  "@media (pointer: coarse)": {
+    minHeight: touchTargetCoarsePx,
+  },
+} as const;
+
+const rowActionSx = {
+  minWidth: touchTargetFinePx,
+  minHeight: touchTargetFinePx,
+  "@media (pointer: coarse)": {
+    minWidth: touchTargetCoarsePx,
+    minHeight: touchTargetCoarsePx,
+  },
+} as const;
+
+const accordionSummarySx = {
+  ...touchTargetSx,
+  px: 0.75,
+  "& .MuiAccordionSummary-content": { my: 0.35 },
+} as const;
 
 function formatIsoDate(value: string | undefined): string | null {
   if (!value?.trim()) return null;
@@ -111,7 +132,9 @@ function linkStatusLabel(status: ExternalTaxResearchLinkStatus | undefined): str
   }
 }
 
-function linkStatusColor(status: ExternalTaxResearchLinkStatus | undefined): "default" | "success" | "warning" | "error" {
+function linkStatusColor(
+  status: ExternalTaxResearchLinkStatus | undefined
+): "default" | "success" | "warning" | "error" {
   switch (status) {
     case "ok":
       return "success";
@@ -151,25 +174,54 @@ function ReferenceCard({
 }) {
   return (
     <Box
+      className="pp-tax-ref-row"
       sx={{
-        p: 1,
-        border: "1px solid",
-        borderColor: saved ? "secondary.main" : "divider",
-        borderRadius: 1,
+        px: 0.75,
+        py: 0.5,
+        borderBottom: "1px solid",
+        borderColor: "divider",
         bgcolor: saved ? "action.selected" : "transparent",
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Stack direction="row" spacing={0.5} alignItems="flex-start">
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
-            <Typography variant="body2" fontWeight={600}>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{ lineHeight: 1.3, ...chromeFontSx }}
+            >
               {entry.title}
             </Typography>
-            <Chip size="small" label={taxJurisdictionLabel(entry.jurisdiction)} variant="outlined" />
-            {highlighted ? <Chip size="small" label="Relevant" color="primary" variant="outlined" /> : null}
+            <Chip
+              size="small"
+              label={taxJurisdictionLabel(entry.jurisdiction)}
+              variant="outlined"
+              sx={{ height: 20, ...chromeFontSx }}
+            />
+            {highlighted ? (
+              <Chip
+                size="small"
+                label="Relevant"
+                color="primary"
+                variant="outlined"
+                className="pp-tax-ref-extra"
+                sx={{ height: 20, ...chromeFontSx }}
+              />
+            ) : null}
           </Stack>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25 }}>
-            {entry.source} · {entry.blurb}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            noWrap
+            className="pp-tax-ref-blurb"
+            sx={chromeFontSx}
+          >
+            {entry.source}
+            <Box component="span" className="pp-tax-ref-extra">
+              {` · ${entry.blurb}`}
+            </Box>
           </Typography>
         </Box>
         <IconButton
@@ -177,6 +229,7 @@ function ReferenceCard({
           aria-label={saved ? "Remove from my library" : "Save to my library"}
           color={saved ? "secondary" : "default"}
           onClick={onToggleSave}
+          sx={rowActionSx}
         >
           {saved ? <BookmarkAddedIcon fontSize="small" /> : <BookmarkBorderOutlinedIcon fontSize="small" />}
         </IconButton>
@@ -187,6 +240,7 @@ function ReferenceCard({
           href={entry.url}
           target="_blank"
           rel="noopener noreferrer"
+          sx={rowActionSx}
         >
           <OpenInNewIcon fontSize="small" />
         </IconButton>
@@ -210,7 +264,7 @@ function MergedReferenceCard({
   const source = row.external?.source ?? row.curated?.source ?? "Reference";
   const blurb = row.curated?.blurb ?? row.external?.excerpt ?? "";
   const url = row.curated?.url ?? row.external?.url;
-  const href = url ? safeHref(url) : null;
+  const href = url ? researchSafeHref(url) : null;
   const published = formatIsoDate(row.external?.publishedAt);
   const retrieved = formatIsoDate(row.external?.retrievedAt ?? row.external?.publishedAt);
   const linkStatus = row.external?.linkStatus;
@@ -218,39 +272,86 @@ function MergedReferenceCard({
 
   return (
     <Box
+      className="pp-tax-ref-row"
       sx={{
-        p: 1,
-        border: "1px solid",
-        borderColor: saved ? "secondary.main" : "divider",
-        borderRadius: 1,
+        px: 0.75,
+        py: 0.5,
+        borderBottom: "1px solid",
+        borderColor: "divider",
         bgcolor: saved ? "action.selected" : "transparent",
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Stack direction="row" spacing={0.5} alignItems="flex-start">
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
-            <Typography variant="body2" fontWeight={600}>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{ lineHeight: 1.3, ...chromeFontSx }}
+            >
               {title}
             </Typography>
-            <Chip size="small" label={taxJurisdictionLabel(row.jurisdiction)} variant="outlined" />
-            {row.external ? <Chip size="small" label="Live / external" color="info" variant="outlined" /> : null}
-            {highlighted ? <Chip size="small" label="Relevant" color="primary" variant="outlined" /> : null}
+            <Chip
+              size="small"
+              label={taxJurisdictionLabel(row.jurisdiction)}
+              variant="outlined"
+              sx={{ height: 20, ...chromeFontSx }}
+            />
+            {row.external ? (
+              <Chip
+                size="small"
+                label="Live"
+                color="info"
+                variant="outlined"
+                className="pp-tax-ref-extra"
+                sx={{ height: 20, ...chromeFontSx }}
+              />
+            ) : null}
+            {highlighted ? (
+              <Chip
+                size="small"
+                label="Relevant"
+                color="primary"
+                variant="outlined"
+                className="pp-tax-ref-extra"
+                sx={{ height: 20, ...chromeFontSx }}
+              />
+            ) : null}
             {linkLabel ? (
               <Chip
                 size="small"
                 label={linkLabel}
                 color={linkStatusColor(linkStatus)}
                 variant="outlined"
+                className="pp-tax-ref-extra"
+                sx={{ height: 20, ...chromeFontSx }}
                 icon={linkStatus === "broken" ? <LinkOffOutlinedIcon /> : undefined}
               />
             ) : null}
           </Stack>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            noWrap
+            sx={chromeFontSx}
+          >
             {source}
-            {blurb ? ` · ${blurb}` : ""}
+            {blurb ? (
+              <Box component="span" className="pp-tax-ref-extra">
+                {` · ${blurb}`}
+              </Box>
+            ) : null}
           </Typography>
           {row.external ? (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              noWrap
+              className="pp-tax-ref-extra"
+              sx={chromeFontSx}
+            >
               {published ? `Published ${published}` : "Publication date unknown"}
               {retrieved ? ` · Retrieved ${retrieved}` : ""}
             </Typography>
@@ -261,6 +362,7 @@ function MergedReferenceCard({
           aria-label={saved ? "Remove from my library" : "Save to my library"}
           color={saved ? "secondary" : "default"}
           onClick={onToggleSave}
+          sx={rowActionSx}
         >
           {saved ? <BookmarkAddedIcon fontSize="small" /> : <BookmarkBorderOutlinedIcon fontSize="small" />}
         </IconButton>
@@ -272,6 +374,7 @@ function MergedReferenceCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
+            sx={rowActionSx}
           >
             <OpenInNewIcon fontSize="small" />
           </IconButton>
@@ -291,55 +394,72 @@ function SavedReferenceRow({
   onRemove: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const onCommit = useCallback((value: string) => onUpdateNotes(value), [onUpdateNotes]);
+  const { draft, setDraft, flush } = useResearchNotesBuffer(issue.id, issue.notes, onCommit);
+  const href = issue.url ? researchSafeHref(issue.url) : null;
+
   return (
     <Accordion
       expanded={expanded}
       onChange={(_, v) => setExpanded(v)}
       disableGutters
       elevation={0}
-      sx={{ border: "1px solid", borderColor: "divider", borderRadius: "8px !important", "&:before": { display: "none" } }}
+      sx={{
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        borderRadius: "0 !important",
+        "&:before": { display: "none" },
+      }}
     >
-      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 44, "& .MuiAccordionSummary-content": { my: 0.5 } }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={600} noWrap>
-              {issue.title}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap display="block">
-              {issue.jurisdiction ? `${taxJurisdictionLabel(issue.jurisdiction)} · ` : ""}
-              {taxIssueTopicLabel(issue.topic)}
-              {issue.source ? ` · ${issue.source}` : ""}
-            </Typography>
-          </Box>
-          {issue.url && safeHref(issue.url) ? (
-            <IconButton
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={accordionSummarySx}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" fontWeight={600} noWrap sx={chromeFontSx}>
+            {issue.title}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            noWrap
+            display="block"
+            sx={chromeFontSx}
+          >
+            {issue.jurisdiction ? `${taxJurisdictionLabel(issue.jurisdiction)} · ` : ""}
+            {taxIssueTopicLabel(issue.topic)}
+            {issue.source ? ` · ${issue.source}` : ""}
+          </Typography>
+        </Box>
+      </AccordionSummary>
+      <AccordionDetails sx={{ pt: 0, px: 0.75 }}>
+        <Stack spacing={1}>
+          {href ? (
+            <Button
               size="small"
-              aria-label="Open saved reference"
+              variant="text"
               component="a"
-              href={safeHref(issue.url)!}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              startIcon={<OpenInNewIcon fontSize="small" />}
+              sx={{ alignSelf: "flex-start", ...touchTargetSx, ...chromeFontSx }}
             >
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
+              Open reference
+            </Button>
           ) : null}
+          <TextField
+            size="small"
+            label="Your notes"
+            multiline
+            minRows={2}
+            maxRows={4}
+            fullWidth
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={flush}
+          />
+          <Button size="small" color="warning" onClick={onRemove} sx={{ ...touchTargetSx, alignSelf: "flex-start" }}>
+            Remove from library
+          </Button>
         </Stack>
-      </AccordionSummary>
-      <AccordionDetails sx={{ pt: 0 }}>
-        <TextField
-          size="small"
-          label="Your notes"
-          multiline
-          minRows={2}
-          fullWidth
-          value={issue.notes ?? ""}
-          onChange={(e) => onUpdateNotes(e.target.value)}
-          sx={{ mb: 1 }}
-        />
-        <Button size="small" color="warning" onClick={onRemove}>
-          Remove from library
-        </Button>
       </AccordionDetails>
     </Accordion>
   );
@@ -362,12 +482,12 @@ function TopicGuidePanel({
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   return (
-    <Stack spacing={1.25}>
-      <Typography variant="body2" color="text.secondary">
+    <Stack spacing={1}>
+      <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8125rem" }}>
         {guide.summary}
       </Typography>
       <Typography variant="subtitle2">Diligence checklist</Typography>
-      <Stack spacing={0.5}>
+      <Stack spacing={0.25}>
         {guide.checklist.map((item, i) => (
           <FormControlLabel
             key={item}
@@ -390,7 +510,7 @@ function TopicGuidePanel({
         ))}
       </Stack>
       <Typography variant="subtitle2">Related references</Typography>
-      <Stack spacing={0.75}>
+      <Stack spacing={0}>
         {related.map((entry) => (
           <ReferenceCard
             key={entry.id}
@@ -427,9 +547,17 @@ export function TaxReferencesPanel({
   const [source, setSource] = useState("");
   const [manualTopic, setManualTopic] = useState<TaxIssueTopic>("other");
   const [manualJurisdiction, setManualJurisdiction] = useState<TaxIssueJurisdiction>("county");
+  const [manualSubmitted, setManualSubmitted] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [collectError, setCollectError] = useState<string | null>(null);
   const [collectProgress, setCollectProgress] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const isNarrowViewport = useMediaQuery(`(max-width:${WIDGET_STACK_MAX_WIDTH_PX - 0.05}px)`);
+  const fillHeight = !compact && !isNarrowViewport;
+
+  useEffect(() => {
+    if (collectError) setDetailsOpen(true);
+  }, [collectError]);
 
   const pack = useMemo(() => buildTaxResourcePack(state), [state]);
   const highlighted = useMemo(() => {
@@ -516,6 +644,8 @@ export function TaxReferencesPanel({
   const canCollect = !compact && Boolean(activePropertyId?.trim());
   const hasSnapshot = Boolean(externalSnapshot);
   const apiConfigured = isTaxResearchApiConfigured();
+  const manualUrlError = url.trim() ? researchUrlFieldError(url) : null;
+  const showManualUrlError = manualSubmitted && Boolean(manualUrlError);
 
   const runCollection = useCallback(
     async (forceRefresh: boolean) => {
@@ -587,8 +717,8 @@ export function TaxReferencesPanel({
         taxIssues: taxIssues.filter((issue) => {
           if (row.curated && issue.curatedRefId === row.curated.id) return false;
           if (row.external?.externalRefId && issue.curatedRefId === row.external.externalRefId) return false;
-          const url = row.curated?.url ?? row.external?.url;
-          if (url && issue.url === url) return false;
+          const rowUrl = row.curated?.url ?? row.external?.url;
+          if (rowUrl && issue.url === rowUrl) return false;
           return true;
         }),
       });
@@ -603,7 +733,9 @@ export function TaxReferencesPanel({
   function updateSavedNotes(id: string, notesText: string) {
     onChange({
       ...research,
-      taxIssues: taxIssues.map((t) => (t.id === id ? { ...t, notes: notesText.slice(0, 2000) || undefined } : t)),
+      taxIssues: taxIssues.map((t) =>
+        t.id === id ? { ...t, notes: notesText.slice(0, 2000) || undefined } : t
+      ),
     });
   }
 
@@ -612,9 +744,11 @@ export function TaxReferencesPanel({
   }
 
   function addManual() {
+    setManualSubmitted(true);
     const trimmed = title.trim();
     if (!trimmed) return;
-    const href = url.trim() ? safeHref(url) : null;
+    if (url.trim() && !researchSafeHref(url)) return;
+    const href = url.trim() ? researchSafeHref(url) : null;
     onChange({
       ...research,
       taxIssues: [
@@ -635,211 +769,298 @@ export function TaxReferencesPanel({
     setUrl("");
     setNotes("");
     setSource("");
+    setManualSubmitted(false);
+  }
+
+  function onManualSubmit(e: FormEvent) {
+    e.preventDefault();
+    addManual();
   }
 
   const activeGuide = getTopicGuide(guideTopic);
   const referenceCount = mergedReferences.length;
+  const hasProvenanceOrErrors = Boolean(
+    externalSnapshot?.sourceProvenance?.sources?.length ||
+      externalSnapshot?.errors?.length ||
+      collectError ||
+      (!apiConfigured && canCollect)
+  );
 
-  return (
-    <Stack spacing={1.25}>
+  const chrome = (
+    <Stack spacing={1} sx={{ flexShrink: 0 }}>
       {!compact ? (
-        <Alert severity="info" variant="outlined" sx={{ py: 0.35 }}>
-          <Typography variant="caption" sx={{ lineHeight: 1.4, display: "block" }}>
-            Interactive reference library — bookmark links, check diligence items, add notes. Not tax
-            advice. Property tax <strong>amounts</strong>: External estimates on Property.
-          </Typography>
-        </Alert>
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, ...chromeFontSx }}>
+          Reference library for bookmarks and diligence — not tax advice. Amounts: External estimates on
+          Property.
+        </Typography>
       ) : null}
 
       {canCollect ? (
-        <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} justifyContent="space-between">
-            <Stack spacing={0.35} sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2">Official tax references</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {hasSnapshot
-                  ? formatTaxResearchFreshness(externalSnapshot)
-                  : "Collect live links from official federal, state, and county sources for this address."}
-              </Typography>
-            </Stack>
-            <Button
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+          sx={{
+            px: 0.75,
+            py: 0.5,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            ...touchTargetSx,
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ flex: 1, minWidth: 140, ...chromeFontSx }}
+          >
+            {hasSnapshot
+              ? formatTaxResearchFreshness(externalSnapshot)
+              : "Collect official federal, state, and county links for this address."}
+          </Typography>
+          {hasSnapshot ? (
+            <Chip
+              size="small"
+              label={formatCollectionStatusLabel(externalSnapshot?.collectionStatus)}
+              color={collectionStatusChipColor(externalSnapshot?.collectionStatus)}
+              sx={{ height: 22, ...chromeFontSx }}
+            />
+          ) : null}
+          {externalSnapshot?.sourceProvenance?.provider ? (
+            <Chip
               size="small"
               variant="outlined"
-              color="secondary"
-              disabled={collecting || !apiConfigured}
-              startIcon={
-                collecting ? <CircularProgress size={14} /> : hasSnapshot ? <RefreshOutlinedIcon sx={{ fontSize: 16 }} /> : <CloudSyncOutlinedIcon sx={{ fontSize: 16 }} />
-              }
-              onClick={() => void runCollection(hasSnapshot)}
-            >
-              {hasSnapshot ? "Refresh" : "Collect from official sites"}
-            </Button>
-          </Stack>
-
-          {hasSnapshot ? (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-              <Chip
-                size="small"
-                label={formatCollectionStatusLabel(externalSnapshot?.collectionStatus)}
-                color={collectionStatusChipColor(externalSnapshot?.collectionStatus)}
-              />
-              {externalSnapshot?.sourceProvenance?.provider ? (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={`Source: ${externalSnapshot.sourceProvenance.provider}${
-                    externalSnapshot.sourceProvenance.providerVersion
-                      ? ` v${externalSnapshot.sourceProvenance.providerVersion}`
-                      : ""
-                  }`}
-                />
-              ) : null}
-            </Stack>
+              sx={{ height: 22, ...chromeFontSx }}
+              label={`${externalSnapshot.sourceProvenance.provider}${
+                externalSnapshot.sourceProvenance.providerVersion
+                  ? ` v${externalSnapshot.sourceProvenance.providerVersion}`
+                  : ""
+              }`}
+            />
           ) : null}
-
-          {externalSnapshot?.sourceProvenance?.sources?.length ? (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
-              Provenance: {externalSnapshot.sourceProvenance.sources.slice(0, 3).join(" · ")}
-              {externalSnapshot.sourceProvenance.sources.length > 3
-                ? ` · +${externalSnapshot.sourceProvenance.sources.length - 3} more`
-                : ""}
-            </Typography>
-          ) : null}
-
-          {collectProgress ? (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
-              {collectProgress}
-            </Typography>
-          ) : null}
-
-          {!apiConfigured ? (
-            <Alert severity="warning" variant="outlined" sx={{ mt: 1 }}>
-              Configure `VITE_TAX_RESEARCH_API_BASE_URL` or `VITE_ESTIMATE_API_BASE_URL` to enable live collection.
-            </Alert>
-          ) : null}
-
-          {collectError ? (
-            <Alert
-              severity="error"
-              variant="outlined"
-              sx={{ mt: 1 }}
-              action={
-                <Button size="small" onClick={() => void runCollection(true)}>
-                  Retry
-                </Button>
-              }
-            >
-              {collectError}
-            </Alert>
-          ) : null}
-
-          {externalSnapshot?.errors?.length ? (
-            <Alert severity="warning" variant="outlined" sx={{ mt: 1 }}>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Partial collection failures
-              </Typography>
-              <Stack spacing={0.35}>
-                {externalSnapshot.errors.slice(0, 5).map((err) => (
-                  <Typography key={`${err.code}-${err.message}`} variant="caption" display="block">
-                    {err.code}: {err.message}
-                    {err.source ? ` (${err.source})` : ""}
-                  </Typography>
-                ))}
-              </Stack>
-            </Alert>
-          ) : null}
-        </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            color="secondary"
+            disabled={collecting || !apiConfigured}
+            startIcon={
+              collecting ? (
+                <CircularProgress size={14} />
+              ) : hasSnapshot ? (
+                <RefreshOutlinedIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <CloudSyncOutlinedIcon sx={{ fontSize: 16 }} />
+              )
+            }
+            onClick={() => void runCollection(hasSnapshot)}
+            sx={{ ...touchTargetSx, ...chromeFontSx }}
+          >
+            {hasSnapshot ? "Refresh" : "Collect"}
+          </Button>
+          <Typography
+            component="div"
+            variant="caption"
+            color="text.secondary"
+            aria-live="polite"
+            sx={{ width: "100%", minHeight: collectProgress ? undefined : 0, ...chromeFontSx }}
+          >
+            {collectProgress ?? ""}
+          </Typography>
+        </Stack>
       ) : null}
 
       {!compact && !activePropertyId ? (
-        <Alert severity="info" variant="outlined">
-          Save this house to your cloud portfolio to collect live official tax references for the current address.
+        <Alert severity="info" variant="outlined" sx={{ py: 0.25 }}>
+          Save this house to collect live official tax references for the current address.
         </Alert>
       ) : null}
 
       {compact && hasSnapshot ? (
-        <Alert severity="info" variant="outlined" sx={{ py: 0.35 }}>
-          <Typography variant="caption" display="block">
-            {formatCollectionStatusLabel(externalSnapshot?.collectionStatus)} · {formatTaxResearchFreshness(externalSnapshot)}
-          </Typography>
-        </Alert>
+        <Typography variant="caption" color="text.secondary" sx={chromeFontSx}>
+          {formatCollectionStatusLabel(externalSnapshot?.collectionStatus)} ·{" "}
+          {formatTaxResearchFreshness(externalSnapshot)}
+        </Typography>
       ) : null}
 
-      <TextField
-        size="small"
-        placeholder="Search references…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 18 }} />
-              </InputAdornment>
-            ),
-          },
-        }}
-      />
+      {canCollect && hasProvenanceOrErrors ? (
+        <Accordion
+          expanded={detailsOpen}
+          onChange={(_, open) => setDetailsOpen(open)}
+          disableGutters
+          elevation={0}
+          sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, "&:before": { display: "none" } }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={accordionSummarySx}>
+            <Typography variant="caption" fontWeight={600} sx={chromeFontSx}>
+              Provenance & errors
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 0 }}>
+            <Stack spacing={0.75}>
+              {externalSnapshot?.sourceProvenance?.sources?.length ? (
+                <Typography variant="caption" color="text.secondary" display="block" sx={chromeFontSx}>
+                  Provenance: {externalSnapshot.sourceProvenance.sources.slice(0, 3).join(" · ")}
+                  {externalSnapshot.sourceProvenance.sources.length > 3
+                    ? ` · +${externalSnapshot.sourceProvenance.sources.length - 3} more`
+                    : ""}
+                </Typography>
+              ) : null}
 
-      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-        <Chip
-          size="small"
-          label="All levels"
-          color={jurisdictionFilter === "all" ? "secondary" : "default"}
-          variant={jurisdictionFilter === "all" ? "filled" : "outlined"}
-          onClick={() => setJurisdictionFilter("all")}
-        />
-        {TAX_JURISDICTIONS.map((j) => (
-          <Chip
-            key={j}
-            size="small"
-            label={taxJurisdictionLabel(j)}
-            color={jurisdictionFilter === j ? "secondary" : "default"}
-            variant={jurisdictionFilter === j ? "filled" : "outlined"}
-            onClick={() => setJurisdictionFilter(j)}
-          />
-        ))}
-      </Stack>
+              {!apiConfigured ? (
+                <Alert severity="warning" variant="outlined">
+                  Configure `VITE_TAX_RESEARCH_API_BASE_URL` or `VITE_ESTIMATE_API_BASE_URL` to enable live
+                  collection.
+                </Alert>
+              ) : null}
 
-      {!compact ? (
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-          <Chip
+              {collectError ? (
+                <Alert
+                  severity="error"
+                  variant="outlined"
+                  action={
+                    <Button size="small" onClick={() => void runCollection(true)} sx={touchTargetSx}>
+                      Retry
+                    </Button>
+                  }
+                >
+                  {collectError}
+                </Alert>
+              ) : null}
+
+              {externalSnapshot?.errors?.length ? (
+                <Alert severity="warning" variant="outlined">
+                  <Typography variant="body2" fontWeight={600} gutterBottom sx={chromeFontSx}>
+                    Partial collection failures
+                  </Typography>
+                  <Stack spacing={0.35}>
+                    {externalSnapshot.errors.slice(0, 5).map((err) => (
+                      <Typography
+                        key={`${err.code}-${err.message}`}
+                        variant="caption"
+                        display="block"
+                        sx={chromeFontSx}
+                      >
+                        {err.code}: {err.message}
+                        {err.source ? ` (${err.source})` : ""}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Alert>
+              ) : null}
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+      ) : null}
+
+      <FormGrid maxColumns={3} compact>
+        <FormField span={1}>
+          <TextField
             size="small"
-            label="All topics"
-            color={topicFilter === "all" ? "secondary" : "default"}
-            variant={topicFilter === "all" ? "filled" : "outlined"}
-            onClick={() => setTopicFilter("all")}
+            label="Search references"
+            placeholder="Title, source, or keyword"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18 }} aria-hidden />
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: {
+                "aria-label": "Search references",
+              },
+            }}
           />
-          {TAX_ISSUE_TOPICS.map((topic) => (
-            <Chip
-              key={topic}
+        </FormField>
+        <FormField span={1}>
+          <TextField
+            size="small"
+            select
+            label="Level"
+            value={jurisdictionFilter}
+            onChange={(e) => setJurisdictionFilter(e.target.value as TaxJurisdiction | "all")}
+            fullWidth
+          >
+            <MenuItem value="all">All levels</MenuItem>
+            {TAX_JURISDICTIONS.map((j) => (
+              <MenuItem key={j} value={j}>
+                {taxJurisdictionLabel(j)}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FormField>
+        {!compact ? (
+          <FormField span={1}>
+            <TextField
               size="small"
-              label={taxIssueTopicLabel(topic)}
-              color={topicFilter === topic ? "secondary" : highlighted.has(topic) ? "primary" : "default"}
-              variant={topicFilter === topic ? "filled" : "outlined"}
-              onClick={() => {
-                setTopicFilter(topic);
-                setGuideTopic(topic);
+              select
+              label="Topic"
+              value={topicFilter}
+              onChange={(e) => {
+                const next = e.target.value as TaxIssueTopic | "all";
+                setTopicFilter(next);
+                if (next !== "all") setGuideTopic(next);
               }}
-            />
-          ))}
-        </Stack>
-      ) : null}
+              fullWidth
+            >
+              <MenuItem value="all">All topics</MenuItem>
+              {TAX_ISSUE_TOPICS.map((topic) => (
+                <MenuItem key={topic} value={topic}>
+                  {taxIssueTopicLabel(topic)}
+                  {highlighted.has(topic) ? " · relevant" : ""}
+                </MenuItem>
+              ))}
+            </TextField>
+          </FormField>
+        ) : null}
+      </FormGrid>
 
       <Tabs
         value={view}
         onChange={(_, v: ViewTab) => setView(v)}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36, py: 0.5, textTransform: "none" } }}
+        sx={{
+          minHeight: touchTargetFinePx,
+          "& .MuiTab-root": {
+            ...touchTargetSx,
+            py: 0.25,
+            textTransform: "none",
+            ...chromeFontSx,
+          },
+        }}
       >
-        <Tab value="references" label={`References (${referenceCount})`} icon={<OpenInNewIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
-        <Tab value="library" label={`My library (${taxIssues.length})`} icon={<BookmarkAddedIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
-        <Tab value="guides" label="Topic guides" icon={<MenuBookOutlinedIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
+        <Tab
+          value="references"
+          label={`References (${referenceCount})`}
+          icon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
+          iconPosition="start"
+        />
+        <Tab
+          value="library"
+          label={`Library (${taxIssues.length})`}
+          icon={<BookmarkAddedIcon sx={{ fontSize: 15 }} />}
+          iconPosition="start"
+        />
+        <Tab
+          value="guides"
+          label="Guides"
+          icon={<MenuBookOutlinedIcon sx={{ fontSize: 15 }} />}
+          iconPosition="start"
+        />
       </Tabs>
+    </Stack>
+  );
 
+  const results = (
+    <Stack spacing={0.75} sx={{ minHeight: 0 }}>
       {view === "references" ? (
-        <Stack spacing={1}>
+        <Stack spacing={0.75}>
           {(["county", "state", "federal"] as const).map((j) => {
             const items = groupedMerged[j];
             if (items.length === 0) return null;
@@ -849,21 +1070,28 @@ export function TaxReferencesPanel({
                 defaultExpanded={j === "county" || (j === "state" && groupedMerged.county.length === 0)}
                 disableGutters
                 elevation={0}
-                sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, "&:before": { display: "none" } }}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  "&:before": { display: "none" },
+                }}
               >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="subtitle2">
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={accordionSummarySx}>
+                  <Typography variant="subtitle2" sx={chromeFontSx}>
                     {taxJurisdictionLabel(j)} ({items.length})
                   </Typography>
                 </AccordionSummary>
-                <AccordionDetails sx={{ pt: 0 }}>
-                  <Stack spacing={0.75}>
+                <AccordionDetails sx={{ p: 0 }}>
+                  <Stack spacing={0}>
                     {items.map((row) => (
                       <MergedReferenceCard
                         key={row.key}
                         row={row}
                         saved={isMergedReferenceSaved(taxIssues, row)}
-                        highlighted={highlighted.has(row.curated?.topic ?? row.external?.topic ?? "other")}
+                        highlighted={highlighted.has(
+                          row.curated?.topic ?? row.external?.topic ?? "other"
+                        )}
                         onToggleSave={() => toggleSaveMerged(row)}
                       />
                     ))}
@@ -873,17 +1101,18 @@ export function TaxReferencesPanel({
             );
           })}
           {referenceCount === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No references match your filters{hasSnapshot ? "" : " — collect from official sites or adjust filters"}.
+            <Typography variant="body2" color="text.secondary" sx={chromeFontSx}>
+              No references match your filters
+              {hasSnapshot ? "" : " — collect from official sites or adjust filters"}.
             </Typography>
           ) : null}
         </Stack>
       ) : null}
 
       {view === "library" ? (
-        <Stack spacing={1}>
+        <Stack spacing={0.75}>
           {filteredSaved.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={chromeFontSx}>
               No saved references — bookmark items from the References tab.
             </Typography>
           ) : (
@@ -897,33 +1126,122 @@ export function TaxReferencesPanel({
             ))
           )}
           {!compact ? (
-            <Box sx={{ pt: 1, borderTop: "1px solid", borderColor: "divider" }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Add custom reference
-              </Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-                <TextField size="small" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ flex: 1.2, minWidth: 140 }} />
-                <TextField size="small" select label="Level" value={manualJurisdiction} onChange={(e) => setManualJurisdiction(e.target.value as TaxIssueJurisdiction)} sx={{ minWidth: 120 }}>
-                  {TAX_JURISDICTIONS.map((j) => (
-                    <MenuItem key={j} value={j}>{taxJurisdictionLabel(j)}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField size="small" select label="Topic" value={manualTopic} onChange={(e) => setManualTopic(e.target.value as TaxIssueTopic)} sx={{ minWidth: 130 }}>
-                  {TAX_ISSUE_TOPICS.map((t) => (
-                    <MenuItem key={t} value={t}>{taxIssueTopicLabel(t)}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField size="small" label="URL" value={url} onChange={(e) => setUrl(e.target.value)} sx={{ flex: 1.4, minWidth: 160 }} />
-                <Button size="small" variant="outlined" disabled={!title.trim()} onClick={addManual}>Add</Button>
-              </Stack>
-              <TextField size="small" label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline minRows={2} />
-            </Box>
+            <Accordion
+              defaultExpanded={false}
+              disableGutters
+              elevation={0}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                "&:before": { display: "none" },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={accordionSummarySx}>
+                <Typography variant="subtitle2" sx={chromeFontSx}>
+                  Add custom reference
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Box component="form" onSubmit={onManualSubmit} noValidate>
+                  <FormGrid maxColumns={3} compact>
+                    <FormField span={2}>
+                      <TextField
+                        size="small"
+                        label="Title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        fullWidth
+                        required
+                      />
+                    </FormField>
+                    <FormField span={1}>
+                      <TextField
+                        size="small"
+                        select
+                        label="Level"
+                        value={manualJurisdiction}
+                        onChange={(e) => setManualJurisdiction(e.target.value as TaxIssueJurisdiction)}
+                        fullWidth
+                      >
+                        {TAX_JURISDICTIONS.map((j) => (
+                          <MenuItem key={j} value={j}>
+                            {taxJurisdictionLabel(j)}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </FormField>
+                    <FormField span={1}>
+                      <TextField
+                        size="small"
+                        select
+                        label="Topic"
+                        value={manualTopic}
+                        onChange={(e) => setManualTopic(e.target.value as TaxIssueTopic)}
+                        fullWidth
+                      >
+                        {TAX_ISSUE_TOPICS.map((t) => (
+                          <MenuItem key={t} value={t}>
+                            {taxIssueTopicLabel(t)}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </FormField>
+                    <FormField span={1}>
+                      <TextField
+                        size="small"
+                        label="Source"
+                        value={source}
+                        onChange={(e) => setSource(e.target.value)}
+                        fullWidth
+                        placeholder="IRS, county, etc."
+                      />
+                    </FormField>
+                    <FormField span={1}>
+                      <TextField
+                        size="small"
+                        label="URL"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        fullWidth
+                        error={showManualUrlError}
+                        helperText={showManualUrlError ? manualUrlError : undefined}
+                      />
+                    </FormField>
+                    <FormField span={3}>
+                      <TextField
+                        size="small"
+                        label="Notes"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        maxRows={4}
+                      />
+                    </FormField>
+                    <FormField span={1}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        type="submit"
+                        disabled={!title.trim()}
+                        fullWidth
+                        sx={touchTargetSx}
+                      >
+                        Add
+                      </Button>
+                    </FormField>
+                  </FormGrid>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
           ) : null}
         </Stack>
       ) : null}
 
       {view === "guides" ? (
-        <Stack spacing={1.25}>
+        <Stack spacing={1}>
           <TextField
             size="small"
             select
@@ -951,10 +1269,39 @@ export function TaxReferencesPanel({
       ) : null}
 
       {compact && onOpenFullResearch ? (
-        <Button size="small" variant="text" onClick={onOpenFullResearch}>
+        <Button size="small" variant="text" onClick={onOpenFullResearch} sx={touchTargetSx}>
           Open full reference library in Research tab
         </Button>
       ) : null}
     </Stack>
+  );
+
+  return (
+    <Box
+      sx={{
+        height: fillHeight ? "100%" : "auto",
+        minHeight: fillHeight ? 0 : undefined,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        containerType: "inline-size",
+        containerName: "pp-tax-refs",
+        // Narrow / md-width workbench: drop secondary chips + blurbs for denser rows.
+        [`@container pp-tax-refs (max-width: 640px)`]: {
+          "& .pp-tax-ref-extra": { display: "none" },
+        },
+      }}
+    >
+      {chrome}
+      <Box
+        sx={{
+          flex: fillHeight ? 1 : "none",
+          minHeight: fillHeight ? 0 : undefined,
+          overflow: fillHeight ? "auto" : "visible",
+        }}
+      >
+        {results}
+      </Box>
+    </Box>
   );
 }
