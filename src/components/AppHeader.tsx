@@ -1,6 +1,7 @@
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
@@ -141,9 +142,11 @@ export function AppHeader({
         borderBottom: "1px solid",
         borderColor: "divider",
         bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#eef3f7", 0.92) : alpha("#071018", 0.92),
-        backdropFilter: "saturate(160%) blur(18px)",
-        WebkitBackdropFilter: "saturate(160%) blur(18px)",
+          t.palette.mode === "light" ? alpha("#ffffff", 0.96) : alpha("#1A2129", 0.94),
+        backdropFilter: "saturate(140%) blur(14px)",
+        WebkitBackdropFilter: "saturate(140%) blur(14px)",
+        boxShadow: (t) =>
+          t.palette.mode === "light" ? "0 1px 0 rgba(42, 42, 51, 0.04)" : "none",
       }}
     >
       <Box
@@ -170,28 +173,48 @@ export function AppHeader({
             alignItems="baseline"
             sx={{ minWidth: 0, flex: "1 1 auto" }}
           >
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                aria-hidden
+                sx={{
+                  width: { xs: 24, sm: 28 },
+                  height: { xs: 24, sm: 28 },
+                  borderRadius: "7px",
+                  bgcolor: "primary.main",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                  color: "#fff",
+                  boxShadow: "0 0 0 3px rgba(166, 229, 255, 0.5)",
+                }}
+              >
+                <HomeRoundedIcon sx={{ fontSize: { xs: 15, sm: 17 } }} />
+              </Box>
               <Typography
                 component="h1"
                 sx={{
                   fontFamily: "var(--pp-font-display)",
-                  fontWeight: 700,
-                  fontSize: { xs: "1rem", sm: "1.15rem" },
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1.1,
+                  fontWeight: 800,
+                  fontSize: { xs: "1.05rem", sm: "1.28rem" },
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.05,
                   whiteSpace: "nowrap",
+                  color: "text.primary",
                 }}
               >
-                Property Pro
+                Property{" "}
+                <Box component="span" sx={{ color: "primary.main" }}>
+                  Pro
+                </Box>
               </Typography>
             </Box>
             <Typography
               className="pp-mono"
               sx={{
-                fontWeight: 650,
-                fontSize: { xs: "0.88rem", sm: "1.05rem" },
+                fontWeight: 700,
+                fontSize: { xs: "0.92rem", sm: "1.12rem" },
                 letterSpacing: "-0.03em",
-                color: "secondary.main",
+                color: "primary.main",
                 whiteSpace: "nowrap",
                 minWidth: 0,
               }}
@@ -212,15 +235,16 @@ export function AppHeader({
             <Button
               size="small"
               variant="contained"
-              color="secondary"
+              color="primary"
               startIcon={<SaveOutlinedIcon sx={{ fontSize: 16 }} />}
               onClick={onSave}
               aria-label="Save all tab data"
               sx={{
                 ...shellActionTargetSx,
-                px: { xs: 1, sm: 1.35 },
+                px: { xs: 1.1, sm: 1.5 },
                 fontWeight: 700,
                 minWidth: 0,
+                borderRadius: "6px",
               }}
             >
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>

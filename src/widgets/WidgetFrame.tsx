@@ -47,14 +47,17 @@ export function WidgetFrame({
         minHeight: 0,
         border: "1px solid",
         borderColor: "divider",
-        borderRadius: "12px",
-        bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#f7fafc", 0.96) : alpha("#101a24", 0.96),
+        borderRadius: "8px",
+        bgcolor: "background.paper",
         boxShadow: "var(--pp-shadow)",
         overflow: "hidden",
         position: "relative",
         pb: showDrag ? "2px" : 0,
         pr: showDrag ? "2px" : 0,
+        transition: "box-shadow 0.2s var(--pp-ease), border-color 0.2s ease",
+        "&:hover": {
+          borderColor: (t) => alpha(t.palette.primary.main, 0.28),
+        },
       }}
     >
       <Stack
@@ -66,12 +69,12 @@ export function WidgetFrame({
         title={showDrag ? "Drag title bar to rearrange" : undefined}
         sx={{
           cursor: showDrag ? "grab" : "default",
-          px: 1,
-          py: 0.55,
+          px: 1.1,
+          py: 0.6,
           borderBottom: "1px solid",
           borderColor: "divider",
           bgcolor: (t) =>
-            t.palette.mode === "light" ? alpha("#0b1f33", 0.03) : alpha("#e8eef4", 0.04),
+            t.palette.mode === "light" ? alpha("#006AFF", 0.03) : alpha("#4D9AFF", 0.06),
           "&:active": showDrag ? { cursor: "grabbing" } : undefined,
           userSelect: "none",
           minHeight: showDrag ? 36 : 32,
@@ -88,9 +91,10 @@ export function WidgetFrame({
             id={titleId}
             component="h3"
             sx={{
+              fontFamily: "var(--pp-font-display)",
               fontWeight: 700,
-              fontSize: "0.8125rem",
-              letterSpacing: "-0.02em",
+              fontSize: "0.875rem",
+              letterSpacing: "-0.015em",
               lineHeight: 1.2,
             }}
             noWrap

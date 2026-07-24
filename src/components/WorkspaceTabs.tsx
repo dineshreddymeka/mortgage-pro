@@ -31,12 +31,11 @@ export function WorkspaceTabs({ value, onChange }: WorkspaceTabsProps) {
       className="pp-rise-delay"
       sx={{
         mb: 1,
-        borderRadius: "10px",
-        bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#0b1f33", 0.05) : alpha("#e8eef4", 0.08),
-        border: "1px solid",
+        borderRadius: 0,
+        bgcolor: "transparent",
+        borderBottom: "1px solid",
         borderColor: "divider",
-        px: 0.35,
+        px: 0,
         // Soft fade hints that more tabs are off-screen on phones.
         maskImage: {
           xs: "linear-gradient(90deg, #000 0%, #000 calc(100% - 28px), transparent 100%)",
@@ -65,29 +64,35 @@ export function WorkspaceTabs({ value, onChange }: WorkspaceTabsProps) {
           "@media (pointer: coarse)": {
             minHeight: touchTargetCoarsePx,
           },
-          "& .MuiTabs-flexContainer": { gap: 0.25 },
+          "& .MuiTabs-flexContainer": { gap: 0.15 },
           "& .MuiTabs-indicator": {
-            height: 2,
-            borderRadius: 1,
-            bgcolor: "secondary.main",
+            height: 3,
+            borderRadius: "3px 3px 0 0",
+            bgcolor: "primary.main",
+            transition: "left 0.22s var(--pp-ease), width 0.22s var(--pp-ease)",
           },
           "& .MuiTab-root": {
             minHeight: touchTargetFinePx,
             minWidth: "auto",
-            py: 0.5,
-            px: { xs: 1.1, sm: 1.4 },
-            borderRadius: "8px",
+            py: 0.65,
+            px: { xs: 1.15, sm: 1.5 },
+            borderRadius: 0,
             textTransform: "none",
-            fontWeight: 600,
-            fontSize: `${minOperationalFontPx}px`,
-            letterSpacing: "-0.015em",
+            fontWeight: 650,
+            fontSize: `${minOperationalFontPx + 1}px`,
+            letterSpacing: "-0.01em",
             color: "text.secondary",
+            transition: "color 0.16s ease, background 0.16s ease",
             "@media (pointer: coarse)": {
               minHeight: touchTargetCoarsePx,
             },
+            "&:hover": {
+              color: "primary.main",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.05),
+            },
             "&.Mui-selected": {
-              fontWeight: 700,
-              color: "secondary.main",
+              fontWeight: 800,
+              color: "primary.main",
             },
           },
         }}

@@ -1,20 +1,21 @@
 :root {
-  --pp-ink: #0b1f33;
-  --pp-ink-soft: #3d556c;
-  --pp-accent: #0e7490;
-  --pp-accent-deep: #155e75;
-  --pp-success: #0f766e;
-  --pp-warn: #b45309;
-  --pp-mist: #d7e3ec;
-  --pp-fog: #eef3f7;
-  --pp-paper: #f7fafc;
-  --pp-line: rgba(11, 31, 51, 0.1);
-  --pp-font-display: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --pp-font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --pp-ink: #2a2a33;
+  --pp-ink-soft: #54545a;
+  --pp-accent: #006aff;
+  --pp-accent-deep: #0d4599;
+  --pp-accent-soft: #a6e5ff;
+  --pp-success: #1b7a4e;
+  --pp-warn: #c65d00;
+  --pp-mist: #d1d1d5;
+  --pp-fog: #f1f1f4;
+  --pp-paper: #ffffff;
+  --pp-line: #d1d1d5;
+  --pp-font-display: "Figtree", "Source Sans 3", sans-serif;
+  --pp-font-body: "Source Sans 3", "Figtree", sans-serif;
   --pp-font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --pp-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --pp-radius: 12px;
-  --pp-shadow: 0 1px 0 rgba(11, 31, 51, 0.04), 0 8px 24px rgba(11, 31, 51, 0.06);
+  --pp-radius: 8px;
+  --pp-shadow: 0 1px 2px rgba(42, 42, 51, 0.06), 0 4px 14px rgba(42, 42, 51, 0.05);
 }
 
 html {
@@ -37,10 +38,9 @@ body {
   color: var(--pp-ink);
   background-color: var(--pp-fog);
   background-image:
-    linear-gradient(180deg, rgba(14, 116, 144, 0.07), transparent 28%),
-    linear-gradient(rgba(11, 31, 51, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 31, 51, 0.035) 1px, transparent 1px);
-  background-size: auto, 28px 28px, 28px 28px;
+    radial-gradient(ellipse 90% 55% at 12% -10%, rgba(0, 106, 255, 0.1), transparent 58%),
+    radial-gradient(ellipse 70% 45% at 88% 0%, rgba(166, 229, 255, 0.35), transparent 50%),
+    linear-gradient(180deg, #ffffff 0%, var(--pp-fog) 42%);
   background-attachment: fixed;
   overflow-x: hidden;
 }
@@ -53,7 +53,7 @@ body {
 }
 
 ::selection {
-  background-color: rgba(14, 116, 144, 0.22);
+  background-color: rgba(0, 106, 255, 0.2);
   color: var(--pp-ink);
 }
 
@@ -123,7 +123,7 @@ body {
 .dark :where(a, button, [role="button"], input, select, textarea, summary):focus-visible,
 [data-mui-color-scheme="dark"]
   :where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
-  outline-color: #22d3ee;
+  outline-color: #4d9aff;
 }
 
 @media (pointer: coarse) {

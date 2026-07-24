@@ -5,8 +5,9 @@ import {
   touchTargetFinePx,
 } from "./layout/formLayout";
 
-/** Property Pro — analytical desk: slate ink, teal accent, tabular mono metrics. */
-const sansStack = '"IBM Plex Sans", "Segoe UI", sans-serif';
+/** Property Pro — Zillow-inspired listing desk: brand blue, white surfaces, clean sans. */
+const sansStack = '"Source Sans 3", "Figtree", sans-serif';
+const displayStack = '"Figtree", "Source Sans 3", sans-serif';
 
 const touchTargetSx = {
   minHeight: touchTargetFinePx,
@@ -16,25 +17,29 @@ const touchTargetSx = {
 } as const;
 
 const focusVisibleOutline = (theme: Theme) => ({
-  outline: `2px solid ${theme.palette.secondary.main}`,
+  outline: `2px solid ${theme.palette.primary.main}`,
   outlineOffset: 2,
 });
 
-const label = "#0b1f33";
-const labelSecondary = "#3d556c";
-const fill = "#eef3f7";
-const paper = "#f7fafc";
-const separator = "rgba(11, 31, 51, 0.1)";
-const systemBlue = "#0e7490";
-const systemBlueDark = "#22d3ee";
-const systemGreen = "#0f766e";
-const systemOrange = "#b45309";
-const systemRed = "#b91c1c";
+/** Near-black listing ink (Zillow-adjacent). */
+const label = "#2A2A33";
+const labelSecondary = "#54545A";
+const fill = "#F1F1F4";
+const paper = "#FFFFFF";
+const separator = "#D1D1D5";
+/** Product blue — recognizable Zillow-adjacent CTA. */
+const brandBlue = "#006AFF";
+const brandBlueHover = "#0D4599";
+const brandBlueDeep = "#0041D9";
+const brandBlueSoft = "#A6E5FF";
+const systemGreen = "#1B7A4E";
+const systemOrange = "#C65D00";
+const systemRed = "#C62828";
 
-const labelDark = "#e8eef4";
-const fillDark = "#071018";
-const paperDark = "#101a24";
-const surfaceDark = "#162433";
+const labelDark = "#F5F5F7";
+const fillDark = "#0F1419";
+const paperDark = "#1A2129";
+const brandBlueDark = "#4D9AFF";
 
 export const appTheme = createTheme({
   spacing: 8,
@@ -46,39 +51,39 @@ export const appTheme = createTheme({
       palette: {
         mode: "light",
         primary: {
-          main: label,
-          light: "#3a3a3c",
-          dark: "#000000",
+          main: brandBlue,
+          light: "#3D8CFF",
+          dark: brandBlueHover,
           contrastText: "#ffffff",
         },
         secondary: {
-          main: systemBlue,
-          light: "#47a3ff",
-          dark: "#0066d6",
+          main: brandBlueDeep,
+          light: brandBlue,
+          dark: "#001751",
           contrastText: "#ffffff",
         },
         success: {
           main: systemGreen,
-          light: "#30d158",
-          dark: "#248a3d",
+          light: "#2F9E68",
+          dark: "#145C3A",
           contrastText: "#ffffff",
         },
         info: {
-          main: systemBlue,
+          main: brandBlue,
           contrastText: "#ffffff",
         },
         warning: {
           main: systemOrange,
-          contrastText: "#1d1d1f",
+          contrastText: "#ffffff",
         },
         error: {
           main: systemRed,
           contrastText: "#ffffff",
         },
         text: {
-          primary: alpha(label, 0.92),
+          primary: alpha(label, 0.96),
           secondary: labelSecondary,
-          disabled: alpha(label, 0.3),
+          disabled: alpha(label, 0.35),
         },
         background: {
           default: fill,
@@ -87,8 +92,8 @@ export const appTheme = createTheme({
         divider: separator,
         action: {
           active: alpha(label, 0.55),
-          hover: alpha(systemBlue, 0.06),
-          selected: alpha(systemBlue, 0.12),
+          hover: alpha(brandBlue, 0.06),
+          selected: alpha(brandBlue, 0.12),
           disabled: alpha(label, 0.26),
           disabledBackground: alpha(label, 0.05),
         },
@@ -98,34 +103,34 @@ export const appTheme = createTheme({
       palette: {
         mode: "dark",
         primary: {
-          main: labelDark,
-          light: "#ffffff",
-          dark: "#aeaeb2",
-          contrastText: "#000000",
+          main: brandBlueDark,
+          light: "#7AB3FF",
+          dark: brandBlue,
+          contrastText: "#061018",
         },
         secondary: {
-          main: systemBlueDark,
-          light: "#409cff",
-          dark: "#007AFF",
-          contrastText: "#ffffff",
+          main: brandBlueSoft,
+          light: "#D2F2FF",
+          dark: brandBlueDark,
+          contrastText: "#061018",
         },
         success: {
-          main: "#30D158",
-          light: "#64e87a",
+          main: "#3DCF86",
+          light: "#6FDEB0",
           dark: systemGreen,
-          contrastText: "#000000",
+          contrastText: "#061018",
         },
         info: {
-          main: systemBlueDark,
-          contrastText: "#ffffff",
+          main: brandBlueDark,
+          contrastText: "#061018",
         },
         warning: {
-          main: "#FF9F0A",
-          contrastText: "#000000",
+          main: "#FFB020",
+          contrastText: "#061018",
         },
         error: {
-          main: "#FF453A",
-          contrastText: "#ffffff",
+          main: "#FF6B6B",
+          contrastText: "#061018",
         },
         text: {
           primary: alpha(labelDark, 0.95),
@@ -136,85 +141,84 @@ export const appTheme = createTheme({
           default: fillDark,
           paper: paperDark,
         },
-        divider: "rgba(84, 84, 88, 0.48)",
+        divider: "rgba(209, 209, 213, 0.18)",
         action: {
           active: alpha("#fff", 0.65),
-          hover: alpha(systemBlueDark, 0.1),
-          selected: alpha(systemBlueDark, 0.18),
+          hover: alpha(brandBlueDark, 0.12),
+          selected: alpha(brandBlueDark, 0.2),
           disabled: alpha("#fff", 0.28),
           disabledBackground: alpha("#fff", 0.06),
         },
       },
     },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 8 },
   typography: {
     fontFamily: sansStack,
     fontWeightLight: 400,
     fontWeightRegular: 400,
-    fontWeightMedium: 500,
+    fontWeightMedium: 600,
     fontWeightBold: 700,
     h1: {
-      fontFamily: sansStack,
+      fontFamily: displayStack,
       fontWeight: 700,
-      letterSpacing: "-0.03em",
-      lineHeight: 1.1,
-    },
-    h2: {
-      fontFamily: sansStack,
-      fontWeight: 700,
-      letterSpacing: "-0.025em",
+      letterSpacing: "-0.02em",
       lineHeight: 1.15,
     },
-    h3: {
-      fontFamily: sansStack,
-      fontWeight: 650,
-      fontSize: "1.5rem",
+    h2: {
+      fontFamily: displayStack,
+      fontWeight: 700,
       letterSpacing: "-0.02em",
       lineHeight: 1.2,
     },
+    h3: {
+      fontFamily: displayStack,
+      fontWeight: 700,
+      fontSize: "1.5rem",
+      letterSpacing: "-0.015em",
+      lineHeight: 1.25,
+    },
     h4: {
-      fontFamily: sansStack,
-      fontWeight: 650,
-      letterSpacing: "-0.02em",
+      fontFamily: displayStack,
+      fontWeight: 700,
+      letterSpacing: "-0.015em",
     },
     h5: {
-      fontFamily: sansStack,
-      fontWeight: 600,
-      letterSpacing: "-0.015em",
+      fontFamily: displayStack,
+      fontWeight: 650,
+      letterSpacing: "-0.01em",
     },
     h6: {
-      fontFamily: sansStack,
-      fontWeight: 600,
-      letterSpacing: "-0.015em",
+      fontFamily: displayStack,
+      fontWeight: 650,
+      letterSpacing: "-0.01em",
     },
     subtitle1: { fontWeight: 600, letterSpacing: "-0.01em" },
     subtitle2: { fontWeight: 600, letterSpacing: "-0.01em" },
-    body1: { letterSpacing: "-0.01em", lineHeight: 1.45 },
-    body2: { letterSpacing: "-0.01em", lineHeight: 1.4 },
+    body1: { letterSpacing: "-0.005em", lineHeight: 1.45 },
+    body2: { letterSpacing: "-0.005em", lineHeight: 1.4 },
     caption: {
-      letterSpacing: "-0.005em",
+      letterSpacing: "0",
       lineHeight: 1.35,
       fontSize: `${minOperationalFontPx}px`,
     },
     overline: {
       fontFamily: sansStack,
-      letterSpacing: "0.08em",
-      fontWeight: 600,
+      letterSpacing: "0.06em",
+      fontWeight: 700,
       fontSize: `${minOperationalFontPx}px`,
     },
     button: {
       textTransform: "none",
-      fontWeight: 600,
+      fontWeight: 700,
       letterSpacing: "-0.01em",
       fontFamily: sansStack,
-      fontSize: "0.8125rem",
+      fontSize: "0.875rem",
     },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        // Density tokens — single source is src/layout/formLayout.ts.
         ":root": {
           "--pp-touch-fine": `${touchTargetFinePx}px`,
           "--pp-touch-coarse": `${touchTargetCoarsePx}px`,
@@ -224,7 +228,7 @@ export const appTheme = createTheme({
           theme.palette.mode === "dark"
             ? {
                 backgroundColor: fillDark,
-                backgroundImage: `radial-gradient(ellipse 120% 70% at 50% -20%, ${alpha(systemBlueDark, 0.1)}, transparent 55%)`,
+                backgroundImage: `radial-gradient(ellipse 110% 60% at 50% -18%, ${alpha(brandBlueDark, 0.16)}, transparent 55%)`,
                 backgroundAttachment: "fixed",
               }
             : {},
@@ -245,49 +249,48 @@ export const appTheme = createTheme({
       },
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 6,
           paddingInline: 14,
           ...touchTargetSx,
-          fontSize: "0.8125rem",
-          transition: "background 0.18s var(--pp-ease, ease), border-color 0.18s ease, opacity 0.15s ease",
+          fontSize: "0.875rem",
+          transition: "background 0.16s var(--pp-ease, ease), border-color 0.16s ease, color 0.16s ease",
           "&:active": {
-            opacity: 0.85,
+            opacity: 0.9,
           },
         },
         contained: ({ theme }) => ({
           boxShadow: "none",
-          backgroundColor: theme.palette.mode === "light" ? label : labelDark,
-          color: theme.palette.mode === "light" ? paper : "#000",
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
           "&:hover": {
             boxShadow: "none",
-            backgroundColor: theme.palette.mode === "light" ? "#3a3a3c" : "#d1d1d6",
+            backgroundColor: theme.palette.primary.dark,
           },
         }),
         containedSecondary: ({ theme }) => ({
           backgroundColor: theme.palette.secondary.main,
-          color: "#ffffff",
+          color: theme.palette.secondary.contrastText,
           "&:hover": {
             backgroundColor: theme.palette.secondary.dark,
           },
         }),
         outlined: ({ theme }) => ({
           borderWidth: 1,
-          borderColor: alpha(theme.palette.text.primary, 0.16),
+          borderColor: theme.palette.divider,
           color: theme.palette.text.primary,
-          backgroundColor:
-            theme.palette.mode === "light" ? alpha(paper, 0.7) : alpha(surfaceDark, 0.55),
-          backdropFilter: "blur(8px)",
+          backgroundColor: theme.palette.background.paper,
           "&:hover": {
             borderWidth: 1,
-            borderColor: alpha(theme.palette.secondary.main, 0.45),
-            backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+            borderColor: alpha(theme.palette.primary.main, 0.55),
+            backgroundColor: alpha(theme.palette.primary.main, 0.06),
+            color: theme.palette.primary.dark,
           },
         }),
         text: ({ theme }) => ({
           color: theme.palette.text.secondary,
           "&:hover": {
-            backgroundColor: alpha(theme.palette.secondary.main, 0.08),
-            color: theme.palette.text.primary,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+            color: theme.palette.primary.main,
           },
         }),
       },
@@ -296,8 +299,8 @@ export const appTheme = createTheme({
       defaultProps: { size: "small" },
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: 10,
-          border: `1px solid ${alpha(theme.palette.text.primary, 0.1)}`,
+          borderRadius: 6,
+          border: `1px solid ${theme.palette.divider}`,
           padding: 6,
           ...touchTargetSx,
           minWidth: touchTargetFinePx,
@@ -305,13 +308,12 @@ export const appTheme = createTheme({
             minHeight: touchTargetCoarsePx,
             minWidth: touchTargetCoarsePx,
           },
-          backgroundColor:
-            theme.palette.mode === "light" ? alpha(paper, 0.65) : alpha(surfaceDark, 0.55),
-          transition: "border-color 0.18s ease, background 0.18s ease",
+          backgroundColor: theme.palette.background.paper,
+          transition: "border-color 0.16s ease, background 0.16s ease, color 0.16s ease",
           "&:hover": {
-            backgroundColor: alpha(theme.palette.secondary.main, 0.1),
-            borderColor: alpha(theme.palette.secondary.main, 0.35),
-            color: theme.palette.secondary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+            borderColor: alpha(theme.palette.primary.main, 0.4),
+            color: theme.palette.primary.main,
           },
           "&.Mui-focusVisible": focusVisibleOutline(theme),
         }),
@@ -321,16 +323,14 @@ export const appTheme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: ({ theme }) => ({
-          border: `1px solid ${alpha(theme.palette.text.primary, theme.palette.mode === "light" ? 0.08 : 0.12)}`,
-          borderRadius: 14,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 8,
           backgroundImage: "none",
-          backgroundColor:
-            theme.palette.mode === "light" ? alpha(paper, 0.82) : alpha(paperDark, 0.78),
-          backdropFilter: "saturate(180%) blur(16px)",
+          backgroundColor: theme.palette.background.paper,
           boxShadow:
             theme.palette.mode === "light"
-              ? "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)"
-              : "0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.28)",
+              ? "0 1px 2px rgba(42, 42, 51, 0.06)"
+              : "0 1px 2px rgba(0,0,0,0.28)",
         }),
       },
     },
@@ -340,15 +340,13 @@ export const appTheme = createTheme({
           backgroundImage: "none",
         },
         outlined: ({ theme }) => ({
-          borderColor: alpha(theme.palette.text.primary, theme.palette.mode === "light" ? 0.08 : 0.12),
-          borderRadius: 14,
-          backgroundColor:
-            theme.palette.mode === "light" ? alpha(paper, 0.85) : alpha(paperDark, 0.8),
-          backdropFilter: "saturate(180%) blur(12px)",
+          borderColor: theme.palette.divider,
+          borderRadius: 8,
+          backgroundColor: theme.palette.background.paper,
           boxShadow:
             theme.palette.mode === "light"
-              ? "0 1px 2px rgba(0,0,0,0.03), 0 2px 10px rgba(0,0,0,0.03)"
-              : "0 1px 2px rgba(0,0,0,0.18)",
+              ? "0 1px 2px rgba(42, 42, 51, 0.04)"
+              : "0 1px 2px rgba(0,0,0,0.22)",
         }),
       },
     },
@@ -372,7 +370,7 @@ export const appTheme = createTheme({
       styleOverrides: {
         root: {
           fontSize: "0.8125rem",
-          fontWeight: 500,
+          fontWeight: 600,
         },
       },
     },
@@ -387,11 +385,9 @@ export const appTheme = createTheme({
     MuiAccordion: {
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: "14px !important",
-          border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
-          backgroundColor:
-            theme.palette.mode === "light" ? alpha(paper, 0.8) : alpha(paperDark, 0.75),
-          backdropFilter: "saturate(180%) blur(12px)",
+          borderRadius: "8px !important",
+          border: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.paper,
           boxShadow: "none",
           "&:before": { display: "none" },
           "&.Mui-expanded": {
@@ -410,7 +406,7 @@ export const appTheme = createTheme({
             minHeight: touchTargetCoarsePx,
           },
           "&.Mui-focusVisible": {
-            backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
             ...focusVisibleOutline(theme),
           },
         }),
@@ -425,22 +421,23 @@ export const appTheme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: 10,
+          borderRadius: 6,
           backgroundColor:
-            theme.palette.mode === "light" ? alpha("#787880", 0.08) : alpha("#787880", 0.24),
+            theme.palette.mode === "light" ? alpha("#2A2A33", 0.04) : alpha("#F5F5F7", 0.06),
           ...touchTargetSx,
           "& fieldset": {
             borderColor: "transparent",
           },
           "&:hover fieldset": {
-            borderColor: alpha(theme.palette.secondary.main, 0.35),
+            borderColor: alpha(theme.palette.primary.main, 0.4),
           },
           "&.Mui-focused": {
-            boxShadow: `0 0 0 2px ${alpha(theme.palette.secondary.main, 0.28)}`,
+            boxShadow: `0 0 0 3px ${alpha(brandBlueSoft, theme.palette.mode === "light" ? 0.85 : 0.35)}`,
+            backgroundColor: theme.palette.background.paper,
           },
           "&.Mui-focused fieldset": {
             borderWidth: 1.5,
-            borderColor: theme.palette.secondary.main,
+            borderColor: theme.palette.primary.main,
           },
           "& .MuiInputBase-input": {
             fontSize: "0.875rem",
@@ -473,7 +470,7 @@ export const appTheme = createTheme({
           fontSize: `${minOperationalFontPx}px`,
         },
         head: ({ theme }) => ({
-          fontWeight: 600,
+          fontWeight: 700,
           fontSize: `${minOperationalFontPx}px`,
           letterSpacing: "0.04em",
           textTransform: "uppercase",
@@ -481,15 +478,15 @@ export const appTheme = createTheme({
           paddingTop: 8,
           paddingBottom: 8,
           backgroundColor:
-            theme.palette.mode === "light" ? alpha("#787880", 0.08) : alpha("#787880", 0.2),
-          borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+            theme.palette.mode === "light" ? alpha("#2A2A33", 0.04) : alpha("#F5F5F7", 0.06),
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }),
       },
     },
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
         },
         outlinedInfo: ({ theme }) => ({
           borderColor: alpha(theme.palette.info.main, 0.3),
@@ -516,15 +513,15 @@ export const appTheme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
-          fontWeight: 560,
+          borderRadius: 6,
+          fontWeight: 650,
           height: 24,
           fontSize: `${minOperationalFontPx}px`,
         },
         colorPrimary: ({ theme }) => ({
-          backgroundColor: alpha(theme.palette.secondary.main, 0.12),
-          border: `1px solid ${alpha(theme.palette.secondary.main, 0.28)}`,
-          color: theme.palette.secondary.dark,
+          backgroundColor: alpha(theme.palette.primary.main, 0.12),
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+          color: theme.palette.primary.dark,
         }),
       },
     },

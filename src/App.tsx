@@ -408,7 +408,7 @@ export default function App() {
           onClose={() => setToast(null)}
           severity={toast?.severity ?? "success"}
           variant="filled"
-          sx={{ width: "100%", bgcolor: "secondary.main" }}
+          sx={{ width: "100%", bgcolor: "primary.main" }}
         >
           {toast?.message ?? ""}
         </Alert>

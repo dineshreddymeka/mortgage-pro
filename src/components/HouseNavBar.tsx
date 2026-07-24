@@ -128,7 +128,7 @@ export function HouseNavBar({
         borderBottom: { xs: "1px solid", md: "none" },
         borderColor: "divider",
         bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#f7fafc", 0.94) : alpha("#101a24", 0.94),
+          t.palette.mode === "light" ? alpha("#ffffff", 0.97) : alpha("#1A2129", 0.96),
         position: { md: "sticky" },
         top: { md: APP_HEADER_HEIGHT_PX },
         alignSelf: { md: "flex-start" },
@@ -177,7 +177,7 @@ export function HouseNavBar({
                 component="span"
                 sx={{
                   display: "inline-flex",
-                  color: cloudStatus === "ready" ? "secondary.main" : "text.secondary",
+                  color: cloudStatus === "ready" ? "primary.main" : "text.secondary",
                   mr: 0.25,
                 }}
                 aria-label={statusTitle}
@@ -233,7 +233,7 @@ export function HouseNavBar({
               component="span"
               sx={{
                 display: "inline-flex",
-                color: cloudStatus === "ready" ? "secondary.main" : "text.secondary",
+                color: cloudStatus === "ready" ? "primary.main" : "text.secondary",
                 flexShrink: 0,
               }}
               aria-label={statusTitle}
@@ -302,7 +302,7 @@ export function HouseNavBar({
               component="span"
               sx={{
                 display: "inline-flex",
-                color: cloudStatus === "ready" ? "secondary.main" : "text.secondary",
+                color: cloudStatus === "ready" ? "primary.main" : "text.secondary",
                 mb: 0.25,
               }}
             >
@@ -328,11 +328,11 @@ export function HouseNavBar({
                     fontWeight: 700,
                     fontSize: opFont,
                     border: "1px solid",
-                    borderColor: selected ? "secondary.main" : "divider",
+                    borderColor: selected ? "primary.main" : "divider",
                     bgcolor: selected
-                      ? (t) => alpha(t.palette.secondary.main, 0.14)
+                      ? (t) => alpha(t.palette.primary.main, 0.12)
                       : "transparent",
-                    color: selected ? "secondary.main" : "text.primary",
+                    color: selected ? "primary.main" : "text.primary",
                   }}
                 >
                   {p.houseId}
@@ -410,14 +410,14 @@ export function HouseNavBar({
                       maxWidth: { xs: 200, md: "none" },
                       alignItems: "flex-start",
                       border: "1px solid",
-                      borderColor: selected ? "secondary.main" : "divider",
+                      borderColor: selected ? "primary.main" : "divider",
                       bgcolor: selected
-                        ? (t) => alpha(t.palette.secondary.main, 0.1)
+                        ? (t) => alpha(t.palette.primary.main, 0.08)
                         : "transparent",
                       "&.Mui-selected": {
-                        bgcolor: (t) => alpha(t.palette.secondary.main, 0.12),
+                        bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
                         "&:hover": {
-                          bgcolor: (t) => alpha(t.palette.secondary.main, 0.16),
+                          bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
                         },
                       },
                     }}
@@ -435,8 +435,8 @@ export function HouseNavBar({
                             fontWeight: 700,
                             fontSize: opFont,
                             fontFamily: "var(--pp-font-mono)",
-                            bgcolor: selected ? "secondary.main" : alpha("#0b1f33", 0.08),
-                            color: selected ? "secondary.contrastText" : "text.primary",
+                            bgcolor: selected ? "primary.main" : alpha("#2A2A33", 0.08),
+                            color: selected ? "primary.contrastText" : "text.primary",
                           }}
                         >
                           {p.houseId}
@@ -567,7 +567,7 @@ export function HouseNavBar({
                           fontWeight: 700,
                           fontSize: opFont,
                           fontFamily: "var(--pp-font-mono)",
-                          bgcolor: alpha("#0b1f33", 0.06),
+                          bgcolor: alpha("#006AFF", 0.06),
                           color: "text.secondary",
                         }}
                       >
@@ -590,7 +590,7 @@ export function HouseNavBar({
                         size="small"
                         aria-label={`Restore ${p.name || houseLabel(p.houseId)}`}
                         onClick={() => onRestore(p.id)}
-                        sx={{ ...shellIconActionTargetSx, color: "secondary.main" }}
+                        sx={{ ...shellIconActionTargetSx, color: "primary.main" }}
                       >
                           <UnarchiveOutlinedIcon sx={{ fontSize: 16 }} />
                         </IconButton>

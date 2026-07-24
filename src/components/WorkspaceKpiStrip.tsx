@@ -36,7 +36,7 @@ function Kpi({
 }) {
   const color =
     tone === "accent"
-      ? "secondary.main"
+      ? "primary.main"
       : tone === "good"
         ? "success.main"
         : tone === "bad"
@@ -55,14 +55,16 @@ function Kpi({
         border: "1px solid",
         borderColor: "divider",
         bgcolor: (t) =>
-          t.palette.mode === "light" ? alpha("#ffffff", 0.72) : alpha("#162433", 0.72),
+          t.palette.mode === "light" ? alpha("#ffffff", 0.95) : alpha("#1A2129", 0.9),
+        boxShadow: (t) =>
+          t.palette.mode === "light" ? "0 1px 2px rgba(42, 42, 51, 0.04)" : "none",
       }}
     >
       <Typography
         sx={{
           fontSize: opFont,
           fontWeight: 700,
-          letterSpacing: "0.06em",
+          letterSpacing: "0.04em",
           textTransform: "uppercase",
           color: "text.secondary",
           lineHeight: 1.15,
@@ -75,8 +77,8 @@ function Kpi({
       <Typography
         className="pp-mono"
         sx={{
-          fontSize: { xs: "0.8125rem", sm: "0.875rem" },
-          fontWeight: 650,
+          fontSize: { xs: "0.875rem", sm: "0.9375rem" },
+          fontWeight: 700,
           letterSpacing: "-0.03em",
           color,
           lineHeight: 1.15,

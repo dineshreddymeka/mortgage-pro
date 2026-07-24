@@ -1,10 +1,10 @@
 .pp-report-root {
-  --pp-report-ink: #0b1f33;
-  --pp-report-muted: #4a6075;
-  --pp-report-line: rgba(11, 31, 51, 0.14);
+  --pp-report-ink: #2a2a33;
+  --pp-report-muted: #54545a;
+  --pp-report-line: #d1d1d5;
   color: var(--pp-report-ink);
   background: #fff;
-  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: "Source Sans 3", "Figtree", sans-serif;
   font-size: 11pt;
   line-height: 1.45;
 }
@@ -15,22 +15,22 @@
   align-items: center;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--pp-report-line);
-  background: #f7fafc;
+  background: #f1f1f4;
 }
 
 .pp-report-toolbar button {
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.45rem 0.9rem;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--pp-report-line);
   background: #fff;
   cursor: pointer;
 }
 
 .pp-report-toolbar button.primary {
-  background: #0e7490;
-  border-color: #0e7490;
+  background: #006aff;
+  border-color: #006aff;
   color: #fff;
 }
 
