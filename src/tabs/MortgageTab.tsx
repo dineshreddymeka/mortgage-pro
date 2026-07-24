@@ -19,6 +19,7 @@ import { MortgagePaymentBreakdown } from "../components/MortgagePaymentBreakdown
 import { ExternalEstimateSuggestionsPanel } from "../components/ExternalEstimateSuggestionsPanel";
 import { PaydownYearlyMergedCompare } from "../components/PaydownYearlyMergedCompare";
 import { PaydownYearlyColorLegend } from "../components/PaydownYearlyDetailTable";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import { WidgetBoard } from "../widgets/WidgetBoard";
 import { deriveScenario } from "../lib/deriveScenario";
 import {
@@ -29,6 +30,12 @@ import {
   type AmortizationRow,
 } from "../lib/mortgageMath";
 import type { AppPersisted } from "../storage/mortgageState";
+import {
+  FINANCING_BOARD_LAYOUT_REVISION,
+  FINANCING_BOARD_PRESET,
+  financingWidgetLayouts,
+  financingWidgetLgLayout,
+} from "./financingTabLayout";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -45,9 +52,20 @@ const moneyDec = new Intl.NumberFormat(undefined, {
 
 const summarySx = {
   px: 1.25,
-  minHeight: 42,
+  minHeight: touchTargetFinePx,
   alignItems: "flex-start",
+  "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
   "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
+  "& .MuiAccordionSummary-expandIconWrapper": {
+    minWidth: touchTargetFinePx,
+    minHeight: touchTargetFinePx,
+    alignItems: "center",
+    justifyContent: "center",
+    "@media (pointer: coarse)": {
+      minWidth: touchTargetCoarsePx,
+      minHeight: touchTargetCoarsePx,
+    },
+  },
 } as const;
 
 export type FinancingTabProps = {
@@ -140,7 +158,8 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "loan",
         title: "Loan & payment",
         description: `${moneyDec.format(breakdown.total)}/mo · LTV ${ltvPct.toFixed(1)}%`,
-        defaultLayout: { x: 0, y: 0, w: 12, h: 13, minW: 6, minH: 9 },
+        defaultLayout: financingWidgetLgLayout("loan"),
+        defaultLayouts: financingWidgetLayouts("loan"),
         content: (
           <Grid container spacing={1} alignItems="flex-start">
             <Grid size={{ xs: 12, lg: 7 }}>
@@ -168,20 +187,23 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "loan-product",
         title: "Loan product",
         description: `${derived.loanProduct.productType} · ${derived.loanProduct.miLabel}`,
-        defaultLayout: { x: 0, y: 13, w: 12, h: 11, minW: 6, minH: 8 },
+        defaultLayout: financingWidgetLgLayout("loan-product"),
+        defaultLayouts: financingWidgetLayouts("loan-product"),
         content: <LoanProductPanel state={state} patch={patch} />,
       },
       {
         id: "external-rate-estimates",
         title: "Rate suggestions",
         description: "External benchmarks — explicit apply only",
-        defaultLayout: { x: 0, y: 24, w: 12, h: 10, minW: 4, minH: 6 },
+        defaultLayout: financingWidgetLgLayout("external-rate-estimates"),
+        defaultLayouts: financingWidgetLayouts("external-rate-estimates"),
         content: (
           <ExternalEstimateSuggestionsPanel
             state={state}
             patch={patch}
             categories={["rate"]}
             title="External rate suggestions"
+            hideTitle
             onNotify={onNotify}
           />
         ),
@@ -190,7 +212,8 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "affordability",
         title: "Affordability",
         description: "DTI from income and other debt",
-        defaultLayout: { x: 0, y: 34, w: 12, h: 12, minW: 4, minH: 8 },
+        defaultLayout: financingWidgetLgLayout("affordability"),
+        defaultLayouts: financingWidgetLayouts("affordability"),
         content: (
           <Stack spacing={0.75}>
             <MortgageAffordabilityDtiPanel
@@ -211,7 +234,8 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         id: "term-tools",
         title: "Term tools",
         description: "15 vs 30 · paydown · refi",
-        defaultLayout: { x: 0, y: 46, w: 12, h: 14, minW: 6, minH: 8 },
+        defaultLayout: financingWidgetLgLayout("term-tools"),
+        defaultLayouts: financingWidgetLayouts("term-tools"),
         content: (
           <Stack spacing={0.75}>
             <Accordion defaultExpanded={false} disableGutters elevation={0}>
@@ -419,7 +443,15 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
     ]
   );
 
-  return <WidgetBoard boardId="financing" widgets={widgets} rowHeight={28} />;
+  return (
+    <WidgetBoard
+      boardId="financing"
+      widgets={widgets}
+      rowHeight={28}
+      layoutRevision={FINANCING_BOARD_LAYOUT_REVISION}
+      preset={FINANCING_BOARD_PRESET}
+    />
+  );
 }
 
 /** @deprecated Prefer FinancingTab. */

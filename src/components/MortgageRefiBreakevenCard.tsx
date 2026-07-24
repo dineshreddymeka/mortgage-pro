@@ -1,11 +1,11 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid2";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
 import {
   balanceAfterCompletedLoanYears,
   monthlyPiForRefi,
@@ -103,9 +103,9 @@ export function MortgageRefiBreakevenCard({
           (level each month on a fixed loan). Pick how far you are into the <strong>current</strong> loan to snap the
           balance from the amortization model, then edit if needed. Ignores taxes, insurance, and PMI.
         </Typography>
-        <Grid container spacing={1.5}>
+        <FormGrid maxColumns={4} compact>
           {scheduleLen > 0 ? (
-            <Grid size={12}>
+            <FormField span={4}>
               <TextField
                 label="Where you are on the current loan (snap balance)"
                 size="small"
@@ -132,9 +132,9 @@ export function MortgageRefiBreakevenCard({
                   );
                 })}
               </TextField>
-            </Grid>
+            </FormField>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <FormField span={2}>
             <TextField
               label="Loan balance to refinance"
               size="small"
@@ -148,8 +148,8 @@ export function MortgageRefiBreakevenCard({
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          </FormField>
+          <FormField span={2}>
             <TextField
               label="Your current P&amp;I (before refi)"
               size="small"
@@ -163,8 +163,8 @@ export function MortgageRefiBreakevenCard({
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField>
             <TextField
               label="New rate (APR)"
               size="small"
@@ -178,8 +178,8 @@ export function MortgageRefiBreakevenCard({
                 input: { endAdornment: <InputAdornment position="end">%</InputAdornment> },
               }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField>
             <TextField
               label="New term"
               size="small"
@@ -195,8 +195,8 @@ export function MortgageRefiBreakevenCard({
                 </option>
               ))}
             </TextField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          </FormField>
+          <FormField span={2}>
             <TextField
               label="Refi closing costs"
               size="small"
@@ -210,8 +210,8 @@ export function MortgageRefiBreakevenCard({
                 input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
               }}
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Stack spacing={0.75} sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">

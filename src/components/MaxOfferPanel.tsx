@@ -6,6 +6,8 @@ import Alert from "@mui/material/Alert";
 import { InputAdornment, Stack, Typography } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useMemo } from "react";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import { AccordionSummaryMetric } from "./AccordionSummaryMetric";
 import type { MaxOfferOutputs } from "../lib/offerMath";
 import type { AppPersisted, OfferTargetsPersisted } from "../storage/mortgageState";
@@ -90,10 +92,21 @@ export function MaxOfferPanel({ state, patch, maxOffer, currentHomePrice }: Prop
         expandIcon={<ExpandMore />}
         sx={{
           px: 1.25,
-          minHeight: 44,
+          minHeight: touchTargetFinePx,
           alignItems: "flex-start",
+          "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
           "&:hover": { bgcolor: "action.hover" },
           "& .MuiAccordionSummary-content": { my: 0.5, width: "100%", maxWidth: "calc(100% - 36px)" },
+          "& .MuiAccordionSummary-expandIconWrapper": {
+            minWidth: touchTargetFinePx,
+            minHeight: touchTargetFinePx,
+            alignItems: "center",
+            justifyContent: "center",
+            "@media (pointer: coarse)": {
+              minWidth: touchTargetCoarsePx,
+              minHeight: touchTargetCoarsePx,
+            },
+          },
         }}
       >
         <Stack
@@ -126,88 +139,90 @@ export function MaxOfferPanel({ state, patch, maxOffer, currentHomePrice }: Prop
           assumptions — never written to storage.
         </Typography>
 
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          useFlexGap
-          flexWrap="wrap"
-          sx={{ mb: 1 }}
-        >
-          <TextField
-            label="Target DSCR"
-            size="small"
-            disabled={!hasFinancing}
-            value={formatTargetField(targets?.targetDscr)}
-            onChange={(e) => {
-              const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-              patch({
-                offerTargets: patchOfferTargets(targets, {
-                  targetDscr: Number.isFinite(n) && n > 0 ? n : undefined,
-                }),
-              });
-            }}
-            slotProps={{ input: { endAdornment: <InputAdornment position="end">×</InputAdornment> } }}
-            sx={{ flex: "1 1 140px" }}
-          />
-          <TextField
-            label="Target cash flow"
-            size="small"
-            disabled={!hasFinancing}
-            value={formatTargetField(targets?.targetCashFlowMonthly)}
-            onChange={(e) => {
-              const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-              patch({
-                offerTargets: patchOfferTargets(targets, {
-                  targetCashFlowMonthly: Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined,
-                }),
-              });
-            }}
-            slotProps={{
-              input: {
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                endAdornment: <InputAdornment position="end">/mo</InputAdornment>,
-              },
-            }}
-            sx={{ flex: "1 1 140px" }}
-          />
-          <TextField
-            label="Target CoC"
-            size="small"
-            disabled={!hasFinancing}
-            value={formatTargetField(targets?.targetCashOnCashPercent)}
-            onChange={(e) => {
-              const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-              patch({
-                offerTargets: patchOfferTargets(targets, {
-                  targetCashOnCashPercent: Number.isFinite(n) && n > 0 ? n : undefined,
-                }),
-              });
-            }}
-            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
-            sx={{ flex: "1 1 120px" }}
-          />
-          <TextField
-            label="Target payment"
-            size="small"
-            disabled={!hasFinancing}
-            value={formatTargetField(targets?.targetPaymentMonthly)}
-            onChange={(e) => {
-              const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-              patch({
-                offerTargets: patchOfferTargets(targets, {
-                  targetPaymentMonthly: Number.isFinite(n) && n > 0 ? Math.round(n) : undefined,
-                }),
-              });
-            }}
-            slotProps={{
-              input: {
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                endAdornment: <InputAdornment position="end">/mo</InputAdornment>,
-              },
-            }}
-            sx={{ flex: "1 1 140px" }}
-          />
-        </Stack>
+        <FormGrid maxColumns={4} compact sx={{ mb: 1 }}>
+          <FormField>
+            <TextField
+              label="Target DSCR"
+              size="small"
+              fullWidth
+              disabled={!hasFinancing}
+              value={formatTargetField(targets?.targetDscr)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                patch({
+                  offerTargets: patchOfferTargets(targets, {
+                    targetDscr: Number.isFinite(n) && n > 0 ? n : undefined,
+                  }),
+                });
+              }}
+              slotProps={{ input: { endAdornment: <InputAdornment position="end">×</InputAdornment> } }}
+            />
+          </FormField>
+          <FormField>
+            <TextField
+              label="Target cash flow"
+              size="small"
+              fullWidth
+              disabled={!hasFinancing}
+              value={formatTargetField(targets?.targetCashFlowMonthly)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                patch({
+                  offerTargets: patchOfferTargets(targets, {
+                    targetCashFlowMonthly: Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined,
+                  }),
+                });
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">/mo</InputAdornment>,
+                },
+              }}
+            />
+          </FormField>
+          <FormField>
+            <TextField
+              label="Target CoC"
+              size="small"
+              fullWidth
+              disabled={!hasFinancing}
+              value={formatTargetField(targets?.targetCashOnCashPercent)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                patch({
+                  offerTargets: patchOfferTargets(targets, {
+                    targetCashOnCashPercent: Number.isFinite(n) && n > 0 ? n : undefined,
+                  }),
+                });
+              }}
+              slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
+            />
+          </FormField>
+          <FormField>
+            <TextField
+              label="Target payment"
+              size="small"
+              fullWidth
+              disabled={!hasFinancing}
+              value={formatTargetField(targets?.targetPaymentMonthly)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                patch({
+                  offerTargets: patchOfferTargets(targets, {
+                    targetPaymentMonthly: Number.isFinite(n) && n > 0 ? Math.round(n) : undefined,
+                  }),
+                });
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">/mo</InputAdornment>,
+                },
+              }}
+            />
+          </FormField>
+        </FormGrid>
 
         {!hasFinancing ? (
           <Typography variant="caption" color="text.disabled">

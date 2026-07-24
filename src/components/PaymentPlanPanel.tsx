@@ -1,9 +1,9 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { Button, IconButton, Stack, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
+import { touchTargetCoarsePx, touchTargetFinePx } from "../layout/formLayout";
 import type { AppPersisted, PaymentPlanLumpSum, PaymentPlanPersisted } from "../storage/mortgageState";
 
 function formatNumberField(value: number): string {
@@ -17,6 +17,33 @@ function normalizePaymentPlan(plan: PaymentPlanPersisted | undefined): PaymentPl
   if (plan.frequency === "monthly" && lumpSums.length === 0) return undefined;
   return { frequency: plan.frequency, lumpSums };
 }
+
+const coarseTouchSx = {
+  minHeight: touchTargetFinePx,
+  "@media (pointer: coarse)": { minHeight: touchTargetCoarsePx },
+} as const;
+
+const removeButtonSx = {
+  minWidth: touchTargetFinePx,
+  minHeight: touchTargetFinePx,
+  width: touchTargetFinePx,
+  height: touchTargetFinePx,
+  "@media (pointer: coarse)": {
+    minWidth: touchTargetCoarsePx,
+    minHeight: touchTargetCoarsePx,
+    width: touchTargetCoarsePx,
+    height: touchTargetCoarsePx,
+  },
+} as const;
+
+/** Stable Month | Amount | Remove row — does not collapse via FormGrid 360px bands. */
+const lumpRowSx = {
+  display: "grid",
+  gridTemplateColumns: "minmax(4.75rem, 6.5rem) minmax(0, 1fr) 44px",
+  columnGap: 1,
+  alignItems: "center",
+  width: "100%",
+} as const;
 
 export type PaymentPlanPanelProps = {
   state: AppPersisted;
@@ -96,6 +123,7 @@ export function PaymentPlanPanel({ state, patch, scheduledPiMonthly }: PaymentPl
           startIcon={<AddIcon />}
           disabled={!hasLoan}
           onClick={addLump}
+          sx={coarseTouchSx}
         >
           Add
         </Button>
@@ -106,42 +134,41 @@ export function PaymentPlanPanel({ state, patch, scheduledPiMonthly }: PaymentPl
         </Typography>
       ) : (
         lumpSums.map((lump, index) => (
-          <Grid container spacing={1} alignItems="center" key={`lump-${index}`}>
-            <Grid size={{ xs: 5, sm: 4 }}>
-              <TextField
-                label="Month"
-                size="small"
-                fullWidth
-                value={formatNumberField(lump.month)}
-                onChange={(e) => {
-                  const n = Number(e.target.value.replace(/[^0-9]/g, ""));
-                  if (!Number.isFinite(n)) return;
-                  updateLump(index, { month: Math.min(360, Math.max(1, Math.round(n))) });
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 7 }}>
-              <TextField
-                label="Amount"
-                size="small"
-                fullWidth
-                value={formatNumberField(lump.amount)}
-                onChange={(e) => {
-                  const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
-                  if (!Number.isFinite(n)) return;
-                  updateLump(index, { amount: Math.max(0, Math.round(n)) });
-                }}
-                slotProps={{
-                  input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 1 }}>
-              <IconButton size="small" aria-label="Remove lump sum" onClick={() => removeLump(index)}>
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </Grid>
-          </Grid>
+          <Box key={`lump-${index}`} sx={lumpRowSx}>
+            <TextField
+              label="Month"
+              size="small"
+              fullWidth
+              value={formatNumberField(lump.month)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9]/g, ""));
+                if (!Number.isFinite(n)) return;
+                updateLump(index, { month: Math.min(360, Math.max(1, Math.round(n))) });
+              }}
+            />
+            <TextField
+              label="Amount"
+              size="small"
+              fullWidth
+              value={formatNumberField(lump.amount)}
+              onChange={(e) => {
+                const n = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                if (!Number.isFinite(n)) return;
+                updateLump(index, { amount: Math.max(0, Math.round(n)) });
+              }}
+              slotProps={{
+                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+              }}
+            />
+            <IconButton
+              size="small"
+              aria-label="Remove lump sum"
+              onClick={() => removeLump(index)}
+              sx={removeButtonSx}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Box>
         ))
       )}
     </Stack>
