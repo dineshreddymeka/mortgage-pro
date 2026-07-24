@@ -21,8 +21,8 @@ export type ExitSharedScenarioPanelProps = {
   netInitialCashInvested: number;
   monthlyRent: number;
   mortgage: MonthlyBreakdown;
-  onGoToFinancing?: () => void;
-  onGoToUpfront?: () => void;
+  /** Navigate to Common Inputs for shared loan / cash-in fields. */
+  onGoToCommonInputs?: () => void;
   onGoToRental?: () => void;
 };
 
@@ -59,8 +59,7 @@ function Stat({ label, value, emphasize }: { label: string; value: string; empha
 }
 
 function EditActions(props: {
-  onGoToFinancing?: () => void;
-  onGoToUpfront?: () => void;
+  onGoToCommonInputs?: () => void;
   onGoToRental?: () => void;
 }) {
   return (
@@ -68,22 +67,12 @@ function EditActions(props: {
       <Button
         size="small"
         variant="outlined"
-        onClick={() => props.onGoToFinancing?.()}
-        disabled={!props.onGoToFinancing}
-        aria-label="Edit financing"
+        onClick={() => props.onGoToCommonInputs?.()}
+        disabled={!props.onGoToCommonInputs}
+        aria-label="Edit common inputs"
         sx={{ fontSize: `${minOperationalFontPx}px` }}
       >
-        Edit Financing
-      </Button>
-      <Button
-        size="small"
-        variant="outlined"
-        onClick={() => props.onGoToUpfront?.()}
-        disabled={!props.onGoToUpfront}
-        aria-label="Edit upfront cash"
-        sx={{ fontSize: `${minOperationalFontPx}px` }}
-      >
-        Edit Upfront
+        Edit Common
       </Button>
       <Button
         size="small"
@@ -99,7 +88,7 @@ function EditActions(props: {
   );
 }
 
-/** Compact read-only shared scenario with Edit actions to canonical Financing / Upfront / Rental tabs. */
+/** Compact read-only shared scenario with Edit Common / Edit Rental for canonical tabs. */
 export function ExitSharedScenarioPanel({
   homePrice,
   interestRateApr,
@@ -107,8 +96,7 @@ export function ExitSharedScenarioPanel({
   netInitialCashInvested,
   monthlyRent,
   mortgage,
-  onGoToFinancing,
-  onGoToUpfront,
+  onGoToCommonInputs,
   onGoToRental,
 }: ExitSharedScenarioPanelProps) {
   const cq = FORM_CONTAINER_NAME;
@@ -153,11 +141,7 @@ export function ExitSharedScenarioPanel({
             },
           }}
         >
-          <EditActions
-            onGoToFinancing={onGoToFinancing}
-            onGoToUpfront={onGoToUpfront}
-            onGoToRental={onGoToRental}
-          />
+          <EditActions onGoToCommonInputs={onGoToCommonInputs} onGoToRental={onGoToRental} />
         </Box>
       </Box>
       <Typography
@@ -165,8 +149,8 @@ export function ExitSharedScenarioPanel({
         color="text.secondary"
         sx={{ display: "block", mt: 0.65, lineHeight: 1.35, fontSize: `${minOperationalFontPx}px` }}
       >
-        Shared scenario — loan, cash-to-close, and rent edit on Financing / Upfront / Rental. Exit keeps
-        sale timing, yield inclusion, tax, and rent-vs-buy.
+        Shared scenario — loan and cash-to-close edit on Common Inputs; rent on Rental. Exit keeps sale
+        timing, yield inclusion, tax, and rent-vs-buy.
       </Typography>
     </Box>
   );

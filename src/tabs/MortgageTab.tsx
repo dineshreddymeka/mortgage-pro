@@ -7,9 +7,12 @@ import Grid from "@mui/material/Grid2";
 import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
 import { AmortizationScheduleSection } from "../components/AmortizationScheduleSection";
+import {
+  CommonInputsSummaryPanel,
+  financingCommonSummaryItems,
+} from "../components/CommonInputsSummaryPanel";
 import { MaxOfferPanel } from "../components/MaxOfferPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
-import { MortgageInputsFields } from "../components/MortgageInputsFields";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";
 import { MortgageLoanCompareCards } from "../components/MortgageLoanCompareCards";
 import { MortgageRefiBreakevenCard } from "../components/MortgageRefiBreakevenCard";
@@ -72,13 +75,15 @@ export type FinancingTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
   onNotify?: (message: string, severity?: "success" | "error") => void;
+  /** Navigate to Common Inputs for shared loan / carrying fields. */
+  onGoToCommonInputs?: () => void;
 };
 
 /** @deprecated Use FinancingTab — category rename. */
 export type MortgageTabProps = FinancingTabProps;
 
-/** Category: Financing — loan inputs, payment, DTI, term/paydown/refi. */
-export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
+/** Category: Financing — payment, product, DTI, term/paydown/refi. Shared loan/carrying via Common Inputs. */
+export function FinancingTab({ state, patch, onNotify, onGoToCommonInputs }: FinancingTabProps) {
   const extraPrincipalMonthly = Math.max(0, Math.round(Number(state.extraPrincipalMonthly) || 0));
 
   const derived = useMemo(() => deriveScenario(state), [state]);
@@ -163,7 +168,13 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
         content: (
           <Grid container spacing={1} alignItems="flex-start">
             <Grid size={{ xs: 12, lg: 7 }}>
-              <MortgageInputsFields state={state} patch={patch} compactGrid inputSize="small" />
+              <CommonInputsSummaryPanel
+                title="Shared loan & carrying"
+                caption="Edit price, down, rate, term, tax, insurance, HOA, PMI, and extra principal on Common Inputs."
+                items={financingCommonSummaryItems(state)}
+                onGoToCommonInputs={onGoToCommonInputs}
+                maxColumns={3}
+              />
             </Grid>
             <Grid size={{ xs: 12, lg: 5 }}>
               <Stack spacing={0.85}>
@@ -436,6 +447,7 @@ export function FinancingTab({ state, patch, onNotify }: FinancingTabProps) {
       baselineSchedule,
       schedule,
       derived,
+      onGoToCommonInputs,
       onNotify,
       state,
       yearlyDetailed,

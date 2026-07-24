@@ -38,8 +38,8 @@ describe("exitTabLayout", () => {
   });
 
   it("bumps board revision so old layouts offer recommended update", () => {
-    expect(EXIT_BOARD_LAYOUT_REVISION).toBeGreaterThanOrEqual(2);
-    expect(EXIT_BOARD_LAYOUT_REVISION).toBe(2);
+    expect(EXIT_BOARD_LAYOUT_REVISION).toBeGreaterThanOrEqual(4);
+    expect(EXIT_BOARD_LAYOUT_REVISION).toBe(4);
     expect(EXIT_BOARD_PRESET).toBe("compact-side-by-side");
   });
 

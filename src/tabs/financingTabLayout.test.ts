@@ -31,7 +31,7 @@ describe("financingTabLayout", () => {
   });
 
   it("exposes board revision and compact preset", () => {
-    expect(FINANCING_BOARD_LAYOUT_REVISION).toBe(3);
+    expect(FINANCING_BOARD_LAYOUT_REVISION).toBe(5);
     expect(FINANCING_BOARD_PRESET).toBe("compact-side-by-side");
   });
 
@@ -53,11 +53,11 @@ describe("financingTabLayout", () => {
       (typeof lg)[number]
     >;
 
-    expect(byId.loan).toMatchObject({ x: 0, y: 0, w: 12 });
-    expect(byId["loan-product"]).toMatchObject({ x: 0, y: 14, w: 7, h: 20 });
-    expect(byId["external-rate-estimates"]).toMatchObject({ x: 7, y: 14, w: 5, h: 20 });
-    expect(byId.affordability).toMatchObject({ x: 0, y: 34, w: 5 });
-    expect(byId["term-tools"]).toMatchObject({ x: 5, y: 34, w: 7 });
+    expect(byId.loan).toMatchObject({ x: 0, y: 0, w: 12, h: 12 });
+    expect(byId["loan-product"]).toMatchObject({ x: 0, y: 12, w: 7, h: 20 });
+    expect(byId["external-rate-estimates"]).toMatchObject({ x: 7, y: 12, w: 5, h: 20 });
+    expect(byId.affordability).toMatchObject({ x: 0, y: 32, w: 5 });
+    expect(byId["term-tools"]).toMatchObject({ x: 5, y: 32, w: 7 });
 
     expect(byId["loan-product"].w + byId["external-rate-estimates"].w).toBe(12);
     expect(byId.affordability.w + byId["term-tools"].w).toBe(12);
@@ -78,7 +78,7 @@ describe("financingTabLayout", () => {
       NonNullable<ReturnType<typeof buildDefaultLayouts>["md"]>[number]
     >;
 
-    expect(byId.loan).toMatchObject({ w: 10 });
+    expect(byId.loan).toMatchObject({ w: 10, h: 12 });
     expect(byId["loan-product"]).toMatchObject({ x: 0, w: 5, h: 20 });
     expect(byId["external-rate-estimates"]).toMatchObject({ x: 5, w: 5, h: 20 });
     expect(byId.affordability).toMatchObject({ x: 0, w: 10 });
@@ -92,7 +92,7 @@ describe("financingTabLayout", () => {
   it("gives rate suggestions enough height for list, alerts, and Apply", () => {
     for (const breakpoint of ["lg", "md", "sm"] as const) {
       const layouts = FINANCING_WIDGET_DEFAULT_LAYOUTS;
-      expect(layouts.loan[breakpoint]?.h).toBeGreaterThanOrEqual(14);
+      expect(layouts.loan[breakpoint]?.h).toBeGreaterThanOrEqual(12);
       expect(layouts["external-rate-estimates"][breakpoint]?.h).toBeGreaterThanOrEqual(20);
       expect(layouts["external-rate-estimates"][breakpoint]?.minH).toBeGreaterThanOrEqual(12);
       expect(layouts.affordability[breakpoint]?.minH).toBeGreaterThanOrEqual(10);
@@ -105,7 +105,7 @@ describe("financingTabLayout", () => {
     const layouts = buildDefaultLayouts(asDefs());
     const sm = layouts.sm ?? [];
     expect(sm.map((item) => item.i)).toEqual([...FINANCING_WIDGET_ORDER]);
-    expect(sm.map((item) => item.y)).toEqual([0, 16, 30, 50, 68]);
+    expect(sm.map((item) => item.y)).toEqual([0, 14, 28, 48, 66]);
     for (const item of sm) {
       expect(item).toMatchObject({ x: 0, w: 6, maxW: 6 });
     }

@@ -25,7 +25,7 @@ describe("upfrontTabLayout", () => {
   });
 
   it("exposes board revision and compact preset", () => {
-    expect(UPFRONT_BOARD_LAYOUT_REVISION).toBe(3);
+    expect(UPFRONT_BOARD_LAYOUT_REVISION).toBe(4);
     expect(UPFRONT_BOARD_PRESET).toBe("compact-side-by-side");
   });
 
@@ -49,7 +49,7 @@ describe("upfrontTabLayout", () => {
 
     expect(byId.settlement).toMatchObject({ x: 0, y: 0, w: 5, h: 8 });
     expect(byId.credits).toMatchObject({ x: 5, y: 0, w: 7, h: 8 });
-    expect(byId["inputs-model"]).toMatchObject({ x: 0, y: 8, w: 12, h: 24 });
+    expect(byId["inputs-model"]).toMatchObject({ x: 0, y: 8, w: 12, h: 20 });
 
     expect(byId.settlement.w + byId.credits.w).toBe(12);
     expect(byId.settlement.y).toBe(byId.credits.y);
@@ -69,7 +69,7 @@ describe("upfrontTabLayout", () => {
 
     expect(byId.settlement).toMatchObject({ x: 0, w: 5, h: 8 });
     expect(byId.credits).toMatchObject({ x: 5, w: 5, h: 8 });
-    expect(byId["inputs-model"]).toMatchObject({ x: 0, w: 10, h: 24 });
+    expect(byId["inputs-model"]).toMatchObject({ x: 0, w: 10, h: 20 });
     expect(byId.settlement.w + byId.credits.w).toBe(10);
     expect(byId["inputs-model"].y).toBe(byId.settlement.y + byId.settlement.h);
   });
@@ -79,13 +79,13 @@ describe("upfrontTabLayout", () => {
       const layouts = UPFRONT_WIDGET_DEFAULT_LAYOUTS;
       expect(layouts.settlement[breakpoint]?.h).toBe(8);
       expect(layouts.credits[breakpoint]?.h).toBe(8);
-      expect(layouts["inputs-model"][breakpoint]?.h).toBe(24);
-      expect(layouts["inputs-model"][breakpoint]?.minH).toBeGreaterThanOrEqual(18);
+      expect(layouts["inputs-model"][breakpoint]?.h).toBe(20);
+      expect(layouts["inputs-model"][breakpoint]?.minH).toBeGreaterThanOrEqual(14);
     }
     expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS.settlement.sm?.h).toBe(8);
     expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS.credits.sm?.h).toBeGreaterThanOrEqual(8);
-    expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS["inputs-model"].sm?.h).toBeGreaterThanOrEqual(24);
-    expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS["inputs-model"].sm?.minH).toBeGreaterThanOrEqual(18);
+    expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS["inputs-model"].sm?.h).toBeGreaterThanOrEqual(20);
+    expect(UPFRONT_WIDGET_DEFAULT_LAYOUTS["inputs-model"].sm?.minH).toBeGreaterThanOrEqual(14);
   });
 
   it("stacks sm widgets full-width in upfront order", () => {

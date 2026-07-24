@@ -62,17 +62,20 @@ function formatPercentField(value: number): string {
 export type RentalTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  /** Navigate to Common Inputs for shared loan / cash-in / carrying fields. */
+  onGoToCommonInputs?: () => void;
+  /** @deprecated Unused — shared loan fields edit on Common Inputs. */
   onGoToFinancing?: () => void;
+  /** @deprecated Unused — cash-in fields edit on Common Inputs. */
   onGoToUpfront?: () => void;
   onGoToResearch?: () => void;
 };
 
-/** Category: Rental — income, OpEx, pro forma. Financing/Upfront via Shared Scenario Edit actions. */
+/** Category: Rental — income, OpEx, pro forma. Shared loan/cash-in/carrying via Common Inputs. */
 export function RentalTab({
   state,
   patch,
-  onGoToFinancing,
-  onGoToUpfront,
+  onGoToCommonInputs,
   onGoToResearch,
 }: RentalTabProps) {
   const derived = useMemo(() => deriveScenario(state), [state]);
@@ -118,8 +121,7 @@ export function RentalTab({
               closingCosts={state.closingCosts}
               miscInitialCash={state.miscInitialCash}
               mortgage={mortgage}
-              onGoToFinancing={onGoToFinancing}
-              onGoToUpfront={onGoToUpfront}
+              onGoToCommonInputs={onGoToCommonInputs}
             />
             <Box id="rental-metrics-row">
             <Box
@@ -292,7 +294,7 @@ export function RentalTab({
       {
         id: "operating-expenses",
         title: "Operating expenses",
-        description: "Canonical OpEx editor · tax / ins / HOA / reserves",
+        description: "Canonical mgmt / maint / CapEx · tax / ins / HOA via Common",
         defaultLayout: rentalWidgetLgLayout("operating-expenses"),
         defaultLayouts: rentalWidgetLayouts("operating-expenses"),
         content: (
@@ -303,7 +305,7 @@ export function RentalTab({
             piMonthly={piMonthly}
             pmiMonthly={pmiMo}
             pctOfEgiLabel={pctOfEgi(totalOpexMo, egi)}
-            onEditFinancing={onGoToFinancing}
+            onGoToCommonInputs={onGoToCommonInputs}
           />
         ),
       },
@@ -319,7 +321,7 @@ export function RentalTab({
             state={state}
             patch={patch}
             rental={r}
-            onGoToFinancing={onGoToFinancing}
+            onGoToCommonInputs={onGoToCommonInputs}
           />
         ),
       },
@@ -397,9 +399,8 @@ export function RentalTab({
       mortgage,
       mortgageFreeAnnual,
       mortgageFreeMonthly,
-      onGoToFinancing,
+      onGoToCommonInputs,
       onGoToResearch,
-      onGoToUpfront,
       patch,
       piMonthly,
       piSummaryRight,
@@ -418,8 +419,8 @@ export function RentalTab({
         color="text.secondary"
         sx={{ lineHeight: 1.35, fontSize: "12px" }}
       >
-        Category: <strong>Rental</strong> — edit rent &amp; expenses here. Loan and cash-to-close via
-        Shared scenario Edit actions.
+        Category: <strong>Rental</strong> — edit rent &amp; reserves here. Loan, cash-to-close, and
+        tax/ins/HOA via Common Inputs.
       </Typography>
       <WidgetBoard
         boardId="rental"

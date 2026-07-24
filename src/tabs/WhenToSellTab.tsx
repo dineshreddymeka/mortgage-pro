@@ -24,18 +24,21 @@ import {
 export type WhenToSellTabProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
+  /** Navigate to Common Inputs for shared loan / cash-in fields. */
+  onGoToCommonInputs?: () => void;
+  /** @deprecated Unused — shared loan fields edit on Common Inputs. */
   onGoToFinancing?: () => void;
+  /** @deprecated Unused — cash-in fields edit on Common Inputs. */
   onGoToUpfront?: () => void;
   onGoToRental?: () => void;
   onGoToResearch?: () => void;
 };
 
-/** Category: Exit — sale timing & gain. Shared Financing/Upfront/Rental via Edit actions. */
+/** Category: Exit — sale timing & gain. Shared Common Inputs / Rental via Edit actions. */
 export function WhenToSellTab({
   state,
   patch,
-  onGoToFinancing,
-  onGoToUpfront,
+  onGoToCommonInputs,
   onGoToRental,
   onGoToResearch,
 }: WhenToSellTabProps) {
@@ -123,8 +126,7 @@ export function WhenToSellTab({
             netInitialCashInvested={initialCashInvested}
             monthlyRent={state.monthlyRent}
             mortgage={monthly}
-            onGoToFinancing={onGoToFinancing}
-            onGoToUpfront={onGoToUpfront}
+            onGoToCommonInputs={onGoToCommonInputs}
             onGoToRental={onGoToRental}
           />
         ),
@@ -253,10 +255,9 @@ export function WhenToSellTab({
       loanAmount,
       milestoneYearsLabel,
       monthly,
-      onGoToFinancing,
+      onGoToCommonInputs,
       onGoToRental,
       onGoToResearch,
-      onGoToUpfront,
       patch,
       rental15Path,
       rental30Path,
@@ -274,8 +275,8 @@ export function WhenToSellTab({
   return (
     <Stack spacing={0.75}>
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, fontSize: "12px" }}>
-        Category: <strong>Exit</strong> — sale timing &amp; gain. Loan, cash-to-close, and rent via Shared
-        scenario Edit actions.
+        Category: <strong>Exit</strong> — sale timing &amp; gain. Loan and cash-to-close via Common
+        Inputs; rent via Edit Rental.
       </Typography>
       <WidgetBoard
         boardId="when-to-sell"

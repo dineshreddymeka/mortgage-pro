@@ -47,7 +47,9 @@ export type WorkspaceTabId =
   | "upfront"
   | "rental"
   | "exit"
-  | "compare";
+  | "compare"
+  /** Appended after Compare so existing indices stay stable. */
+  | "common-inputs";
 
 export type WorkspaceTabDef = {
   label: string;
@@ -63,6 +65,7 @@ export const WORKSPACE_TABS: readonly WorkspaceTabDef[] = [
   { label: "Rental", id: "rental" },
   { label: "Exit", id: "exit" },
   { label: "Compare", id: "compare" },
+  { label: "Common Inputs", id: "common-inputs" },
 ] as const;
 
 export const WORKSPACE_TAB_INDEX: Record<WorkspaceTabId, number> = {
@@ -73,6 +76,7 @@ export const WORKSPACE_TAB_INDEX: Record<WorkspaceTabId, number> = {
   rental: 4,
   exit: 5,
   compare: 6,
+  "common-inputs": 7,
 };
 
 export function clampWorkspaceTabIndex(index: number, tabCount = WORKSPACE_TABS.length): number {

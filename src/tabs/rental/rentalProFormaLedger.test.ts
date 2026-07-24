@@ -6,6 +6,8 @@ import {
   buildProFormaLedgerRows,
   computeExitYieldAdjusted,
   computeProFormaAdjusted,
+  ledgerNavAriaLabel,
+  ledgerScrollElementId,
   lineIncluded,
   monthlyCarryingTotal,
   OPEX_SCROLL_ANCHOR,
@@ -48,13 +50,36 @@ describe("rentalProFormaLedger helpers", () => {
     expect(kinds.indexOf("noi")).toBeGreaterThan(kinds.lastIndexOf("opex"));
     expect(kinds.indexOf("pi")).toBeGreaterThan(kinds.indexOf("noi"));
     expect(kinds.at(-1)).toBe("cashflow");
-    expect(rows.find((row) => row.kind === "pi")?.navTarget).toBe("financing");
+    expect(rows.find((row) => row.kind === "pi")?.navTarget).toBe("common-inputs");
     expect(rows.find((row) => row.kind === "cashflow")?.navTarget).toBe("overview");
     for (const line of r.operatingExpenseLines) {
       const row = rows.find((item) => item.id === line.id);
       expect(row?.opexAnchorId).toBe(OPEX_SCROLL_ANCHOR[line.id] ?? "rental-edit-carrying");
       expect(row?.showIncludeToggles).toBe(true);
     }
+  });
+
+  it("routes P&I/PMI ledger nav to Common Inputs with matching aria labels", () => {
+    const r = analysisForFixture();
+    const rows = buildProFormaLedgerRows(r, fixtureV2Full.vacancyRatePercent);
+    const pi = rows.find((row) => row.kind === "pi");
+    expect(pi?.navTarget).toBe("common-inputs");
+    expect(ledgerNavAriaLabel(pi!)).toBe("Edit P&I (principal & interest) on Common Inputs");
+
+    const pmi = rows.find((row) => row.kind === "pmi");
+    if (pmi) {
+      expect(pmi.navTarget).toBe("common-inputs");
+      expect(ledgerNavAriaLabel(pmi)).toBe("Edit PMI on Common Inputs");
+    }
+
+    expect(ledgerScrollElementId("income")).toBe("rental-edit-income");
+    expect(ledgerScrollElementId("vacancy")).toBe("rental-edit-vacancy");
+    expect(ledgerScrollElementId("overview")).toBe("rental-metrics-row");
+    expect(ledgerScrollElementId("opex", "rental-edit-mgmt")).toBe("rental-edit-mgmt");
+    expect(ledgerScrollElementId("opex")).toBe("rental-edit-carrying");
+    expect(ledgerNavAriaLabel({ label: "Mgmt", navTarget: "opex" })).toBe(
+      "Jump to operating expense editor for Mgmt"
+    );
   });
 
   it("computes pro-forma adjusted totals independently from exit-yield totals", () => {
