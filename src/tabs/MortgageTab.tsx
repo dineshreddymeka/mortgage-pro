@@ -7,10 +7,8 @@ import Grid from "@mui/material/Grid2";
 import { useMemo } from "react";
 import { AccordionSummaryMetric } from "../components/AccordionSummaryMetric";
 import { AmortizationScheduleSection } from "../components/AmortizationScheduleSection";
-import {
-  CommonInputsSummaryPanel,
-  financingCommonSummaryItems,
-} from "../components/CommonInputsSummaryPanel";
+import { CommonInputsSummaryPanel } from "../components/CommonInputsSummaryPanel";
+import { financingCommonSummaryItems } from "../components/commonInputsSummary";
 import { MaxOfferPanel } from "../components/MaxOfferPanel";
 import { MortgageLoanSummaryCard } from "../components/MortgageLoanSummaryCard";
 import { MortgageAffordabilityDtiPanel } from "../components/MortgageAffordabilityDtiPanel";

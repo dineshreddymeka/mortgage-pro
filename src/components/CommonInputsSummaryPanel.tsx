@@ -12,13 +12,6 @@ import {
 } from "../layout/formLayout";
 import type { CommonInputsSummaryItem } from "./commonInputsSummary";
 
-export type { CommonInputsSummaryItem } from "./commonInputsSummary";
-export {
-  carryingCommonSummaryItems,
-  financingCommonSummaryItems,
-  upfrontCommonSummaryItems,
-} from "./commonInputsSummary";
-
 export type CommonInputsSummaryPanelProps = {
   items: CommonInputsSummaryItem[];
   onGoToCommonInputs?: () => void;
