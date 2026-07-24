@@ -1,4 +1,4 @@
-import Grid from "@mui/material/Grid2";
+import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -7,6 +7,12 @@ import { useMemo } from "react";
 import { DollarPercentField } from "../components/DollarPercentField";
 import { UpfrontCashScenarioPanel } from "../components/UpfrontCashScenarioPanel";
 import { UpfrontCreditsPanel } from "../components/UpfrontCreditsPanel";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import {
+  FORM_CONTAINER_NAME,
+  formContainerBreakpoints,
+  minOperationalFontPx,
+} from "../layout/formLayout";
 import { deriveScenario } from "../lib/deriveScenario";
 import { estimateLocationCosts } from "../lib/locationCostEstimator";
 import {
@@ -18,6 +24,12 @@ import {
 } from "../lib/mortgageInputSync";
 import type { AppPersisted } from "../storage/mortgageState";
 import { WidgetBoard } from "../widgets/WidgetBoard";
+import {
+  UPFRONT_BOARD_LAYOUT_REVISION,
+  UPFRONT_BOARD_PRESET,
+  upfrontWidgetLayouts,
+  upfrontWidgetLgLayout,
+} from "./upfrontTabLayout";
 
 const money = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -43,7 +55,12 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}
+        sx={{
+          fontSize: `${minOperationalFontPx}px`,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
       >
         {label}
       </Typography>
@@ -73,9 +90,10 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
     () => [
       {
         id: "settlement",
-        title: "Cash at settlement",
+        title: "Settlement summary",
         description: "Down + closing + misc · syncs Mortgage & Rental",
-        defaultLayout: { x: 0, y: 0, w: 12, h: 7, minW: 4, minH: 5 },
+        defaultLayout: upfrontWidgetLgLayout("settlement"),
+        defaultLayouts: upfrontWidgetLayouts("settlement"),
         content: (
           <Stack spacing={1}>
             <Typography
@@ -89,23 +107,24 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
             >
               {moneyDec.format(cashToClose)}
             </Typography>
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 6, sm: 3 }}>
+            {/* Half-width widget: cap at 2 cols for a clean 2×2 (avoid 3+1). */}
+            <FormGrid maxColumns={2} compact>
+              <FormField>
                 <SummaryStat label="Down" value={money.format(state.downPayment)} />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              </FormField>
+              <FormField>
                 <SummaryStat
                   label="Closing + misc"
                   value={money.format(state.closingCosts + state.miscInitialCash)}
                 />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              </FormField>
+              <FormField>
                 <SummaryStat label="Financed" value={money.format(loanAmount)} />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              </FormField>
+              <FormField>
                 <SummaryStat label="Total due" value={moneyDec.format(cashToClose)} />
-              </Grid>
-            </Grid>
+              </FormField>
+            </FormGrid>
           </Stack>
         ),
       },
@@ -113,19 +132,40 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
         id: "credits",
         title: "Credits & rehab",
         description: "Earnest · seller · lender · rehab",
-        defaultLayout: { x: 0, y: 7, w: 12, h: 9, minW: 4, minH: 6 },
+        defaultLayout: upfrontWidgetLgLayout("credits"),
+        defaultLayouts: upfrontWidgetLayouts("credits"),
         content: <UpfrontCreditsPanel state={state} patch={patch} />,
       },
       {
         id: "inputs-model",
         title: "Inputs & modeled costs",
         description: "Edit left · compare model on the right",
-        defaultLayout: { x: 0, y: 16, w: 12, h: 18, minW: 6, minH: 10 },
+        defaultLayout: upfrontWidgetLgLayout("inputs-model"),
+        defaultLayouts: upfrontWidgetLayouts("inputs-model"),
         content: (
-          <Grid container spacing={1.5} alignItems="flex-start">
-            <Grid size={{ xs: 12, md: 5 }}>
-              <Grid container spacing={1}>
-                <Grid size={12}>
+          <Box
+            sx={{
+              containerType: "inline-size",
+              containerName: FORM_CONTAINER_NAME,
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                width: "100%",
+                gap: 1.5,
+                gridTemplateColumns: "minmax(0, 1fr)",
+                alignItems: "start",
+                // Wait for fourCol so the model track stays ≥ ~420px (not ~315 at threeCol).
+                [`@container ${FORM_CONTAINER_NAME} (min-width: ${formContainerBreakpoints.fourCol}px)`]:
+                  {
+                    gridTemplateColumns: "minmax(0, 5fr) minmax(0, 7fr)",
+                  },
+              }}
+            >
+              <FormGrid maxColumns={2} compact>
+                <FormField span={2}>
                   <TextField
                     label="Purchase price"
                     size="small"
@@ -144,8 +184,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                       },
                     }}
                   />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                </FormField>
+                <FormField>
                   <DollarPercentField
                     label="Down payment"
                     size="small"
@@ -158,8 +198,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                       patch(syncDownPaymentPercentPatch(pct, state.homePrice, state.downPayment))
                     }
                   />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                </FormField>
+                <FormField>
                   <TextField
                     label="Closing costs"
                     size="small"
@@ -175,8 +215,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                       },
                     }}
                   />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                </FormField>
+                <FormField>
                   <TextField
                     label="Misc. one-time"
                     size="small"
@@ -192,10 +232,8 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                       },
                     }}
                   />
-                </Grid>
-              </Grid>
-            </Grid>
-            <Grid size={{ xs: 12, md: 7 }}>
+                </FormField>
+              </FormGrid>
               <UpfrontCashScenarioPanel
                 state={state}
                 patch={patch}
@@ -204,13 +242,21 @@ export function UpfrontCashTab({ state, patch }: UpfrontCashTabProps) {
                 closingCostMultiplier={locationEst.closingCostMultiplier}
                 hideEditHint
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         ),
       },
     ],
     [cashToClose, loanAmount, locationEst.closingCostMultiplier, patch, state]
   );
 
-  return <WidgetBoard boardId="upfront" widgets={widgets} rowHeight={28} />;
+  return (
+    <WidgetBoard
+      boardId="upfront"
+      widgets={widgets}
+      rowHeight={28}
+      layoutRevision={UPFRONT_BOARD_LAYOUT_REVISION}
+      preset={UPFRONT_BOARD_PRESET}
+    />
+  );
 }

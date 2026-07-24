@@ -10,6 +10,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo } from "react";
 import { applyBuyerCostLineOverrides, estimateHomeBuyingOneTimeCosts } from "../lib/buyingCostsMath";
+import { FormField, FormGrid } from "../layout/FormGrid";
+import { minOperationalFontPx } from "../layout/formLayout";
 import type { AppPersisted } from "../storage/mortgageState";
 
 const money = new Intl.NumberFormat(undefined, {
@@ -17,6 +19,8 @@ const money = new Intl.NumberFormat(undefined, {
   currency: "USD",
   maximumFractionDigits: 0,
 });
+
+const operationalFont = `${minOperationalFontPx}px`;
 
 function formatNumberField(value: number): string {
   if (!Number.isFinite(value)) return "";
@@ -104,28 +108,72 @@ export function UpfrontCashScenarioPanel({
   return (
     <Stack spacing={1}>
       {!hideEditHint ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", lineHeight: 1.3, fontSize: operationalFont }}
+        >
           Modeled lines are editable · compare to entered closing · not a Loan Estimate.
         </Typography>
       ) : (
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", lineHeight: 1.3, fontSize: operationalFont }}
+        >
           Fee / prepaid model · editable · not a Loan Estimate.
         </Typography>
       )}
 
-      <Stack direction="row" flexWrap="wrap" useFlexGap gap={1.25}>
-        <Stat label="Down" value={money.format(down)} />
-        <Stat label="Closing" value={money.format(closing)} />
-        <Stat label="Misc" value={money.format(misc)} />
-        <Stat label="Total" value={money.format(cashToClose)} emphasized />
-      </Stack>
+      {/* Side track / half-width: clean 2×2 — avoid 3+1 four-value layouts. */}
+      <FormGrid maxColumns={2} compact>
+        <FormField>
+          <Stat label="Down" value={money.format(down)} />
+        </FormField>
+        <FormField>
+          <Stat label="Closing" value={money.format(closing)} />
+        </FormField>
+        <FormField>
+          <Stat label="Misc" value={money.format(misc)} />
+        </FormField>
+        <FormField>
+          <Stat label="Total" value={money.format(cashToClose)} emphasized />
+        </FormField>
+      </FormGrid>
 
-      <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-        <Table size="small" padding="checkbox">
+      {/* Horizontal overflow only on the fee model table — actions stay in normal flow. */}
+      <TableContainer
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 1,
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        <Table size="small" padding="none" sx={{ minWidth: 280 }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, py: 0.5, fontSize: "0.7rem" }}>Modeled line</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, py: 0.5, fontSize: "0.7rem", width: "28%" }}>
+              <TableCell
+                sx={{
+                  fontWeight: 700,
+                  py: 0.35,
+                  px: 0.75,
+                  fontSize: operationalFont,
+                }}
+              >
+                Modeled line
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  fontWeight: 700,
+                  py: 0.35,
+                  px: 0.75,
+                  fontSize: operationalFont,
+                  width: "28%",
+                }}
+              >
                 Amount
               </TableCell>
             </TableRow>
@@ -136,14 +184,19 @@ export function UpfrontCashScenarioPanel({
               const overridden = state.buyingCostLineOverrides?.[l.id] !== undefined;
               return (
                 <TableRow key={l.id}>
-                  <TableCell sx={{ py: 0.35, fontSize: "0.72rem", lineHeight: 1.25 }}>
+                  <TableCell sx={{ py: 0.2, px: 0.75, fontSize: operationalFont, lineHeight: 1.25 }}>
                     {l.label}
-                    <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 0.5, fontSize: operationalFont }}
+                    >
                       ({l.kind === "fee" ? "fee" : "prepaid"}
                       {overridden ? " · edited" : ""})
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ py: 0.25, width: "32%", maxWidth: 140 }}>
+                  <TableCell align="right" sx={{ py: 0.15, px: 0.5, width: "32%", maxWidth: 140 }}>
                     <TextField
                       size="small"
                       variant="outlined"
@@ -156,8 +209,9 @@ export function UpfrontCashScenarioPanel({
                       }}
                       sx={{
                         "& .MuiOutlinedInput-input": {
-                          py: 0.35,
-                          fontSize: "0.75rem",
+                          py: 0.25,
+                          px: 0.5,
+                          fontSize: operationalFont,
                           textAlign: "right",
                           fontVariantNumeric: "tabular-nums",
                         },
@@ -168,20 +222,26 @@ export function UpfrontCashScenarioPanel({
               );
             })}
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, py: 0.45, fontSize: "0.72rem" }}>Fees subtotal</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
+              <TableCell sx={{ fontWeight: 700, py: 0.3, px: 0.75, fontSize: operationalFont }}>
+                Fees subtotal
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, fontSize: operationalFont, px: 0.75 }}>
                 {money.format(est.feesSubtotal)}
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, py: 0.45, fontSize: "0.72rem" }}>Prepaids subtotal</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
+              <TableCell sx={{ fontWeight: 700, py: 0.3, px: 0.75, fontSize: operationalFont }}>
+                Prepaids subtotal
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, fontSize: operationalFont, px: 0.75 }}>
                 {money.format(est.prepaidsSubtotal)}
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ fontWeight: 800, py: 0.5, fontSize: "0.75rem" }}>Suggested closing bucket</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 800, fontSize: "0.75rem" }}>
+              <TableCell sx={{ fontWeight: 800, py: 0.35, px: 0.75, fontSize: operationalFont }}>
+                Suggested closing bucket
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 800, fontSize: operationalFont, px: 0.75 }}>
                 {money.format(est.suggestedClosingTotal)}
               </TableCell>
             </TableRow>
@@ -189,17 +249,21 @@ export function UpfrontCashScenarioPanel({
         </Table>
       </TableContainer>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.35 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: "block", lineHeight: 1.35, fontSize: operationalFont }}
+      >
         vs entered closing: {delta >= 0 ? "+" : ""}
         {money.format(delta)} ({delta >= 0 ? "model higher" : "model lower"}).
       </Typography>
 
-      <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75}>
+      <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ flexShrink: 0 }}>
         <Button
           size="small"
           variant="outlined"
           color="secondary"
-          sx={{ textTransform: "none", fontWeight: 700 }}
+          sx={{ textTransform: "none", fontWeight: 700, fontSize: operationalFont }}
           onClick={() => patch({ closingCosts: Math.max(0, Math.round(est.suggestedClosingTotal)) })}
         >
           Set closing to model (fees + prepaids)
@@ -208,7 +272,7 @@ export function UpfrontCashScenarioPanel({
           size="small"
           variant="text"
           color="inherit"
-          sx={{ textTransform: "none", fontWeight: 600 }}
+          sx={{ textTransform: "none", fontWeight: 600, fontSize: operationalFont }}
           onClick={() => patch({ closingCosts: Math.max(0, Math.round(est.feesSubtotal)) })}
         >
           Fees only
@@ -217,7 +281,7 @@ export function UpfrontCashScenarioPanel({
           size="small"
           variant="text"
           color="inherit"
-          sx={{ textTransform: "none", fontWeight: 600 }}
+          sx={{ textTransform: "none", fontWeight: 600, fontSize: operationalFont }}
           onClick={() => patch({ buyingCostLineOverrides: undefined })}
         >
           Reset lines to formula
@@ -229,11 +293,18 @@ export function UpfrontCashScenarioPanel({
 
 function Stat({ label, value, emphasized }: { label: string; value: string; emphasized?: boolean }) {
   return (
-    <Stack spacing={0.1} sx={{ minWidth: 100 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+    <Stack spacing={0.1} sx={{ minWidth: 0 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ lineHeight: 1.2, fontSize: operationalFont }}
+      >
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ fontWeight: emphasized ? 800 : 600, fontVariantNumeric: "tabular-nums" }}>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: emphasized ? 800 : 600, fontVariantNumeric: "tabular-nums" }}
+      >
         {value}
       </Typography>
     </Stack>
