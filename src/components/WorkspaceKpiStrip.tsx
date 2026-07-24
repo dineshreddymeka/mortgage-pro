@@ -44,12 +44,11 @@ function Kpi({
     <Box
       className="pp-metric-pop"
       sx={{
-        minWidth: { xs: 76, sm: 110 },
-        flex: { xs: "1 1 calc(33.33% - 8px)", sm: "0 0 auto" },
-        maxWidth: { xs: "calc(50% - 4px)", sm: "none" },
-        px: { xs: 0.75, sm: 1 },
-        py: 0.55,
-        borderRadius: "10px",
+        flex: "0 0 auto",
+        minWidth: { xs: 72, sm: 96 },
+        px: { xs: 0.7, sm: 0.9 },
+        py: 0.35,
+        borderRadius: "8px",
         border: "1px solid",
         borderColor: "divider",
         bgcolor: (t) =>
@@ -58,12 +57,14 @@ function Kpi({
     >
       <Typography
         sx={{
-          fontSize: "0.62rem",
+          fontSize: "0.58rem",
           fontWeight: 700,
           letterSpacing: "0.07em",
           textTransform: "uppercase",
           color: "text.secondary",
-          mb: 0.15,
+          lineHeight: 1.1,
+          mb: 0.1,
+          whiteSpace: "nowrap",
         }}
       >
         {label}
@@ -71,11 +72,12 @@ function Kpi({
       <Typography
         className="pp-mono"
         sx={{
-          fontSize: { xs: "0.86rem", sm: "0.95rem" },
+          fontSize: { xs: "0.8rem", sm: "0.88rem" },
           fontWeight: 650,
           letterSpacing: "-0.03em",
           color,
           lineHeight: 1.15,
+          whiteSpace: "nowrap",
         }}
       >
         {value}
@@ -84,6 +86,7 @@ function Kpi({
   );
 }
 
+/** One-line, horizontally scrollable live KPI rail for the active house. */
 export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: WorkspaceKpiStripProps) {
   const cf = row.cashFlowMonthly;
   const coc = row.cashOnCash;
@@ -91,21 +94,29 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
   return (
     <Stack
       direction="row"
-      spacing={0.65}
-      useFlexGap
-      flexWrap="wrap"
-      alignItems="stretch"
+      spacing={0.55}
+      alignItems="center"
       className="pp-rise"
-      sx={{ mb: 1 }}
+      sx={{
+        mb: 0.85,
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "thin",
+        pb: 0.15,
+        mx: { xs: -0.25, sm: 0 },
+        px: { xs: 0.25, sm: 0 },
+      }}
     >
-      <Box sx={{ mr: { xs: 0, sm: 0.25 }, alignSelf: "center", minWidth: 0, flex: { xs: "1 1 100%", sm: "0 0 auto" } }}>
+      <Box sx={{ flex: "0 0 auto", minWidth: 0, pr: 0.35, maxWidth: { xs: 120, sm: 160 } }}>
         <Typography
           sx={{
-            fontSize: "0.62rem",
+            fontSize: "0.58rem",
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             color: "text.secondary",
+            lineHeight: 1.1,
           }}
         >
           Live model
@@ -113,9 +124,9 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
         <Typography
           sx={{
             fontWeight: 700,
-            fontSize: { xs: "0.9rem", sm: "0.95rem" },
+            fontSize: { xs: "0.82rem", sm: "0.9rem" },
             letterSpacing: "-0.03em",
-            lineHeight: 1.2,
+            lineHeight: 1.15,
           }}
           noWrap
         >
@@ -131,14 +142,12 @@ export function WorkspaceKpiStrip({ houseLabel, row, rateApr, termYears }: Works
         value={`${money0.format(cf)}/mo`}
         tone={cf > 0 ? "good" : cf < 0 ? "bad" : "default"}
       />
-      <Box sx={{ display: { xs: "none", sm: "contents" } }}>
-        <Kpi
-          label="Cash-on-cash"
-          value={pct1.format(coc)}
-          tone={coc > 0 ? "good" : coc < 0 ? "bad" : "default"}
-        />
-        <Kpi label="Loan" value={`${rateApr}% · ${termYears}y`} />
-      </Box>
+      <Kpi
+        label="Cash-on-cash"
+        value={pct1.format(coc)}
+        tone={coc > 0 ? "good" : coc < 0 ? "bad" : "default"}
+      />
+      <Kpi label="Loan" value={`${rateApr}% · ${termYears}y`} />
     </Stack>
   );
 }

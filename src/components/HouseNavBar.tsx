@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import type { CloudSyncStatus } from "../hooks/useMortgageSyncedState";
 import type { HouseComparisonRow } from "../lib/houseComparison";
 import { houseLabel, type PropertyMeta } from "../storage/firestoreProperties";
+import { APP_HEADER_HEIGHT_PX } from "./workspaceShell";
 
 const NAV_COLLAPSED_KEY = "mortgage-pro:house-nav-collapsed";
 
@@ -123,10 +124,10 @@ export function HouseNavBar({
         bgcolor: (t) =>
           t.palette.mode === "light" ? alpha("#f7fafc", 0.94) : alpha("#101a24", 0.94),
         position: { md: "sticky" },
-        top: { md: 56 },
+        top: { md: APP_HEADER_HEIGHT_PX },
         alignSelf: { md: "flex-start" },
-        maxHeight: { md: "calc(100dvh - 56px)" },
-        minHeight: { md: "calc(100dvh - 56px)" },
+        maxHeight: { md: `calc(100dvh - ${APP_HEADER_HEIGHT_PX}px)` },
+        minHeight: { md: `calc(100dvh - ${APP_HEADER_HEIGHT_PX}px)` },
         transition: "width 180ms ease",
       }}
     >
@@ -206,43 +207,69 @@ export function HouseNavBar({
         </Stack>
       </Stack>
 
-      {/* Mobile collapsed summary */}
+      {/* Compact mobile portfolio summary (one line) */}
       {collapsed ? (
         <Stack
           direction="row"
           alignItems="center"
-          spacing={0.75}
+          spacing={0.65}
           sx={{
             display: { xs: "flex", md: "none" },
             px: 1.25,
-            pb: 0.9,
+            pb: 0.7,
+            minHeight: 36,
             overflowX: "auto",
             scrollbarWidth: "thin",
+            whiteSpace: "nowrap",
           }}
         >
+          <Tooltip title={statusTitle}>
+            <Box
+              component="span"
+              sx={{
+                display: "inline-flex",
+                color: cloudStatus === "ready" ? "secondary.main" : "text.secondary",
+                flexShrink: 0,
+              }}
+              aria-label={statusTitle}
+            >
+              <CloudIcon status={cloudStatus} />
+            </Box>
+          </Tooltip>
           {active ? (
             <Button
               size="small"
-              variant="outlined"
+              variant="text"
               onClick={toggleCollapsed}
+              aria-label={`Expand portfolio — ${active.name || houseLabel(active.houseId)}`}
               sx={{
-                minHeight: 34,
-                borderRadius: "10px",
+                minHeight: 30,
+                px: 0.5,
                 fontWeight: 700,
-                fontSize: "0.8rem",
+                fontSize: "0.78rem",
                 letterSpacing: "-0.02em",
-                flexShrink: 0,
+                flexShrink: 1,
+                minWidth: 0,
+                justifyContent: "flex-start",
+                color: "text.primary",
               }}
             >
-              {active.name || houseLabel(active.houseId)}
+              <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {active.houseId} · {active.name || houseLabel(active.houseId)}
+              </Box>
             </Button>
           ) : (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
               Portfolio hidden
             </Typography>
           )}
-          <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ flexShrink: 0, fontSize: "0.68rem", fontWeight: 650 }}
+          >
             {sorted.length} active
+            {sortedArchived.length > 0 ? ` · ${sortedArchived.length} archived` : ""}
           </Typography>
         </Stack>
       ) : null}
