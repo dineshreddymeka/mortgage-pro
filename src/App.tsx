@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import { Box, Snackbar, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
+import { CommonInputsTab } from "./tabs/CommonInputsTab";
 import { CompareTab } from "./tabs/CompareTab";
 import { FinancingTab } from "./tabs/MortgageTab";
 import { PropertyTab } from "./tabs/PropertyTab";
@@ -129,6 +130,8 @@ export default function App() {
       });
     }
   }
+
+  const goToCommonInputs = () => setTab(WORKSPACE_TAB_INDEX["common-inputs"]);
 
   const houseHandlers = {
     onSelect: (id: string) => {
@@ -286,6 +289,7 @@ export default function App() {
                 state={state}
                 patch={patch}
                 onNotify={(message, severity = "success") => setToast({ message, severity })}
+                onGoToCommonInputs={goToCommonInputs}
               />
             ) : null}
           </Box>
@@ -295,7 +299,13 @@ export default function App() {
             id="tabpanel-upfront"
             aria-labelledby="tab-upfront"
           >
-            {tab === WORKSPACE_TAB_INDEX.upfront ? <UpfrontCashTab state={state} patch={patch} /> : null}
+            {tab === WORKSPACE_TAB_INDEX.upfront ? (
+              <UpfrontCashTab
+                state={state}
+                patch={patch}
+                onGoToCommonInputs={goToCommonInputs}
+              />
+            ) : null}
           </Box>
           <Box
             role="tabpanel"
@@ -310,6 +320,7 @@ export default function App() {
                 onGoToFinancing={() => setTab(WORKSPACE_TAB_INDEX.financing)}
                 onGoToUpfront={() => setTab(WORKSPACE_TAB_INDEX.upfront)}
                 onGoToResearch={() => setTab(WORKSPACE_TAB_INDEX.research)}
+                onGoToCommonInputs={goToCommonInputs}
               />
             ) : null}
           </Box>
@@ -327,6 +338,7 @@ export default function App() {
                 onGoToUpfront={() => setTab(WORKSPACE_TAB_INDEX.upfront)}
                 onGoToRental={() => setTab(WORKSPACE_TAB_INDEX.rental)}
                 onGoToResearch={() => setTab(WORKSPACE_TAB_INDEX.research)}
+                onGoToCommonInputs={goToCommonInputs}
               />
             ) : null}
           </Box>
@@ -345,6 +357,16 @@ export default function App() {
                 cloudReady={cloudStatus === "ready"}
                 onSelect={houseHandlers.onSelect}
               />
+            ) : null}
+          </Box>
+          <Box
+            role="tabpanel"
+            hidden={tab !== WORKSPACE_TAB_INDEX["common-inputs"]}
+            id="tabpanel-common-inputs"
+            aria-labelledby="tab-common-inputs"
+          >
+            {tab === WORKSPACE_TAB_INDEX["common-inputs"] ? (
+              <CommonInputsTab state={state} patch={patch} />
             ) : null}
           </Box>
 

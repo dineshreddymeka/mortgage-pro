@@ -38,7 +38,7 @@ describe("rentalTabLayout", () => {
   });
 
   it("exposes board revision and compact preset", () => {
-    expect(RENTAL_BOARD_LAYOUT_REVISION).toBe(5);
+    expect(RENTAL_BOARD_LAYOUT_REVISION).toBe(6);
     expect(RENTAL_BOARD_PRESET).toBe("compact-side-by-side");
   });
 
@@ -55,8 +55,8 @@ describe("rentalTabLayout", () => {
   it("keeps wide default total height within the page-scroll budget", () => {
     const bottom = rentalLgBoardBottom();
     expect(bottom).toBeLessThanOrEqual(RENTAL_LG_MAX_ROWS);
-    expect(bottom).toBeLessThanOrEqual(62);
-    expect(bottom).toBe(62);
+    expect(bottom).toBeLessThanOrEqual(60);
+    expect(bottom).toBe(60);
   });
 
   it("packs overview, income|opex, pro-forma+stack, strategies|tax, stress on lg", () => {
@@ -68,14 +68,14 @@ describe("rentalTabLayout", () => {
     >;
 
     expect(byId.overview).toMatchObject({ x: 0, y: 0, w: 12, h: 10 });
-    expect(byId.income).toMatchObject({ x: 0, y: 10, w: 6, h: 16 });
-    expect(byId["operating-expenses"]).toMatchObject({ x: 6, y: 10, w: 6, h: 16 });
-    expect(byId["pro-forma"]).toMatchObject({ x: 0, y: 26, w: 8, h: 14 });
-    expect(byId.composition).toMatchObject({ x: 8, y: 26, w: 4, h: 7 });
-    expect(byId.growth).toMatchObject({ x: 8, y: 33, w: 4, h: 7 });
-    expect(byId.strategies).toMatchObject({ x: 0, y: 40, w: 6, h: 12 });
-    expect(byId.tax).toMatchObject({ x: 6, y: 40, w: 6, h: 12 });
-    expect(byId.stress).toMatchObject({ x: 0, y: 52, w: 12, h: 10 });
+    expect(byId.income).toMatchObject({ x: 0, y: 10, w: 6, h: 14 });
+    expect(byId["operating-expenses"]).toMatchObject({ x: 6, y: 10, w: 6, h: 14 });
+    expect(byId["pro-forma"]).toMatchObject({ x: 0, y: 24, w: 8, h: 14 });
+    expect(byId.composition).toMatchObject({ x: 8, y: 24, w: 4, h: 7 });
+    expect(byId.growth).toMatchObject({ x: 8, y: 31, w: 4, h: 7 });
+    expect(byId.strategies).toMatchObject({ x: 0, y: 38, w: 6, h: 12 });
+    expect(byId.tax).toMatchObject({ x: 6, y: 38, w: 6, h: 12 });
+    expect(byId.stress).toMatchObject({ x: 0, y: 50, w: 12, h: 10 });
 
     expect(byId.income.w + byId["operating-expenses"].w).toBe(12);
     expect(byId["pro-forma"].w + byId.composition.w).toBe(12);
@@ -103,11 +103,11 @@ describe("rentalTabLayout", () => {
     >;
 
     expect(byId.overview).toMatchObject({ w: 10, h: 10 });
-    expect(byId.income).toMatchObject({ x: 0, w: 5, h: 16 });
-    expect(byId["operating-expenses"]).toMatchObject({ x: 5, w: 5, h: 16 });
+    expect(byId.income).toMatchObject({ x: 0, w: 5, h: 14 });
+    expect(byId["operating-expenses"]).toMatchObject({ x: 5, w: 5, h: 14 });
     expect(byId["pro-forma"]).toMatchObject({ x: 0, w: 6, h: 14 });
     expect(byId.composition).toMatchObject({ x: 6, w: 4, h: 7 });
-    expect(byId.growth).toMatchObject({ x: 6, y: 33, w: 4, h: 7 });
+    expect(byId.growth).toMatchObject({ x: 6, y: 31, w: 4, h: 7 });
     expect(byId.strategies).toMatchObject({ x: 0, w: 5, h: 12 });
     expect(byId.tax).toMatchObject({ x: 5, w: 5, h: 12 });
     expect(byId.stress).toMatchObject({ w: 10, h: 10 });
@@ -117,7 +117,7 @@ describe("rentalTabLayout", () => {
     const layouts = buildDefaultLayouts(asDefs());
     const sm = layouts.sm ?? [];
     expect(sm.map((item) => item.i)).toEqual([...RENTAL_WIDGET_ORDER]);
-    expect(sm.map((item) => item.y)).toEqual([0, 14, 30, 48, 66, 74, 82, 94, 106]);
+    expect(sm.map((item) => item.y)).toEqual([0, 14, 28, 44, 62, 70, 78, 90, 102]);
     for (const item of sm) {
       expect(item).toMatchObject({ x: 0, w: 6, maxW: 6 });
     }

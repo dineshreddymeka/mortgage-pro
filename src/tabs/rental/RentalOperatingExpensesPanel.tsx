@@ -1,22 +1,18 @@
 import Chip from "@mui/material/Chip";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { FormField, FormGrid } from "../../layout/FormGrid";
+import {
+  carryingCommonSummaryItems,
+  CommonInputsSummaryPanel,
+} from "../../components/CommonInputsSummaryPanel";
 import { minOperationalFontPx, touchTargetFinePx } from "../../layout/formLayout";
-import { parseNumericInput } from "../../lib/mortgageInputSync";
 import type { AppPersisted } from "../../storage/mortgageState";
 import { monthlyCarryingTotal } from "./rentalProFormaLedger";
 import { RentalFieldRow } from "./RentalFieldControls";
 
 const opFont = `${minOperationalFontPx}px`;
-
-function formatNumberField(value: number): string {
-  if (!Number.isFinite(value)) return "";
-  return String(value);
-}
 
 function formatPercentField(value: number): string {
   if (!Number.isFinite(value)) return "";
@@ -47,10 +43,11 @@ export type RentalOperatingExpensesPanelProps = {
   piMonthly: number;
   pmiMonthly: number;
   pctOfEgiLabel: string;
-  onEditFinancing?: () => void;
+  /** Navigate to Common Inputs for shared tax / insurance / HOA (and loan) fields. */
+  onGoToCommonInputs?: () => void;
 };
 
-/** Canonical Rental OpEx editor (tax / ins / HOA / mgmt / maint / CapEx). */
+/** Canonical Rental OpEx editor (mgmt / maint / CapEx). Tax / ins / HOA via Common Inputs. */
 export function RentalOperatingExpensesPanel({
   state,
   patch,
@@ -58,7 +55,7 @@ export function RentalOperatingExpensesPanel({
   piMonthly,
   pmiMonthly,
   pctOfEgiLabel,
-  onEditFinancing,
+  onGoToCommonInputs,
 }: RentalOperatingExpensesPanelProps) {
   const monthlyCarrying = monthlyCarryingTotal(totalOpexMo, piMonthly, pmiMonthly);
   const pmiPart =
@@ -126,15 +123,15 @@ export function RentalOperatingExpensesPanel({
           sx={{ lineHeight: 1.35, display: "block", fontSize: opFont, mt: 0.35 }}
         >
           {state.termYears}-year loan · {state.interestRateApr}% APR
-          {onEditFinancing ? (
+          {onGoToCommonInputs ? (
             <>
               {" · "}
               <Typography
                 component="button"
                 type="button"
                 variant="caption"
-                onClick={onEditFinancing}
-                aria-label="Edit financing on Financing tab"
+                onClick={onGoToCommonInputs}
+                aria-label="Edit common inputs for loan terms"
                 sx={{
                   cursor: "pointer",
                   border: 0,
@@ -148,7 +145,7 @@ export function RentalOperatingExpensesPanel({
                   minHeight: touchTargetFinePx,
                 }}
               >
-                Edit Financing
+                Edit Common
               </Typography>
             </>
           ) : null}
@@ -164,91 +161,13 @@ export function RentalOperatingExpensesPanel({
           p: 1,
         }}
       >
-        <Typography variant="caption" sx={sectionLabelSx}>
-          Taxes, insurance, HOA
-        </Typography>
-        <FormGrid maxColumns={2} compact>
-          <FormField>
-            <TextField
-              label="Property tax (yr)"
-              size="small"
-              fullWidth
-              value={formatNumberField(state.propertyTaxAnnual)}
-              onChange={(e) => {
-                const n = parseNumericInput(e.target.value);
-                if (n === null) return;
-                const hp = state.homePrice;
-                const annual = Math.max(0, n);
-                patch({
-                  propertyTaxAnnual: annual,
-                  propertyTaxPercent: hp > 0 ? (annual / hp) * 100 : 0,
-                });
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                },
-              }}
-            />
-          </FormField>
-          <FormField>
-            <TextField
-              label="Property tax %"
-              size="small"
-              fullWidth
-              value={formatPercentField(state.propertyTaxPercent)}
-              onChange={(e) => {
-                const n = parseNumericInput(e.target.value);
-                if (n === null) return;
-                const pct = Math.min(100, Math.max(0, n));
-                const hp = state.homePrice;
-                patch({
-                  propertyTaxPercent: pct,
-                  propertyTaxAnnual: hp > 0 ? Math.round((hp * pct) / 100) : state.propertyTaxAnnual,
-                });
-              }}
-              slotProps={{
-                input: {
-                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                },
-              }}
-            />
-          </FormField>
-          <FormField>
-            <TextField
-              label="Insurance (yr)"
-              size="small"
-              fullWidth
-              value={formatNumberField(state.insuranceAnnual)}
-              onChange={(e) => {
-                const n = parseNumericInput(e.target.value);
-                if (n !== null) patch({ insuranceAnnual: Math.max(0, n) });
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                },
-              }}
-            />
-          </FormField>
-          <FormField>
-            <TextField
-              label="HOA (mo)"
-              size="small"
-              fullWidth
-              value={formatNumberField(state.hoaMonthly)}
-              onChange={(e) => {
-                const n = parseNumericInput(e.target.value);
-                if (n !== null) patch({ hoaMonthly: Math.max(0, n) });
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                },
-              }}
-            />
-          </FormField>
-        </FormGrid>
+        <CommonInputsSummaryPanel
+          title="Taxes, insurance, HOA"
+          caption="Shared carrying costs — edit on Common Inputs."
+          items={carryingCommonSummaryItems(state)}
+          onGoToCommonInputs={onGoToCommonInputs}
+          maxColumns={3}
+        />
       </Box>
 
       <Box

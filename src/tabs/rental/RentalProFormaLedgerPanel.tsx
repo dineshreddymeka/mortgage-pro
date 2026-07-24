@@ -23,6 +23,8 @@ import {
   buildProFormaLedgerRows,
   computeExitYieldAdjusted,
   computeProFormaAdjusted,
+  ledgerNavAriaLabel,
+  ledgerScrollElementId,
   lineIncluded,
   patchIncludeMap,
   pctOfEgi,
@@ -57,14 +59,6 @@ const includeColSx = {
   verticalAlign: "bottom" as const,
   fontSize: opFont,
 };
-
-function navAriaLabel(row: ProFormaLedgerRow): string {
-  if (row.navTarget === "financing") return `Edit ${row.label} on Financing tab`;
-  if (row.navTarget === "overview") return `Jump to key metrics for ${row.label}`;
-  if (row.navTarget === "vacancy") return `Jump to vacancy editor`;
-  if (row.navTarget === "income") return `Jump to income editor for ${row.label}`;
-  return `Jump to operating expense editor for ${row.label}`;
-}
 
 function ProFormaNavCell(props: {
   onGo: () => void;
@@ -144,7 +138,8 @@ export type RentalProFormaLedgerPanelProps = {
   state: AppPersisted;
   patch: (partial: Partial<AppPersisted>) => void;
   rental: RentalAnalysis;
-  onGoToFinancing?: () => void;
+  /** P&I / PMI rows navigate to Common Inputs (canonical loan / PMI editors). */
+  onGoToCommonInputs?: () => void;
 };
 
 function displayAmount(row: ProFormaLedgerRow, pfAdj: ReturnType<typeof computeProFormaAdjusted>): number {
@@ -180,7 +175,7 @@ export function RentalProFormaLedgerPanel({
   state,
   patch,
   rental: r,
-  onGoToFinancing,
+  onGoToCommonInputs,
 }: RentalProFormaLedgerPanelProps) {
   const egi = r.effectiveGrossIncomeMonthly;
   const pfToggles = useMemo(() => state.rentalProFormaInclude ?? {}, [state.rentalProFormaInclude]);
@@ -209,21 +204,14 @@ export function RentalProFormaLedgerPanel({
 
   const goTo = useCallback(
     (target: LedgerNavTarget, opexAnchorId?: string) => {
-      if (target === "financing") {
-        onGoToFinancing?.();
+      if (target === "common-inputs") {
+        onGoToCommonInputs?.();
         return;
       }
-      const id =
-        target === "income"
-          ? "rental-edit-income"
-          : target === "vacancy"
-            ? "rental-edit-vacancy"
-            : target === "overview"
-              ? "rental-metrics-row"
-              : (opexAnchorId ?? "rental-edit-carrying");
+      const id = ledgerScrollElementId(target, opexAnchorId);
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
     },
-    [onGoToFinancing]
+    [onGoToCommonInputs]
   );
 
   const restoreBtnSx = {
@@ -427,7 +415,7 @@ export function RentalProFormaLedgerPanel({
                 >
                   <ProFormaNavCell
                     onGo={() => goTo(row.navTarget, row.opexAnchorId)}
-                    ariaLabel={navAriaLabel(row)}
+                    ariaLabel={ledgerNavAriaLabel(row)}
                     buttonSx={{
                       pl:
                         row.kind === "opex" ||

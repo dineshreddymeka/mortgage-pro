@@ -1,13 +1,13 @@
 import type { WidgetBreakpointLayouts, WidgetLayoutPartial } from "../widgets/widgetLayout";
 
 /** Bump when Rental recommended coordinates change (opt-in via “Use recommended layout”). */
-export const RENTAL_BOARD_LAYOUT_REVISION = 5;
+export const RENTAL_BOARD_LAYOUT_REVISION = 6;
 
 /** Preset id stored on the Rental board v3 envelope. */
 export const RENTAL_BOARD_PRESET = "compact-side-by-side";
 
 /** Wide (lg) recommended board bottom — keep page scroll in check. */
-export const RENTAL_LG_MAX_ROWS = 62;
+export const RENTAL_LG_MAX_ROWS = 60;
 
 export type RentalWidgetId =
   | "overview"
@@ -38,7 +38,8 @@ type RentalWidgetLayouts = Record<RentalWidgetId, WidgetBreakpointLayouts>;
 /**
  * Explicit lg (12) / md (10) / sm (6) defaults for the Rental board.
  *
- * Wide (lg ≤62 rows): overview ribbon+KPIs full width; Income | OpEx;
+ * Wide (lg ≤60 rows): overview ribbon+KPIs full width; Income | OpEx
+ * (OpEx shorter with tax/ins/HOA as Common Inputs summary);
  * pro-forma w8 beside composition/growth stack w4; Strategies | Tax; Stress full width.
  *
  * Medium (md): same packing scaled to 10 columns (pro-forma w6 | stack w4).
@@ -50,44 +51,44 @@ export const RENTAL_WIDGET_DEFAULT_LAYOUTS: RentalWidgetLayouts = {
     sm: { x: 0, y: 0, w: 6, h: 14, minW: 6, maxW: 6, minH: 8 },
   },
   income: {
-    lg: { x: 0, y: 10, w: 6, h: 16, minW: 4, minH: 12 },
-    md: { x: 0, y: 10, w: 5, h: 16, minW: 4, minH: 12 },
-    sm: { x: 0, y: 14, w: 6, h: 16, minW: 6, maxW: 6, minH: 12 },
+    lg: { x: 0, y: 10, w: 6, h: 14, minW: 4, minH: 10 },
+    md: { x: 0, y: 10, w: 5, h: 14, minW: 4, minH: 10 },
+    sm: { x: 0, y: 14, w: 6, h: 14, minW: 6, maxW: 6, minH: 10 },
   },
   "operating-expenses": {
-    lg: { x: 6, y: 10, w: 6, h: 16, minW: 4, minH: 12 },
-    md: { x: 5, y: 10, w: 5, h: 16, minW: 4, minH: 12 },
-    sm: { x: 0, y: 30, w: 6, h: 18, minW: 6, maxW: 6, minH: 12 },
+    lg: { x: 6, y: 10, w: 6, h: 14, minW: 4, minH: 10 },
+    md: { x: 5, y: 10, w: 5, h: 14, minW: 4, minH: 10 },
+    sm: { x: 0, y: 28, w: 6, h: 16, minW: 6, maxW: 6, minH: 10 },
   },
   "pro-forma": {
-    lg: { x: 0, y: 26, w: 8, h: 14, minW: 5, minH: 10 },
-    md: { x: 0, y: 26, w: 6, h: 14, minW: 4, minH: 10 },
-    sm: { x: 0, y: 48, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
+    lg: { x: 0, y: 24, w: 8, h: 14, minW: 5, minH: 10 },
+    md: { x: 0, y: 24, w: 6, h: 14, minW: 4, minH: 10 },
+    sm: { x: 0, y: 44, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
   },
   composition: {
-    lg: { x: 8, y: 26, w: 4, h: 7, minW: 3, minH: 5 },
-    md: { x: 6, y: 26, w: 4, h: 7, minW: 3, minH: 5 },
-    sm: { x: 0, y: 66, w: 6, h: 8, minW: 6, maxW: 6, minH: 5 },
+    lg: { x: 8, y: 24, w: 4, h: 7, minW: 3, minH: 5 },
+    md: { x: 6, y: 24, w: 4, h: 7, minW: 3, minH: 5 },
+    sm: { x: 0, y: 62, w: 6, h: 8, minW: 6, maxW: 6, minH: 5 },
   },
   growth: {
-    lg: { x: 8, y: 33, w: 4, h: 7, minW: 3, minH: 5 },
-    md: { x: 6, y: 33, w: 4, h: 7, minW: 3, minH: 5 },
-    sm: { x: 0, y: 74, w: 6, h: 8, minW: 6, maxW: 6, minH: 5 },
+    lg: { x: 8, y: 31, w: 4, h: 7, minW: 3, minH: 5 },
+    md: { x: 6, y: 31, w: 4, h: 7, minW: 3, minH: 5 },
+    sm: { x: 0, y: 70, w: 6, h: 8, minW: 6, maxW: 6, minH: 5 },
   },
   strategies: {
-    lg: { x: 0, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
-    md: { x: 0, y: 40, w: 5, h: 12, minW: 4, minH: 8 },
-    sm: { x: 0, y: 82, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
+    lg: { x: 0, y: 38, w: 6, h: 12, minW: 4, minH: 8 },
+    md: { x: 0, y: 38, w: 5, h: 12, minW: 4, minH: 8 },
+    sm: { x: 0, y: 78, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
   },
   tax: {
-    lg: { x: 6, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
-    md: { x: 5, y: 40, w: 5, h: 12, minW: 4, minH: 8 },
-    sm: { x: 0, y: 94, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
+    lg: { x: 6, y: 38, w: 6, h: 12, minW: 4, minH: 8 },
+    md: { x: 5, y: 38, w: 5, h: 12, minW: 4, minH: 8 },
+    sm: { x: 0, y: 90, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
   },
   stress: {
-    lg: { x: 0, y: 52, w: 12, h: 10, minW: 6, minH: 8 },
-    md: { x: 0, y: 52, w: 10, h: 10, minW: 5, minH: 8 },
-    sm: { x: 0, y: 106, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
+    lg: { x: 0, y: 50, w: 12, h: 10, minW: 6, minH: 8 },
+    md: { x: 0, y: 50, w: 10, h: 10, minW: 5, minH: 8 },
+    sm: { x: 0, y: 102, w: 6, h: 12, minW: 6, maxW: 6, minH: 8 },
   },
 };
 

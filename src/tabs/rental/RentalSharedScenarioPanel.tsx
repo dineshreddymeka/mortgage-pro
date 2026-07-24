@@ -27,8 +27,8 @@ export type RentalSharedScenarioPanelProps = {
   closingCosts: number;
   miscInitialCash: number;
   mortgage: MonthlyBreakdown;
-  onGoToFinancing?: () => void;
-  onGoToUpfront?: () => void;
+  /** Navigate to Common Inputs for shared loan / cash-in fields. */
+  onGoToCommonInputs?: () => void;
   /** Dense ribbon for the merged overview widget. */
   ribbon?: boolean;
 };
@@ -65,32 +65,23 @@ function Stat({ label, value, emphasize }: { label: string; value: string; empha
   );
 }
 
-function EditActions(props: { onGoToFinancing?: () => void; onGoToUpfront?: () => void }) {
+function EditActions(props: { onGoToCommonInputs?: () => void }) {
   return (
     <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75} alignItems="center">
       <Button
         size="small"
         variant="outlined"
-        onClick={() => props.onGoToFinancing?.()}
-        disabled={!props.onGoToFinancing}
-        aria-label="Edit financing"
+        onClick={() => props.onGoToCommonInputs?.()}
+        disabled={!props.onGoToCommonInputs}
+        aria-label="Edit common inputs"
       >
-        Edit Financing
-      </Button>
-      <Button
-        size="small"
-        variant="outlined"
-        onClick={() => props.onGoToUpfront?.()}
-        disabled={!props.onGoToUpfront}
-        aria-label="Edit upfront cash"
-      >
-        Edit Upfront
+        Edit Common
       </Button>
     </Stack>
   );
 }
 
-/** Compact read-only financing + upfront snapshot with Edit actions to canonical tabs. */
+/** Compact read-only financing + upfront snapshot with Edit Common for shared fields. */
 export function RentalSharedScenarioPanel({
   homePrice,
   interestRateApr,
@@ -99,8 +90,7 @@ export function RentalSharedScenarioPanel({
   closingCosts,
   miscInitialCash,
   mortgage,
-  onGoToFinancing,
-  onGoToUpfront,
+  onGoToCommonInputs,
   ribbon = false,
 }: RentalSharedScenarioPanelProps) {
   const totalCashIn = downPayment + closingCosts + miscInitialCash;
@@ -148,7 +138,7 @@ export function RentalSharedScenarioPanel({
               },
             }}
           >
-            <EditActions onGoToFinancing={onGoToFinancing} onGoToUpfront={onGoToUpfront} />
+            <EditActions onGoToCommonInputs={onGoToCommonInputs} />
           </Box>
         </Box>
       </Box>
@@ -162,7 +152,7 @@ export function RentalSharedScenarioPanel({
         color="text.secondary"
         sx={{ lineHeight: 1.35, fontSize: `${minOperationalFontPx}px` }}
       >
-        Shared scenario — loan and cash-to-close edit on Financing / Upfront. Rental keeps income &amp;
+        Shared scenario — loan and cash-to-close edit on Common Inputs. Rental keeps income &amp;
         operating expenses.
       </Typography>
 
@@ -193,7 +183,7 @@ export function RentalSharedScenarioPanel({
         </FormField>
       </FormGrid>
 
-      <EditActions onGoToFinancing={onGoToFinancing} onGoToUpfront={onGoToUpfront} />
+      <EditActions onGoToCommonInputs={onGoToCommonInputs} />
     </Stack>
   );
 }

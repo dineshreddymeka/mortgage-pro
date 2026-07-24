@@ -1,7 +1,7 @@
 import type { WidgetBreakpointLayouts, WidgetLayoutPartial } from "../../widgets/widgetLayout";
 
 /** Bump when Exit recommended coordinates / widget IDs change (opt-in via “Use recommended layout”). */
-export const EXIT_BOARD_LAYOUT_REVISION = 2;
+export const EXIT_BOARD_LAYOUT_REVISION = 4;
 
 /** Preset id stored on the Exit board v3 envelope. */
 export const EXIT_BOARD_PRESET = "compact-side-by-side";
@@ -36,9 +36,8 @@ type ExitWidgetLayouts = Record<ExitWidgetId, WidgetBreakpointLayouts>;
 /**
  * Explicit lg (12) / md (10) / sm (6) defaults for the Exit board.
  *
- * Wide (lg ≤70 rows): overview h8 for Edit CTAs; Sale | Yield (taller for helpers);
- * Milestones w8 | Tax w4 (milestones tall for matrix|detail side-by-side);
- * Yearly w7 | Amortization w5; Rent vs buy full width.
+ * Wide (lg ≤70 rows): overview for Edit Common / Edit Rental; Sale | Yield;
+ * Milestones w8 | Tax w4; Yearly w7 | Amortization w5; Rent vs buy full width.
  */
 export const EXIT_WIDGET_DEFAULT_LAYOUTS: ExitWidgetLayouts = {
   overview: {

@@ -1,7 +1,7 @@
 import type { WidgetBreakpointLayouts, WidgetLayoutPartial } from "../widgets/widgetLayout";
 
 /** Bump when Financing recommended coordinates change (opt-in via “Use recommended layout”). */
-export const FINANCING_BOARD_LAYOUT_REVISION = 3;
+export const FINANCING_BOARD_LAYOUT_REVISION = 5;
 
 /** Preset id stored on the Financing board v3 envelope. */
 export const FINANCING_BOARD_PRESET = "compact-side-by-side";
@@ -27,8 +27,8 @@ type FinancingWidgetLayouts = Record<FinancingWidgetId, WidgetBreakpointLayouts>
 /**
  * Explicit lg (12) / md (10) / sm (6) defaults for the Financing board.
  *
- * Wide (lg): Loan & payment full width; Loan Product w7 | Rate Suggestions w5;
- * Affordability w5 | Term Tools w7.
+ * Wide (lg): Loan & payment full width (Common Inputs summary + payment cards);
+ * Loan Product w7 | Rate Suggestions w5; Affordability w5 | Term Tools w7.
  *
  * Medium (md): product/rates 5+5; affordability and term tools full width.
  *
@@ -36,29 +36,29 @@ type FinancingWidgetLayouts = Record<FinancingWidgetId, WidgetBreakpointLayouts>
  */
 export const FINANCING_WIDGET_DEFAULT_LAYOUTS: FinancingWidgetLayouts = {
   loan: {
-    lg: { x: 0, y: 0, w: 12, h: 14, minW: 6, minH: 10 },
-    md: { x: 0, y: 0, w: 10, h: 14, minW: 5, minH: 10 },
-    sm: { x: 0, y: 0, w: 6, h: 16, minW: 6, maxW: 6, minH: 10 },
+    lg: { x: 0, y: 0, w: 12, h: 12, minW: 6, minH: 8 },
+    md: { x: 0, y: 0, w: 10, h: 12, minW: 5, minH: 8 },
+    sm: { x: 0, y: 0, w: 6, h: 14, minW: 6, maxW: 6, minH: 8 },
   },
   "loan-product": {
-    lg: { x: 0, y: 14, w: 7, h: 20, minW: 4, minH: 8 },
-    md: { x: 0, y: 14, w: 5, h: 20, minW: 4, minH: 8 },
-    sm: { x: 0, y: 16, w: 6, h: 14, minW: 6, maxW: 6, minH: 8 },
+    lg: { x: 0, y: 12, w: 7, h: 20, minW: 4, minH: 8 },
+    md: { x: 0, y: 12, w: 5, h: 20, minW: 4, minH: 8 },
+    sm: { x: 0, y: 14, w: 6, h: 14, minW: 6, maxW: 6, minH: 8 },
   },
   "external-rate-estimates": {
-    lg: { x: 7, y: 14, w: 5, h: 20, minW: 4, minH: 12 },
-    md: { x: 5, y: 14, w: 5, h: 20, minW: 4, minH: 12 },
-    sm: { x: 0, y: 30, w: 6, h: 20, minW: 6, maxW: 6, minH: 12 },
+    lg: { x: 7, y: 12, w: 5, h: 20, minW: 4, minH: 12 },
+    md: { x: 5, y: 12, w: 5, h: 20, minW: 4, minH: 12 },
+    sm: { x: 0, y: 28, w: 6, h: 20, minW: 6, maxW: 6, minH: 12 },
   },
   affordability: {
-    lg: { x: 0, y: 34, w: 5, h: 18, minW: 4, minH: 10 },
-    md: { x: 0, y: 34, w: 10, h: 16, minW: 5, minH: 10 },
-    sm: { x: 0, y: 50, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
+    lg: { x: 0, y: 32, w: 5, h: 18, minW: 4, minH: 10 },
+    md: { x: 0, y: 32, w: 10, h: 16, minW: 5, minH: 10 },
+    sm: { x: 0, y: 48, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
   },
   "term-tools": {
-    lg: { x: 5, y: 34, w: 7, h: 18, minW: 4, minH: 10 },
-    md: { x: 0, y: 50, w: 10, h: 18, minW: 5, minH: 10 },
-    sm: { x: 0, y: 68, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
+    lg: { x: 5, y: 32, w: 7, h: 18, minW: 4, minH: 10 },
+    md: { x: 0, y: 48, w: 10, h: 18, minW: 5, minH: 10 },
+    sm: { x: 0, y: 66, w: 6, h: 18, minW: 6, maxW: 6, minH: 10 },
   },
 };
 

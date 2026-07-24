@@ -126,7 +126,7 @@ export function computeExitYieldAdjusted(
   return { opexIn, noiAdj, piIn, pmiIn, cfAdj, hasExclusion, opexPartial };
 }
 
-export type LedgerNavTarget = "income" | "vacancy" | "opex" | "financing" | "overview";
+export type LedgerNavTarget = "income" | "vacancy" | "opex" | "common-inputs" | "overview";
 
 export type LedgerRowKind =
   | "gsi"
@@ -151,6 +151,31 @@ export type ProFormaLedgerRow = {
   navTarget: LedgerNavTarget;
   opexAnchorId?: string;
 };
+
+/** Accessible label for a ledger row’s navigation control. */
+export function ledgerNavAriaLabel(
+  row: Pick<ProFormaLedgerRow, "label" | "navTarget">
+): string {
+  if (row.navTarget === "common-inputs") return `Edit ${row.label} on Common Inputs`;
+  if (row.navTarget === "overview") return `Jump to key metrics for ${row.label}`;
+  if (row.navTarget === "vacancy") return `Jump to vacancy editor`;
+  if (row.navTarget === "income") return `Jump to income editor for ${row.label}`;
+  return `Jump to operating expense editor for ${row.label}`;
+}
+
+/**
+ * In-tab scroll target for non–Common Inputs ledger navigation.
+ * P&amp;I / PMI use the Common Inputs tab callback instead.
+ */
+export function ledgerScrollElementId(
+  target: Exclude<LedgerNavTarget, "common-inputs">,
+  opexAnchorId?: string
+): string {
+  if (target === "income") return "rental-edit-income";
+  if (target === "vacancy") return "rental-edit-vacancy";
+  if (target === "overview") return "rental-metrics-row";
+  return opexAnchorId ?? "rental-edit-carrying";
+}
 
 /** Single unified ledger sequence: income → EGI → OpEx → NOI → debt → cash flow. */
 export function buildProFormaLedgerRows(
@@ -209,7 +234,7 @@ export function buildProFormaLedgerRows(
     amountMonthly: r.principalAndInterestMonthly,
     isDeduction: true,
     showIncludeToggles: true,
-    navTarget: "financing",
+    navTarget: "common-inputs",
   });
 
   if (r.pmiMonthly > 0.001) {
@@ -220,7 +245,7 @@ export function buildProFormaLedgerRows(
       amountMonthly: r.pmiMonthly,
       isDeduction: true,
       showIncludeToggles: true,
-      navTarget: "financing",
+      navTarget: "common-inputs",
     });
   }
 
